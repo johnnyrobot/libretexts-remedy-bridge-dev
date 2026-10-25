@@ -1,0 +1,7 @@
+# Keep unverified reviewer attribution within an enforced loopback boundary
+
+Accepted 2026-10-25 by LibreTexts Chief for bridge PR #10: option A retains `requestedBy` as caller-asserted, unverified, never used for authorization, with the process `operator` recorded separately. We accept CodeRabbit's MAJOR CWE-345 finding (unverified reviewer identity) for this local staff tool: writes remain governed by the process operator, `REMEDY_WRITE_ALLOWLIST`, and existing preview/write guardrails; this field is attribution only and cannot prove who reviewed a change.
+
+Startup enforces a loopback bind (127.0.0.0/8, ::1, or localhost normalized to 127.0.0.1), with no override flag. CORS allows only localhost origins, but does not authenticate callers; other local processes can assert an arbitrary reviewer. Do not expose the tool through a reverse proxy, tunnel, or off-host port forwarding: a loopback socket does not protect against those deployment choices.
+
+Option B is required before any non-loopback or otherwise off-host deployment: after JWT verification, Conductor signs a minimal reviewer assertion; Remedy Server forwards it; the bridge verifies signature, audience, expiry, action and target/preview binding before deriving `requestedBy`. The signing credential and coordinated Conductor rollout are deferred until that boundary changes. This ADR accepts the current finding within the local boundary; it does not claim the assertion is authenticated.

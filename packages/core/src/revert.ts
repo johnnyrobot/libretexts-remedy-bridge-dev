@@ -32,7 +32,7 @@ export interface RevertOptions {
   snapshotPath?: string;
   /** Dry-run — don't write, return the diff candidate only. Default false. */
   dryRun?: boolean;
-  /** Application user this restore is made on behalf of; recorded alongside the process operator. */
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
   requestedBy?: string;
   /** Reject a restore if the live page changed since the reviewed preview. */
   expectedCurrentHash?: string;

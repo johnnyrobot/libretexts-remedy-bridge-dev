@@ -24,7 +24,7 @@ export interface WritePageRevisionOptions {
   revisionSummary: string;
   source: NonNullable<SnapshotMeta['source']>;
   mode?: FixMode | 'revert';
-  /** Application user this write is made on behalf of; recorded alongside the process operator. */
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
   requestedBy?: string;
 }
 

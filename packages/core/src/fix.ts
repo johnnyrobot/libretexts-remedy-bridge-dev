@@ -19,6 +19,8 @@ export interface FixPageOptions {
   onlyRuleIds?: string[];
   findingIds?: string[];
   revisionSummary?: string;
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
+  requestedBy?: string;
   llm?: LLMClient;
   maxLlmCalls?: number;
 }
@@ -137,6 +139,7 @@ export async function fixPage(
       rules: unique(effectiveApplied),
       revisionSummary,
       source: 'fix',
+      requestedBy: opts.requestedBy,
       env,
     });
     written = write.written;

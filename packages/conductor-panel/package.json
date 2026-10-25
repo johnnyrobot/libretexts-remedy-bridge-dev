@@ -6,6 +6,7 @@
   "description": "Staff UI for LibreTexts Remedy — scan, preview, apply.",
   "type": "module",
   "scripts": {
+    "test": "node --import tsx --test server/*.test.ts",
     "dev": "concurrently -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch server/server.ts",
     "dev:web": "vite",

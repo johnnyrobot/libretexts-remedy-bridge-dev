@@ -6,6 +6,7 @@
  * expose to the public internet without auth.
  */
 import { createPatch } from 'diff';
+import { requireLoopbackHost } from './loopback.js';
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -51,10 +52,8 @@ const REPO_ROOT = resolve(HERE, '../../..');
 loadDotenv({ path: resolve(REPO_ROOT, '.env') });
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
-// Bind to loopback by default — this is a local staff tool with no auth, so it
-// must not be reachable off-host. Override CONDUCTOR_API_HOST deliberately
-// (and add auth) before exposing it anywhere else.
-const HOST = process.env.CONDUCTOR_API_HOST ?? '127.0.0.1';
+// This unauthenticated staff tool must remain on loopback (ADR-0001).
+const HOST = requireLoopbackHost(process.env.CONDUCTOR_API_HOST ?? '127.0.0.1');
 const MAX_REQUEST_BYTES = Number(process.env.REMEDY_MAX_REQUEST_BYTES ?? 5_000_000);
 const FIXTURE_ROOT = resolve(REPO_ROOT, 'fixtures/local-lab');
 const STATIC_ROOT = resolve(HERE, '../dist');
@@ -493,6 +492,7 @@ const routes: Record<string, Handler> = {
       mode: 'apply',
       findingIds,
       revisionSummary: `Remedy: fixed ${findingIds.length} selected finding(s)`,
+      requestedBy: optionalStr(body.requested_by ?? body.requestedBy),
     });
     return {
       fix_mode: 'deterministic',
