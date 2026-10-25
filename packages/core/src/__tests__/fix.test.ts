@@ -1,13 +1,44 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type Expert from '@libretexts/cxone-expert-node';
 import { fixPage } from '../fix.js';
-import { imgAltRule, mathAccessibleRule } from '../rules/index.js';
+import { headingAsBoldRule, imgAltRule, mathAccessibleRule } from '../rules/index.js';
 import { scanHtml } from '../scan.js';
 
 const DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX///+nxBvIAAAAC0lEQVR4nGNgAAIAAAUAAeImBZsAAAAASUVORK5CYII=';
 
 describe('fixPage', () => {
+  it('retains reviewer identity through deterministic apply into audit and snapshot', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'remedy-deterministic-audit-'));
+    const expert = {
+      pages: {
+        getPageInfo: async () => ({ '@id': '3971', path: 'Sandboxes/johnnyphung/Test', title: 'Test' }),
+        getPageContents: async () => ({ body: '<p><strong>Section</strong></p><p>Text</p>' }),
+        postPageContents: async () => ({ page: { '@revision': '43' } }),
+      },
+    } as unknown as Expert;
+    const env = {
+      CXONE_INTEGRATION_ENABLED: 'true', SERVER_DOMAIN: 'dev.libretexts.org',
+      SERVER_KEY: 'test', SERVER_SECRET: 'test', SERVER_USER: 'test', USER: 'bridge-process',
+      REMEDY_WRITE_ALLOWLIST: '^Sandboxes/johnnyphung(?:/|$)',
+      REMEDY_SNAPSHOT_DIR: join(dir, 'snapshots'), REMEDY_AUDIT_LOG: join(dir, 'audit.log'),
+    };
+    try {
+      const result = await fixPage(3971, {
+        expert, env, rules: [headingAsBoldRule], mode: 'apply',
+        findingIds: ['heading-as-bold#0'], requestedBy: 'authenticated-reviewer',
+      });
+      expect(result.written).toBe(true);
+      const audit = JSON.parse((await readFile(env.REMEDY_AUDIT_LOG, 'utf8')).trim());
+      const snapshot = JSON.parse(await readFile(result.snapshotPath!, 'utf8'));
+      expect(audit).toMatchObject({ requestedBy: 'authenticated-reviewer', operator: 'bridge-process' });
+      expect(snapshot).toMatchObject({ requestedBy: 'authenticated-reviewer', operator: 'bridge-process' });
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+
   it('replaces overlong alt text with generated vision alt text', async () => {
     const longAlt = 'Flowchart showing scientific method: Observation to Hypothesis to Experiment to Conclusion/Theory, with feedback loop to revise hypothesis if experiment fails';
     const expert = fakeExpert(`<img src="${DATA_URL}" alt="${longAlt}">`);

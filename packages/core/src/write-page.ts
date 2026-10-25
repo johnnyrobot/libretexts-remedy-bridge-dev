@@ -24,6 +24,8 @@ export interface WritePageRevisionOptions {
   revisionSummary: string;
   source: NonNullable<SnapshotMeta['source']>;
   mode?: FixMode | 'revert';
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
+  requestedBy?: string;
 }
 
 export interface WritePageRevisionResult {
@@ -47,6 +49,7 @@ export async function writePageRevision({
   revisionSummary,
   source,
   mode = 'apply',
+  requestedBy,
 }: WritePageRevisionOptions): Promise<WritePageRevisionResult> {
   if (beforeHtml === afterHtml || isNoiseOnlyChange(beforeHtml, afterHtml)) {
     return { written: false, revisionSummary };
@@ -59,6 +62,7 @@ export async function writePageRevision({
     pagePath: page.path,
     hostname: page.hostname,
     operator: operatorFromEnv(env),
+    requestedBy,
     rules,
     revisionSummary,
     source,
@@ -84,6 +88,7 @@ export async function writePageRevision({
     beforeHash: hashContent(beforeHtml),
     afterHash: hashContent(afterHtml),
     operator: operatorFromEnv(env),
+    requestedBy,
     revisionSummary,
     snapshotPath: snapshot.metaPath,
     cxoneRevisionId,

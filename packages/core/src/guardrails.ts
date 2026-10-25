@@ -101,6 +101,8 @@ export interface AuditEntry {
   beforeHash: string;
   afterHash: string;
   operator: string;
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
+  requestedBy?: string;
   revisionSummary?: string;
   /** Path on disk to the HTML snapshot of the before-state (if saved). */
   snapshotPath?: string;
@@ -144,6 +146,8 @@ export interface SnapshotMeta {
   hostname: string;
   /** Operator who initiated the write. */
   operator: string;
+  /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
+  requestedBy?: string;
   /** SHA-256 hash (first 16 hex chars) of the HTML. */
   hash: string;
   /** Rule ids that will be applied after this snapshot. */
