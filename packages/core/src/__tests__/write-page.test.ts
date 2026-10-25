@@ -32,6 +32,7 @@ describe('writePageRevision', () => {
         rules: ['img-alt'],
         revisionSummary: 'Remedy test write',
         source: 'pipeline',
+        requestedBy: 'authenticated-reviewer',
         env: {
           CXONE_INTEGRATION_ENABLED: 'true',
           SERVER_DOMAIN: 'dev.libretexts.org',
@@ -57,12 +58,16 @@ describe('writePageRevision', () => {
 
       const audit = JSON.parse((await readFile(join(dir, 'audit.log'), 'utf8')).trim());
       expect(audit).toMatchObject({
+        operator: 'tester',
+        requestedBy: 'authenticated-reviewer',
         rules: ['img-alt'],
         mode: 'apply',
         revisionSummary: 'Remedy test write',
         snapshotPath: result.snapshotPath,
         cxoneRevisionId: '42',
       });
+      const snapshot = JSON.parse(await readFile(result.snapshotPath!, 'utf8'));
+      expect(snapshot).toMatchObject({ operator: 'tester', requestedBy: 'authenticated-reviewer' });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

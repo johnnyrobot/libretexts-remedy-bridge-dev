@@ -187,7 +187,7 @@ export async function revertPage(
     snapshotPath: preRevertSnapshot.metaPath,
     revertedFrom: chosen.metaPath,
     cxoneRevisionId: extractRevisionId(postResponse),
-  });
+  }, env.REMEDY_AUDIT_LOG);
 
   return {
     pageId: page.id,
