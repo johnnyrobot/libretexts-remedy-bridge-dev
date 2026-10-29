@@ -185,6 +185,13 @@ export class ReviewerVerifier {
     } catch { throw new Error('reviewer_configuration_invalid'); }
   }
 
+  matchesIssuer(value: unknown): boolean { return value === this.issuer; }
+
+  /** Restore durable revocation tombstones before admission; no API removes them. */
+  rememberRevocations(kids: readonly string[]): void {
+    for (const id of kids) { if (!kidPattern.test(id)) invalid(); this.revoked.add(id); }
+  }
+
   /** Persist this union before acknowledging reload/admission; never remove ledger tombstones. */
   effectiveRevocations(now = Math.floor(Date.now() / 1000)): string[] {
     if (!integer(now)) invalid();

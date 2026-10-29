@@ -2,6 +2,7 @@ import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DurableLedger } from '../../../conductor-panel/server/durable-ledger.js';
 import type { Server } from 'node:http';
 import { request } from 'node:http';
 vi.mock('dotenv', () => ({ config: () => ({}) }));
@@ -9,6 +10,9 @@ let server: Server, base: string;
 const key = 'a'.repeat(64);
 beforeAll(async () => {
   const dir = await mkdtemp(join(tmpdir(), 'required-http-'));
+  await (await import('node:fs/promises')).mkdir(join(dir,'ledger'));
+  await (await DurableLedger.open({directory:join(dir,'ledger'),fencePath:join(dir,'fence.json'),trustEpoch:'test-epoch',initialize:true})).close();
+  vi.stubEnv('REMEDY_CLAIM_DB', join(dir,'ledger','claims.sqlite3')); vi.stubEnv('REMEDY_CLAIM_FENCE_DIR', dir);
   const fixture = JSON.parse(await (await import('node:fs/promises')).readFile(new URL('../../../../docs/proposals/lt-1-reviewer-wire-v1-vectors.json', import.meta.url), 'utf8'));
   await writeFile(join(dir, 'service'), key + '\n');
   await writeFile(join(dir, 'keys.json'), JSON.stringify({issuer:'urn:libretexts:conductor:test',audience:'urn:libretexts:remedy-bridge:test',environment:'test',trust_epoch:'test-epoch', keys:[{kid:fixture.kid,kty:fixture.public_jwk.kty,crv:fixture.public_jwk.crv,x:fixture.public_jwk.x,issuer:'urn:libretexts:conductor:test',audience:'urn:libretexts:remedy-bridge:test',environment:'test',trust_epoch:'test-epoch',not_before:0,not_after:4102444800,enabled:true,revoked_at:null}]}));
@@ -32,11 +36,11 @@ it('denies duplicate credentials before coalescing and keeps panel unavailable',
   expect(response).toBe(401);
   expect((await fetch(base+'/',{headers:{'X-Remedy-Service-Key':key}})).status).toBe(404);
 });
-it('reports capabilities without leaking config and never allows a mutation alias in incomplete required mode',async()=>{
+it('reports capabilities without leaking config and never allows a mutation alias in required mode without CXone',async()=>{
  const r=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':key}});expect(r.status).toBe(503);
- expect(await r.json()).toMatchObject({ok:false,state:'degraded',capabilities:{scan:false,preview:false,mutate:false,operation_status:false}});
+ expect(await r.json()).toMatchObject({ok:false,state:'degraded',capabilities:{scan:false,preview:false,mutate:false,operation_status:true}});
  for(const path of ['/api/apply','/v1/cxone/page/apply-fix','/v1/cxone/page/restore']){
- const r=await fetch(base+path,{method:'POST',headers:{'X-Remedy-Service-Key':key},body:'{}'});expect(r.status).toBe(503);
+ const r=await fetch(base+path,{method:'POST',headers:{'X-Remedy-Service-Key':key},body:'{}'});expect(r.status).toBe(path === '/api/apply' ? 403 : 503);
  }
 });
 

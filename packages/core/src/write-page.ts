@@ -28,6 +28,10 @@ export interface WritePageRevisionOptions {
   requestedBy?: string;
   /** Snapshot being restored, for the append-only audit trail. */
   revertedFrom?: string;
+  /** Verified HTTP reviewer, distinct from the process operator. */
+  reviewer?: { issuer: string; subject: string };
+  /** Required-mode durable dispatch marker; must complete before the single remote call. */
+  beforeDispatch?: (snapshot: import('./guardrails.js').SnapshotEntry) => Promise<void>;
 }
 
 export interface WritePageRevisionResult {
@@ -56,6 +60,8 @@ export async function writePageRevision({
   mode = 'apply',
   requestedBy,
   revertedFrom,
+  reviewer,
+  beforeDispatch,
 }: WritePageRevisionOptions): Promise<WritePageRevisionResult> {
   if (beforeHtml === afterHtml || (mode !== 'revert' && isNoiseOnlyChange(beforeHtml, afterHtml))) {
     return { written: false, revisionSummary };
@@ -72,10 +78,13 @@ export async function writePageRevision({
       hostname: page.hostname,
       operator: operatorFromEnv(env),
       requestedBy,
+      reviewer,
       rules,
       revisionSummary,
       source,
     }, env);
+
+    await beforeDispatch?.(snapshot);
 
     let postResponse: unknown;
     try {
@@ -100,6 +109,7 @@ export async function writePageRevision({
         afterHash: hashContent(afterHtml),
         operator: operatorFromEnv(env),
         requestedBy,
+        reviewer,
         revertedFrom,
         revisionSummary,
         snapshotPath: snapshot.metaPath,
