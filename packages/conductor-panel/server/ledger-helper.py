@@ -1,6 +1,7 @@
 """Retained POSIX owner for Remedy's local SQLite claim ledger.
 
-No remote I/O, lease expiry, lock unlink, claim deletion or reconciliation mutation.
+No remote I/O, lease expiry, lock unlink or claim deletion. Offline resolution
+requires exclusive ownership and an explicit preserved operator decision.
 The line protocol is private to durable-ledger.ts; errors never include input bytes.
 """
 import argparse
@@ -92,7 +93,7 @@ class Ledger:
             raise ValueError()
         self.check()
         recovery = self.db.execute("SELECT 1 FROM claims WHERE outcome='pending' LIMIT 1").fetchone()
-        if recovery:
+        if recovery and args.offline_resolve is None:
             def recover():
                 self.db.execute("UPDATE claims SET outcome=CASE state WHEN 'write_started' THEN 'unknown_write' ELSE 'not_attempted' END, reason=CASE state WHEN 'write_started' THEN 'write_outcome_unknown' ELSE 'pre_dispatch_failure' END, target_active=CASE state WHEN 'write_started' THEN 1 ELSE 0 END, state='terminal', updated_at=? WHERE outcome='pending'", (now(),))
             self.mutate(recover)
@@ -148,6 +149,7 @@ class Ledger:
 
     def mutate(self, callback):
         self.check()
+        prior_fence = self.fence_value()
         self.db.execute('BEGIN IMMEDIATE')
         try:
             result = callback()
@@ -155,6 +157,11 @@ class Ledger:
             seq = self.db.execute('SELECT durability_seq FROM meta WHERE singleton=1').fetchone()[0]
             self.fault('disk_full_before_commit')
             self.fault('crash_before_db_commit')
+            if self.fence_value() != prior_fence:
+                raise ValueError()
+            current = os.stat(self.lock_path, follow_symlinks=False)
+            if (current.st_ino, current.st_dev) != (self.lock_stat.st_ino, self.lock_stat.st_dev):
+                raise ValueError()
             self.db.execute('COMMIT')
         except Exception:
             if self.db.in_transaction:
@@ -162,11 +169,19 @@ class Ledger:
             raise
         self.fault('crash_after_db_commit')
         self.fault('disk_full_before_fence')
+        if self.fence_value() != prior_fence:
+            raise ValueError()
         self.write_fence(seq)
         return result
 
     @staticmethod
-    def status_row(row):
+    def resolution(db, operation_id):
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='resolutions'").fetchone():
+            return None
+        return db.execute('SELECT * FROM resolutions WHERE operation_id=?', (operation_id,)).fetchone()
+
+    @staticmethod
+    def status_row(row, resolution=None):
         if row is None:
             return None
         outcome, action = row['outcome'], row['action']
@@ -175,20 +190,61 @@ class Ledger:
         return {'operation_id': row['operation_id'], 'action': action, 'outcome': outcome, 'reason': row['reason'],
                 'applied': active if action == 'cxone.apply' else False, 'restored': active if action == 'cxone.restore' else False,
                 'audit_recorded': None if row['audit_recorded'] is None else bool(row['audit_recorded']),
-                'requires_reconciliation': unknown, 'reconciliation': 'required' if unknown else 'none',
+                'requires_reconciliation': unknown and resolution is None, 'reconciliation': 'resolved' if resolution else 'required' if unknown else 'none',
                 'evidence_effect': 'hold' if outcome == 'pending' else 'preserve' if outcome == 'not_attempted' and row['reason'] not in ('stale_preview', 'target_mismatch') else 'invalidate',
-                'updated_at': row['updated_at']}
+                'updated_at': resolution['resolved_at'] if resolution else row['updated_at']}
 
     @staticmethod
     def report(db):
         meta = dict(db.execute('SELECT trust_epoch,durability_seq FROM meta WHERE singleton=1').fetchone())
         operations = []
         for row in db.execute('SELECT * FROM claims ORDER BY created_at,operation_id'):
-            operation = Ledger.status_row(row)
+            operation = Ledger.status_row(row, Ledger.resolution(db, row['operation_id']))
             operation.update({key: row[key] for key in ('issuer', 'jti', 'binding_sha256', 'subject', 'expires_at', 'snapshot_path', 'cxone_revision_id', 'created_at')})
             operation['target'] = {'hostname': row['hostname'], 'page_id': row['page_id']}
             operations.append(operation)
         return {**meta, 'operations': operations}
+
+    def offline_resolve(self, decision, report_bytes):
+        # This method is deliberately absent from the writer's line protocol.
+        required = {'operation_id', 'target', 'trust_epoch', 'expected_seq', 'expected_state',
+                    'expected_outcome', 'expected_updated_at', 'report_sha256', 'operator', 'reason',
+                    'external_settlement_acknowledged', 'writer_drained'}
+        if set(decision) != required or decision['writer_drained'] is not True or decision['external_settlement_acknowledged'] is not True:
+            raise ValueError()
+        if any(type(decision[key]) is not str or not decision[key].strip() or len(decision[key]) > 4096
+               for key in required - {'target', 'expected_seq', 'external_settlement_acknowledged', 'writer_drained'}):
+            raise ValueError()
+        if type(decision['expected_seq']) is not int or decision['trust_epoch'] != self.args.epoch:
+            raise ValueError()
+        if hashlib.sha256(report_bytes).hexdigest() != decision['report_sha256']:
+            raise ValueError()
+        report = json.loads(report_bytes)
+        if report != self.report(self.db) or report['durability_seq'] != decision['expected_seq']:
+            raise ValueError()
+        row = self.by_id(decision['operation_id'])
+        target = {'hostname': row['hostname'], 'page_id': row['page_id']}
+        if decision['target'] != target or decision['expected_state'] != row['state'] or decision['expected_outcome'] != row['outcome'] or decision['expected_updated_at'] != row['updated_at']:
+            raise ValueError()
+        if row['state'] != 'terminal' or row['outcome'] != 'unknown_write' or row['target_active'] != 1 or self.resolution(self.db, row['operation_id']):
+            raise ValueError()
+        if self.db.execute("SELECT 1 FROM claims WHERE outcome='pending' OR (hostname=? AND page_id=? AND target_active=1 AND operation_id<>?)", (row['hostname'], row['page_id'], row['operation_id'])).fetchone():
+            raise ValueError()
+        timestamp = now()
+        def append():
+            self.db.execute("""CREATE TABLE IF NOT EXISTS resolutions (
+                operation_id TEXT PRIMARY KEY REFERENCES claims(operation_id), resolved_at TEXT NOT NULL,
+                operator TEXT NOT NULL, reason TEXT NOT NULL, report_sha256 TEXT NOT NULL,
+                report BLOB NOT NULL, decision TEXT NOT NULL)""")
+            self.db.execute('INSERT INTO resolutions VALUES (?,?,?,?,?,?,?)',
+                            (row['operation_id'], timestamp, decision['operator'], decision['reason'],
+                             decision['report_sha256'], report_bytes, json.dumps(decision, sort_keys=True)))
+            # Preserve the original unknown outcome, reason, time and nonce/token forever.
+            self.db.execute('UPDATE claims SET target_active=0 WHERE operation_id=?', (row['operation_id'],))
+        self.current_command = 'resolve'
+        self.mutate(append)
+        self.check()
+        return self.status_row(row, self.resolution(self.db, row['operation_id']))
 
     def by_id(self, operation_id):
         row = self.db.execute('SELECT * FROM claims WHERE operation_id=?', (operation_id,)).fetchone()
@@ -214,7 +270,8 @@ class Ledger:
         if command == 'report':
             return self.report(self.db)
         if command == 'status':
-            return self.status_row(self.db.execute('SELECT * FROM claims WHERE issuer=? AND jti=?', (data['issuer'], data['jti'])).fetchone())
+            row = self.db.execute('SELECT * FROM claims WHERE issuer=? AND jti=?', (data['issuer'], data['jti'])).fetchone()
+            return self.status_row(row, self.resolution(self.db, row['operation_id']) if row else None)
         if command == 'claim':
             operation_id, timestamp = str(uuid.uuid4()), now()
             action = data['binding']['action']
@@ -303,9 +360,11 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--initialize', action='store_true')
     mode.add_argument('--readonly-report', action='store_true')
+    mode.add_argument('--offline-resolve', metavar='DECISION_JSON')
+    parser.add_argument('--report-file')
     parser.add_argument('--owner-fd', type=int)
     parser.add_argument('--test-fault', choices=['crash_before_db_commit', 'crash_after_db_commit', 'crash_after_fence_file_fsync', 'crash_after_fence_commit', 'disk_full_before_commit', 'disk_full_before_fence'])
-    parser.add_argument('--test-fault-on', choices=['claim', 'start', 'finish', 'revoke'], default='claim')
+    parser.add_argument('--test-fault-on', choices=['claim', 'start', 'finish', 'revoke', 'resolve'], default='claim')
     args = parser.parse_args()
     os.umask(0o077)
     if args.readonly_report:
@@ -318,8 +377,26 @@ def main():
     try:
         ledger = Ledger(args)
     except Exception:
-        emit({'ready': False})
-        return
+        emit({'error': 'offline_resolution_refused'} if args.offline_resolve is not None else {'ready': False})
+        return 1 if args.offline_resolve is not None else None
+    if args.offline_resolve is not None:
+        try:
+            # Bounded regular, no-follow files; never load credentials or network content.
+            def evidence_file(path):
+                fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+                with os.fdopen(fd, 'rb') as handle:
+                    if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+                        raise ValueError()
+                    value = handle.read(16 * 1024 * 1024 + 1)
+                    if len(value) > 16 * 1024 * 1024:
+                        raise ValueError()
+                    return value
+            decision = json.loads(evidence_file(args.offline_resolve))
+            emit(ledger.offline_resolve(decision, evidence_file(args.report_file)))
+            return 0
+        except Exception:
+            emit({'error': 'offline_resolution_refused'})
+            return 1
     emit({'ready': True})
     for line in sys.stdin:
         request_id = None
