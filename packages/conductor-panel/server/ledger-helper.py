@@ -203,7 +203,9 @@ class Ledger:
             kids = data['kids']
             if type(kids) is not list or any(type(kid) is not str or not kid for kid in kids):
                 raise ValueError()
-            self.mutate(lambda: self.db.executemany('INSERT OR IGNORE INTO revocations VALUES (?,?)', [(kid, now()) for kid in kids]))
+            new_kids = [kid for kid in set(kids) if self.db.execute('SELECT 1 FROM revocations WHERE kid=?', (kid,)).fetchone() is None]
+            if new_kids:
+                self.mutate(lambda: self.db.executemany('INSERT INTO revocations VALUES (?,?)', [(kid, now()) for kid in new_kids]))
             return None
         if command == 'is_revoked':
             return self.db.execute('SELECT 1 FROM revocations WHERE kid=?', (data['kid'],)).fetchone() is not None

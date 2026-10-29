@@ -185,6 +185,11 @@ export class ReviewerVerifier {
     } catch { throw new Error('reviewer_configuration_invalid'); }
   }
 
+  hasActiveKey(now = Math.floor(Date.now() / 1000)): boolean {
+    this.effectiveRevocations(now);
+    return [...this.keys.values()].some(({policy}) => policy.enabled && !this.revoked.has(policy.kid) && policy.not_before <= now && now < policy.not_after);
+  }
+
   matchesIssuer(value: unknown): boolean { return value === this.issuer; }
 
   /** Restore durable revocation tombstones before admission; no API removes them. */

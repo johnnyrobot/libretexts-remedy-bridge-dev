@@ -76,6 +76,7 @@ it('restores only the signed, exact reviewed snapshot output',async()=>{
 });
 it('acknowledges key revocation durably, rejects reenabling an old ID and supports explicit rotation',async()=>{
  const {reloadReviewerKeys}=await import('../../../conductor-panel/server/server.js');const config=JSON.parse(await readFile(join(dir,'keys.json'),'utf8'));const p=(await preview()).body,a=assertion(p);config.keys[0].revoked_at=Math.floor(Date.now()/1000);await writeFile(join(dir,'keys.json'),JSON.stringify(config));await reloadReviewerKeys();
+ const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(503);expect(await ready.json()).toMatchObject({capabilities:{mutate:false,operation_status:true}});
  expect((await apply(p,a)).status).toBe(401);expect(cxone.writes).toEqual([]);
  config.keys[0].revoked_at=null;await writeFile(join(dir,'keys.json'),JSON.stringify(config));await reloadReviewerKeys();expect((await apply(p,a)).status).toBe(401);
  config.keys[0].kid='synthetic2';signerKid='synthetic2';await writeFile(join(dir,'keys.json'),JSON.stringify(config));await reloadReviewerKeys();expect((await apply(p)).status).toBe(200);expect(cxone.writes).toHaveLength(1);

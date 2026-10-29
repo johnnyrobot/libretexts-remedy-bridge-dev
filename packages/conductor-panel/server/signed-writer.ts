@@ -49,7 +49,13 @@ export class SignedWriter {
       page_id: input.pageId, page_path: input.pagePath, hostname: input.hostname };
   }
   invalidate(token: string) { this.previews.delete(token); }
-  async ready() { return this.admitting && await this.readable(); }
+  async ready() {
+    if (!this.admitting || !this.ledger.ready) return false;
+    try {
+      await this.ledger.recordRevocations(this.verifier.effectiveRevocations());
+      return this.admitting && this.verifier.hasActiveKey() && await this.readable();
+    } catch { return false; }
+  }
   async readable() {
     if (!this.ledger.ready) return false;
     try { await this.ledger.status({ issuer: '', jti: '' }); return true; } catch { return false; }
