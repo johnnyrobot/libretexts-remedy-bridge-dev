@@ -661,7 +661,7 @@ const instance = createServer(async (req, res) => {
       const result = pathname.endsWith('/operation-status') ? await signedWriter.status(body)
         : await signedWriter.mutate(pathname.endsWith('/restore') ? 'cxone.restore' : 'cxone.apply', body, page);
       json(res, 200, result);
-    } catch (error) { signedError(res, error); }
+    } catch (error) { signedError(res, error,mutation); }
     return;
   }
   const handler = routes[pathname];
@@ -712,7 +712,7 @@ const instance = createServer(async (req, res) => {
   }));
   } catch(error) {
     res.setHeader('retry-after','5');
-    json(res,503,{error:error instanceof CapacityError ? 'capacity_unavailable' : 'work_cancelled',evidence_usable:false});
+    json(res,503,{error:error instanceof CapacityError ? 'capacity_unavailable' : 'work_cancelled',evidence_usable:false,...(signedWriter&&mutation?{outcome:'not_attempted',retryable:false,operation_id:null,evidence_effect:'preserve'}:{})});
   } finally { res.off('close',disconnected); owned.done(); }
 });
 const close = instance.close.bind(instance);
@@ -760,8 +760,8 @@ function decoratePreview(pathname: string, result: unknown): unknown {
     rules: targeted?.appliedRuleIds ?? pipeline?.appliedRuleIds ?? ['__revert__'],
   }) };} catch(error){signedWriter.invalidate(token);throw error;}
 }
-function signedError(res: ServerResponse, error: unknown) {
-  if(error instanceof CapacityError || error instanceof WorkCancelled || (error instanceof Error && error.name==='TimeoutError')) {res.setHeader('retry-after','5');json(res,503,{error:error instanceof CapacityError?'capacity_unavailable':'work_cancelled'});return;}
+function signedError(res: ServerResponse, error: unknown,mutation=false) {
+  if(error instanceof CapacityError || error instanceof WorkCancelled || (error instanceof Error && error.name==='TimeoutError')) {res.setHeader('retry-after','5');json(res,503,{error:error instanceof CapacityError?'capacity_unavailable':'work_cancelled',...(mutation?{outcome:'not_attempted',retryable:false,operation_id:null,evidence_effect:'preserve'}:{})});return;}
   if (error instanceof SignedRequestError) { json(res, error.status, error.body); return; }
   if (error instanceof ReviewAuthError) { json(res, error.status, { error: error.code, outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
   if (error instanceof LedgerError) { json(res, error.code === 'claim_conflict' ? 409 : 503,

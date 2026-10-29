@@ -4,9 +4,9 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {generateKeyPairSync,randomBytes,sign} from 'node:crypto';
 import {DurableLedger} from '../../../conductor-panel/server/durable-ledger.js';
-const remote=vi.hoisted(()=>({gate:undefined as Promise<void>|undefined,entered:()=>{},html:'<p><strong>Title</strong></p>'}));
+const remote=vi.hoisted(()=>({gate:undefined as Promise<void>|undefined,entered:()=>{},html:'<p><strong>Title</strong></p>',readGate:undefined as Promise<void>|undefined,readEntered:()=>{}}));
 vi.mock('dotenv',()=>({config:()=>({})}));vi.mock('dotenv/config',()=>({}));
-vi.mock('@libretexts/cxone-expert-node',()=>({default:class{pages={getPageInfo:async()=>({'@id':1,path:'Sandboxes/johnnyphung/Page'}),getPageContents:async()=>({body:remote.html}),postPageContents:async()=>{remote.entered();await remote.gate;return{page:{'@revision':'9'}};}}}}));
+vi.mock('@libretexts/cxone-expert-node',()=>({default:class{pages={getPageInfo:async()=>({'@id':1,path:'Sandboxes/johnnyphung/Page'}),getPageContents:async()=>{remote.readEntered();await remote.readGate;return {body:remote.html};},postPageContents:async()=>{remote.entered();await remote.gate;return{page:{'@revision':'9'}};}}}}));
 it('retains actual ledger ownership after dispatch plus disconnect plus shutdown until durable finalization',async()=>{
  const root=await mkdtemp(join(tmpdir(),'mutation-drain-'));await mkdir(join(root,'ledger'));const store={directory:join(root,'ledger'),fencePath:join(root,'fence.json'),trustEpoch:'synthetic'};await(await DurableLedger.open({...store,initialize:true})).close();
  const keys=generateKeyPairSync('ed25519'),issuer='urn:conductor:test',audience='urn:bridge:test',service='d'.repeat(64);
@@ -22,6 +22,10 @@ it('retains actual ledger ownership after dispatch plus disconnect plus shutdown
   await dispatched;
   // With one preview slot, consuming a signed token must release all cache owners.
   expect((await post('/v1/cxone/page/preview-fix',{page_id:1})).status).toBe(200);
+  let releaseRead!:()=>void;remote.readGate=new Promise(r=>releaseRead=r);let readEntered!:()=>void;const reading=new Promise<void>(r=>readEntered=r);remote.readEntered=readEntered;
+  const scan=post('/v1/cxone/page/scan',{page_id:1});await reading;
+  try{const capacity=await post('/v1/cxone/page/apply-fix',{});expect(capacity.status).toBe(503);expect(capacity.headers.get('retry-after')).toBe('5');expect(await capacity.json()).toMatchObject({error:'capacity_unavailable',outcome:'not_attempted',operation_id:null,retryable:false,evidence_effect:'preserve'});}finally{releaseRead();}
+  await scan;
   controller.abort();await pending;server.close();const drained=bridge.closeSignedWriter();
   await expect(DurableLedger.open(store)).rejects.toMatchObject({code:'claim_store_unavailable'});
   release();await drained;
