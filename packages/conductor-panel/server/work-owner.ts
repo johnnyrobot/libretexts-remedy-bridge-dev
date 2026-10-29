@@ -1,4 +1,4 @@
-import { fork } from 'node:child_process';
+import { fork, type Serializable } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CapacityError, finiteLimit } from './preview-cache.js';
 export class WorkCancelled extends Error {}
@@ -34,7 +34,7 @@ export class WorkOwner {
   shutdown() { this.stopped=true; for(const controller of this.controllers) controller.abort(new WorkCancelled()); }
 }
 /** Reap actual native/CPU/socket work before settling; no abandoned promise releases a slot. */
-export async function ownedRead(payload: unknown, signal: AbortSignal, worker = new URL('./read-worker.ts',import.meta.url)): Promise<any> {
+export async function ownedRead(payload: Serializable, signal: AbortSignal, worker = new URL('./read-worker.ts',import.meta.url)): Promise<any> {
   signal.throwIfAborted();
   return new Promise((resolve,reject)=>{
     const child = fork(fileURLToPath(worker), [], { execArgv: ['--max-old-space-size=384','--import','tsx'],

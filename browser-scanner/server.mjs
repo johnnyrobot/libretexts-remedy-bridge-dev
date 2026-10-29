@@ -15,8 +15,8 @@ const server = createServer(async (req,res) => {
   if(req.url!=='/scan'||req.method!=='POST'){res.statusCode=404;return res.end('{}');}
   if(busy){res.statusCode=503;res.setHeader('Retry-After','5');return res.end('{"error":"capacity_unavailable"}');}
   busy=true;
-  let child, cancelled=false, teardown, teardownFailed=false;
-  const stop=()=>{cancelled=true;if(child&&!teardown)teardown=terminateOwnedTree(child.pid).catch(()=>{teardownFailed=true;});};
+  let child, browserPid, cancelled=false, teardown, teardownFailed=false;
+  const stop=()=>{cancelled=true;if(child&&!teardown)teardown=terminateOwnedTree(child.pid,browserPid?[browserPid]:[]).catch(()=>{teardownFailed=true;});};
   current=stop;
   const timeout=setTimeout(stop,120000);
   res.once('close',stop);
@@ -34,9 +34,9 @@ const server = createServer(async (req,res) => {
     const result=await new Promise((resolve,reject)=>{
       child=fork(fileURLToPath(new URL('./scan-worker.mjs',import.meta.url)),[],{detached:true,stdio:['ignore','ignore','ignore','ipc'],execArgv:['--max-old-space-size=384']});
       let reply;
-      child.on('message',message=>{reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
+      child.on('message',message=>{if(Number.isSafeInteger(message?.browser_owned)&&message.browser_owned>1){browserPid=message.browser_owned;child.send({ownership_ack:browserPid});return;}reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
       child.on('error',()=>stop());
-      child.once('close',async()=>{await teardown;if(teardownFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
+      child.once('close',async()=>{if(!reply){if(!browserPid)teardownFailed=true;stop();}await teardown;if(teardownFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
       child.send({url});
       if(cancelled)stop();
     });

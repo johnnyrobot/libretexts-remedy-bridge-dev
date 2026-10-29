@@ -14,20 +14,20 @@ async function processes(){
  }))).filter(Boolean);
 }
 /** Playwright launches Chromium in a separate group; freeze the owner before inventory. */
-export async function terminateOwnedTree(pid){
- if(!pid)return;
- try{process.kill(pid,'SIGSTOP');}catch(error){if(error.code==='ESRCH')return;throw error;}
+export async function terminateOwnedTree(pid,additionalRoots=[]){
+ const roots=new Set([pid,...additionalRoots].filter(Boolean));
+ for(const root of roots){try{process.kill(root,'SIGSTOP');}catch(error){if(error.code!=='ESRCH')throw error;}}
  let rows;
  for(let i=0;i<100;i++){
-  rows=await processes();const owner=rows.find(row=>row.pid===pid);
-  if(!owner)return;
-  if(owner.state.startsWith('T'))break;
+  rows=await processes();
+  const running=rows.some(row=>roots.has(row.pid)&&!row.state.startsWith('T')&&!row.state.startsWith('Z'));
+  if(!running)break;
   if(i===99)throw Error('Owner did not stop');
   await sleep(10);
  }
- const owned=new Set([pid]);
+ const owned=new Set(roots);
  for(let changed=true;changed;){changed=false;for(const row of rows)if(owned.has(row.ppid)&&!owned.has(row.pid)){owned.add(row.pid);changed=true;}}
- const groups=new Set(rows.filter(row=>owned.has(row.pid)).map(row=>row.group));
+ const groups=new Set([...roots,...rows.filter(row=>owned.has(row.pid)).map(row=>row.group)]);
  for(const group of groups){try{process.kill(-group,'SIGKILL');}catch(error){if(error.code!=='ESRCH')throw error;}}
  for(let i=0;i<100;i++){
   const active=(await processes()).some(row=>owned.has(row.pid)&&!row.state.startsWith('Z'));

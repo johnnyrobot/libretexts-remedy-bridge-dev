@@ -56,8 +56,12 @@ introduced.
 
 The rendered scanner has its own owned POSIX process group,120s total deadline,
 5s/4096-byte body bound and one active job with immediate503 backpressure. Client
-loss/shutdown kills the group including Chromium, and capacity remains owned
-until the worker is reaped. It runs non-root with Chromium sandbox enabled and
+loss/shutdown kills owned groups including Chromium, and capacity remains owned
+until termination is confirmed. A public loopback-only Playwright server reports
+its browser PID and awaits a parent ownership acknowledgement before loading
+authored content. Abnormal worker exit reaps that independently retained browser
+root; a startup death before ownership is established keeps admission busy until
+an operator restarts the isolated container. No uncertain ownership is released. It runs non-root with Chromium sandbox enabled and
 the committed seccomp profile. Preserve2GiB/2CPU/256PID/1GiB shared-memory limits
 from CI/deployment. It rejects more than64 configured resource hosts,256 resource
 responses,8MiB serialized reader DOM and16MiB result messages. Browser/native

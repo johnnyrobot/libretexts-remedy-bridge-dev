@@ -687,14 +687,14 @@ const instance = createServer(async (req, res) => {
     json(res, 200, decoratePreview(pathname, result));
   } catch (err) {
     if (err instanceof ScanEngineError) { json(res, 503, { error: 'scan_engine_failed', evidence_usable: false }); return; }
-    if (err instanceof WorkCancelled || signal.aborted) { json(res,503,{error:'work_cancelled',evidence_usable:false}); return; }
-    if (err && typeof err === 'object' && 'status' in err && 'body' in err) { if((err as any).status===503) res.setHeader('retry-after','5'); json(res,(err as any).status,(err as any).body); return; }
-    if (security.required) { signedError(res, err); return; }
     if (err instanceof WriteOutcomeError) {
       json(res, 409, { error: 'write_outcome_unknown', write_outcome: 'unknown', retry_safe: false, snapshot_path: err.snapshotPath,
         message: 'Write outcome is unknown. Do not retry. Reconcile CXone revision history and the saved snapshot before further writes.' });
       return;
     }
+    if (err instanceof WorkCancelled || signal.aborted) { json(res,503,{error:'work_cancelled',evidence_usable:false}); return; }
+    if (err && typeof err === 'object' && 'status' in err && 'body' in err) { if((err as any).status===503) res.setHeader('retry-after','5'); json(res,(err as any).status,(err as any).body); return; }
+    if (security.required) { signedError(res, err); return; }
     if (err instanceof Error && err.message.startsWith('Page changed since')) {
       json(res, 409, { error: 'stale_preview', message: 'Page changed since preview; preview again.' });
       return;
