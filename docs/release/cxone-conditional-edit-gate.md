@@ -27,9 +27,17 @@ Installed `node_modules/@libretexts/cxone-expert-node/package.json` reports **1.
 
 ## Recommended gate
 
+LibreTexts' integration/deployment team owns current vendor confirmation,
+separately authorized validation and the reviewed production write-enablement
+decision. This is not a Johnny checkpoint. The full integration stays in one
+maintained build; review-only is optional and LibreTexts chooses rollout timing.
+The gate applies to automatic mutations, not to delivering that optional mode.
+No outreach, live execution or write enablement is authorized by this document.
+
+
 LT-124 now holds production mutation unavailable in readiness and dispatch (503 `conditional_write_unproven`) and blocks production core/CLI authorization. No bypass flag exists. Keep this hold until a current vendor contract and authorized sandbox evidence establish an atomic precondition that distinguishes **every** intervening revision. A fresh read, content hash, local lock, durable dispatch record or post-write reread cannot prevent an outside writer changing content between read and POST. Timestamp gating may mitigate some conflicts but must not be labeled revision CAS. Never retry an ambiguous dispatched mutation. Explicit response validation and reconciliation are required before classifying an outcome.
 
-## Later sandbox procedure for Johnny — not executed
+## Later authorized LibreTexts validation — not executed
 
 1. Obtain authorization naming `<SANDBOX_HOST>`, `<EXACT_PAGE_ID>` and `<EXACT_PAGE_PATH>`, permitted trial count and cleanup. Use only synthetic content, an isolated test page and existing approved local credentials. Record server/deployment version and SDK/bridge commits. Preserve initial body, hashes, revision and raw server timestamps locally; redact auth from evidence.
 2. Establish baseline revision A. Capture its content plus matching revision/timestamp; reconcile separately fetched metadata by revision. Submit distinct reviewed content with `abort=modified`, captured timestamp, canonical numeric ID and redirects disabled. Record HTTP status, sanitized body, returned revision, subsequent body/hash and revision history. This is the accepted control.
