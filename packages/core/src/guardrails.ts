@@ -219,7 +219,7 @@ function validateSnapshotMeta(value: unknown): SnapshotMeta {
   const m = value as SnapshotMeta;
   if (typeof m.ts !== 'string' || !Number.isFinite(Date.parse(m.ts)) || new Date(m.ts).toISOString() !== m.ts ||
       !Number.isSafeInteger(m.pageId) || m.pageId <= 0 || typeof m.pagePath !== 'string' ||
-      normalizeSandboxPath(m.pagePath) !== m.pagePath || typeof m.hostname !== 'string' ||
+      !m.pagePath || typeof m.hostname !== 'string' ||
       m.hostname !== m.hostname.toLowerCase() || !/^[a-z0-9.-]+$/.test(m.hostname) ||
       typeof m.operator !== 'string' || typeof m.hash !== 'string' || !/^[a-f0-9]{16}$/.test(m.hash) ||
       !Number.isSafeInteger(m.bytes) || m.bytes < 0 || !Array.isArray(m.rules) ||
@@ -230,6 +230,7 @@ function validateSnapshotMeta(value: unknown): SnapshotMeta {
       (m.reviewer !== undefined && (!m.reviewer || typeof m.reviewer.issuer !== 'string' || typeof m.reviewer.subject !== 'string'))) {
     throw new InvalidSnapshotError();
   }
+  normalizeSandboxPath(m.pagePath); // Validate syntax while retaining the exact SDK target string.
   return m;
 }
 

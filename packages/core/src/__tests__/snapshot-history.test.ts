@@ -92,3 +92,12 @@ it('retains recoverability with a configured parent-relative storage root', asyn
   expect((await listPageSnapshots(817, { env, expert })).map(s => s.metaPath)).toEqual([saved.metaPath]);
   expect((await revertPage(817, { env, expert, dryRun: true })).revertedToHtml).toBe('recover relative');
 });
+
+it('retains exact SDK page paths whose valid syntax contains percent escapes', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'snapshot-encoded-'));
+  const env = { SERVER_DOMAIN: 'dev.libretexts.org', REMEDY_SNAPSHOT_DIR: dir };
+  const pagePath = 'Sandboxes/johnnyphung/01%3A_Notes';
+  const expert = { pages: { getPageInfo: async () => ({ '@id': 819, path: pagePath }), getPageContents: async () => ({ body: 'current' }) } } as any;
+  await saveSnapshot('recover encoded', { pageId: 819, pagePath, hostname: env.SERVER_DOMAIN, operator: 'fake', rules: [] }, env);
+  expect((await revertPage(819, { env, expert, dryRun: true })).revertedToHtml).toBe('recover encoded');
+});
