@@ -34,7 +34,7 @@ it('durably claims a nonce/token/target and exposes only fixed status metadata',
   await ledger.finish(pending.operation_id, { outcome: 'not_attempted', reason: 'no_change' });
   const status = await ledger.status({ issuer: 'test-issuer', jti: 'nonce-1' });
   expect(status).toMatchObject({ outcome: 'not_attempted', applied: false, restored: false, reason: 'no_change', evidence_effect: 'preserve' });
-  expect(Object.keys(status!).sort()).toEqual(['action', 'applied', 'audit_recorded', 'evidence_effect', 'operation_id', 'outcome', 'reason', 'reconciliation', 'requires_reconciliation', 'restored', 'updated_at']);
+  expect(Object.keys(status!).sort()).toEqual(['action', 'applied', 'audit_recorded', 'evidence_effect', 'operation_id', 'outcome', 'reason', 'reconciliation', 'requires_reconciliation', 'restored', 'terminal_proof', 'updated_at']);
   await ledger.close();
   const restarted = await open(options);
   expect(await restarted.status({ issuer: 'test-issuer', jti: 'nonce-1' })).toEqual(status);
@@ -64,7 +64,8 @@ it('persists successful writes, pre-dispatch recovery and monotonic revocations 
   await ledger.recordRevocations([]);
   const pending = await ledger.claim(input());
   const before = await ledger.status({ issuer: 'test-issuer', jti: 'nonce-1' });
-  expect(await ledger.reconciliationReport()).toMatchObject({ operations: [before] });
+  const {terminal_proof: _proof, ...legacyBefore} = before!;
+  expect(await ledger.reconciliationReport()).toMatchObject({ operations: [legacyBefore] });
   expect(await ledger.status({ issuer: 'test-issuer', jti: 'nonce-1' })).toEqual(before);
   await ledger.close();
   const restarted = await open(options);
@@ -238,8 +239,9 @@ runpy.run_path(sys.argv[0],run_name='__main__')`;
     '--epoch', options.trustEpoch, '--readonly-report'];
   const { stdout } = await run('python3', ['-c', denyNetwork, ...reportArgs]);
   const report = JSON.parse(stdout);
+  const {terminal_proof: _proof, ...legacyBefore} = before!;
   expect(report).toMatchObject({ trust_epoch: options.trustEpoch, durability_seq: 2,
-    operations: [{ ...before, issuer: 'test-issuer', jti: 'nonce-1', target: { hostname: 'example.test', page_id: '1' },
+    operations: [{ ...legacyBefore, issuer: 'test-issuer', jti: 'nonce-1', target: { hostname: 'example.test', page_id: '1' },
       subject: 'reviewer-1', expires_at: 1_800_000_060, snapshot_path, cxone_revision_id: null }] });
   expect(report.operations[0].binding_sha256).toMatch(/^[0-9a-f]{64}$/);
   expect(JSON.stringify(report)).not.toContain('<p>');

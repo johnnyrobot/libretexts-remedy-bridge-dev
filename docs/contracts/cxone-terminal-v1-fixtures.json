@@ -1,0 +1,101 @@
+{
+  "fixture_version": "cxone-terminal-v1-fixtures-r1",
+  "binding": {
+    "action": "cxone.apply",
+    "target": {
+      "hostname": "dev.libretexts.org",
+      "page_id": "42",
+      "page_path": "Sandboxes/johnnyphung/Chapitres/Énergie"
+    },
+    "preview_token": "00000000-0000-4000-8000-000000000001",
+    "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+    "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+    "fix_mode": "deterministic",
+    "tier": null,
+    "snapshot": null
+  },
+  "binding_canonical_json": "{\"action\":\"cxone.apply\",\"after_sha256\":\"2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b\",\"before_sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\",\"fix_mode\":\"deterministic\",\"preview_token\":\"00000000-0000-4000-8000-000000000001\",\"snapshot\":null,\"target\":{\"hostname\":\"dev.libretexts.org\",\"page_id\":\"42\",\"page_path\":\"Sandboxes/johnnyphung/Chapitres/\\u00c9nergie\"},\"tier\":null}",
+  "binding_sha256": "be1b286ded8462208d282a6f4e711dee95d0be5235d12ed901b88a1a600499ab",
+  "statuses": [
+    {
+      "name": "known-success-audit-failed",
+      "body": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "action": "cxone.apply",
+        "outcome": "known_success",
+        "reason": null,
+        "applied": true,
+        "restored": false,
+        "audit_recorded": false,
+        "requires_reconciliation": false,
+        "reconciliation": "none",
+        "evidence_effect": "invalidate",
+        "updated_at": "2026-10-29T00:00:00.000Z",
+        "terminal_proof": {
+          "contract": "cxone-terminal-v1",
+          "issuer": "urn:conductor:synthetic",
+          "jti": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "operation_id": "00000000-0000-4000-8000-000000000001",
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42"
+          },
+          "binding_sha256": "be1b286ded8462208d282a6f4e711dee95d0be5235d12ed901b88a1a600499ab",
+          "outcome": "known_success",
+          "reason": null,
+          "state": "terminal",
+          "audit_recorded": false,
+          "terminal_updated_at": "2026-10-29T00:00:00.000Z",
+          "trust_epoch": "synthetic-terminal-epoch",
+          "durability_seq": 3
+        }
+      }
+    },
+    {
+      "name": "not-attempted-no-change",
+      "body": {
+        "operation_id": "00000000-0000-4000-8000-000000000001",
+        "action": "cxone.apply",
+        "outcome": "not_attempted",
+        "reason": "no_change",
+        "applied": false,
+        "restored": false,
+        "audit_recorded": null,
+        "requires_reconciliation": false,
+        "reconciliation": "none",
+        "evidence_effect": "preserve",
+        "updated_at": "2026-10-29T00:00:00.000Z",
+        "terminal_proof": {
+          "contract": "cxone-terminal-v1",
+          "issuer": "urn:conductor:synthetic",
+          "jti": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "operation_id": "00000000-0000-4000-8000-000000000001",
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42"
+          },
+          "binding_sha256": "be1b286ded8462208d282a6f4e711dee95d0be5235d12ed901b88a1a600499ab",
+          "outcome": "not_attempted",
+          "reason": "no_change",
+          "state": "terminal",
+          "audit_recorded": null,
+          "terminal_updated_at": "2026-10-29T00:00:00.000Z",
+          "trust_epoch": "synthetic-terminal-epoch",
+          "durability_seq": 3
+        }
+      }
+    }
+  ],
+  "held_cases": [
+    "pending:terminal_proof=null",
+    "unknown_write:terminal_proof=null (including reconciliation=resolved; use original offline resolution path)",
+    "404:operation_not_found",
+    "503:claim_store_unavailable",
+    "missing/unknown contract",
+    "issuer/jti/action/target/binding/outcome/audit/time/trust mismatch",
+    "proof changes between preparation and revalidation",
+    "proof alone without current permission, fresh scan and local CAS"
+  ]
+}

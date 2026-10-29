@@ -34,7 +34,7 @@ it('requires a drained exclusive owner, appends resolution, preserves unknown/to
   expect(result).toMatchObject({ outcome: 'unknown_write', reconciliation: 'resolved', requires_reconciliation: false, applied: null, evidence_effect: 'invalidate' });
   const ledger = await DurableLedger.open(f.options);
   try {
-    expect(await ledger.status({ issuer: 'synthetic', jti: 'nonce-1' })).toEqual(result);
+    expect(await ledger.status({ issuer: 'synthetic', jti: 'nonce-1' })).toEqual({...result,terminal_proof:null});
     expect(await ledger.status({ issuer: 'synthetic', jti: 'nonce-2' })).toMatchObject({ reconciliation: 'required' });
     await expect(ledger.claim({ ...claim('1'), preview_token: 'fresh-token' })).rejects.toMatchObject({ code: 'claim_conflict' });
     await expect(ledger.claim({ ...claim('1'), jti: 'fresh-nonce' })).rejects.toMatchObject({ code: 'claim_conflict' });

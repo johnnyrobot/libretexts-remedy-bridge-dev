@@ -7,6 +7,17 @@ import { join } from 'node:path';
 
 export type Outcome = 'pending' | 'not_attempted' | 'known_success' | 'unknown_write';
 export type Reason = 'no_change' | 'stale_preview' | 'target_mismatch' | 'pre_dispatch_failure' | 'write_outcome_unknown';
+/** Persisted terminal evidence, not a bearer credential or mutation permission. */
+export interface TerminalProof {
+  contract: 'cxone-terminal-v1'; issuer: string; jti: string;
+  operation_id: string; action: 'cxone.apply' | 'cxone.restore';
+  target: { hostname: string; page_id: string }; binding_sha256: string;
+  outcome: 'known_success' | 'not_attempted'; reason: Reason | null; audit_recorded: boolean | null;
+  state: 'terminal'; terminal_updated_at: string; trust_epoch: string;
+  /** Current consistent store observation; unrelated operations can advance it. */
+  durability_seq: number;
+}
+export interface OperationLookup extends OperationStatus { terminal_proof: TerminalProof | null; }
 export interface OperationStatus {
   operation_id: string; action: 'cxone.apply' | 'cxone.restore'; outcome: Outcome;
   reason: Reason | null; applied: boolean | null; restored: boolean | null; audit_recorded: boolean | null;
@@ -125,7 +136,7 @@ export class DurableLedger {
     outcome: Exclude<Outcome, 'pending'>; reason?: Reason; audit_recorded?: boolean;
     snapshot_path?: string; cxone_revision_id?: string; applied?: boolean | null; restored?: boolean | null;
   }): Promise<OperationStatus> { return this.request('finish', { operation_id, ...result }); }
-  status(query: { issuer: string; jti: string }): Promise<OperationStatus | null> { return this.request('status', query); }
+  status(query: { issuer: string; jti: string }): Promise<OperationLookup | null> { return this.request('status', query); }
   async recordRevocations(kids: string[]): Promise<void> { await this.request('revoke', { kids }); }
   isRevoked(kid: string): Promise<boolean> { return this.request('is_revoked', { kid }); }
   getRevocations(): Promise<string[]> { return this.request('revocations'); }
