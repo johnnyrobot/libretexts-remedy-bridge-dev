@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, readFile, writeFile, symlink, rename } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { expect, it, vi } from 'vitest';
 import { saveSnapshot, readSnapshot } from '../guardrails.js';
 import { listPageSnapshots, revertPage } from '../revert.js';
@@ -81,4 +81,14 @@ it('skips a named pipe and malformed POSIX filename without blocking recovery', 
   expect((await listPageSnapshots(816, { expert, env })).map(s => s.metaPath)).toEqual([saved.metaPath]);
   await expect(readSnapshot(pipe.htmlPath, env)).rejects.toThrow('integrity');
   expect((await revertPage(816, { expert, env, dryRun: true })).revertedToHtml).toBe('recover');
+});
+
+it('retains recoverability with a configured parent-relative storage root', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'snapshot-relative-'));
+  const env = { REMEDY_SNAPSHOT_DIR: relative(process.cwd(), root), SERVER_DOMAIN: 'dev.libretexts.org' };
+  const pagePath = 'Sandboxes/johnnyphung/Relative';
+  const expert = { pages: { getPageInfo: async () => ({ '@id': 817, path: pagePath }), getPageContents: async () => ({ body: 'current' }) } } as any;
+  const saved = await saveSnapshot('recover relative', { pageId: 817, pagePath, hostname: env.SERVER_DOMAIN, operator: 'fake', rules: [] }, env);
+  expect((await listPageSnapshots(817, { env, expert })).map(s => s.metaPath)).toEqual([saved.metaPath]);
+  expect((await revertPage(817, { env, expert, dryRun: true })).revertedToHtml).toBe('recover relative');
 });

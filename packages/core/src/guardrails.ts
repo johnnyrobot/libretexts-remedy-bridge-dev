@@ -176,7 +176,7 @@ function snapshotRoot(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 export function snapshotDir(pageId: number, env: NodeJS.ProcessEnv = process.env): string {
-  return join(snapshotRoot(env), String(pageId));
+  return resolve(snapshotRoot(env), String(pageId));
 }
 
 /**
