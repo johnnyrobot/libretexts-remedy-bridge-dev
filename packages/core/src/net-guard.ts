@@ -1,25 +1,7 @@
-/**
- * SSRF guard for outbound fetches of content-controlled URLs.
- *
- * Image `src` values come from scraped CXone page HTML, i.e. they are
- * attacker-influenceable. Fetching them blindly (then handing the bytes to an
- * LLM) is a Server-Side Request Forgery vector — a crafted `src` pointing at
- * `http://169.254.169.254/…` (cloud metadata), `http://localhost:…`, or an
- * internal RFC-1918 host would make Remedy issue requests into private
- * infrastructure on the operator's behalf.
- *
- * Default policy: allow public hosts, BLOCK loopback / private / link-local /
- * ULA / CGNAT / multicast addresses and internal-only hostnames. This closes
- * the dangerous targets without breaking legitimate public image CDNs (e.g.
- * cdn.mathpix.com). Set REMEDY_IMAGE_FETCH_ALLOWLIST to a comma-separated list
- * of host suffixes to switch to a strict positive allowlist (lock-down mode).
- *
- * Residual limitation: these checks are synchronous and do not perform DNS
- * resolution, so a public hostname that resolves to a private address
- * (DNS-rebinding) is not caught here. For this local-staff tool the realistic
- * vector is a literal internal IP / hostname in page content, which IS blocked.
- */
+import { isIP } from 'node:net';
+import ipaddr from 'ipaddr.js';
 
+/** URL policy is only the first step; image-fetch pins validated DNS at connect. */
 export class SsrfBlockedError extends Error {
   constructor(url: string, reason: string) {
     super(`Blocked outbound fetch to ${url}: ${reason}`);
@@ -49,7 +31,8 @@ export function isImageFetchAllowed(
     return { ok: false, reason: `scheme ${url.protocol} not allowed` };
   }
 
-  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (url.username || url.password) return { ok: false, reason: 'URL credentials forbidden' };
+  const host = url.hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '').toLowerCase();
   if (!host) return { ok: false, reason: 'empty host' };
 
   const ipReason = blockedIpReason(host);
@@ -88,43 +71,12 @@ export function assertImageFetchAllowed(rawUrl: string, env: NodeJS.ProcessEnv =
   if (!result.ok) throw new SsrfBlockedError(rawUrl, result.reason);
 }
 
-function isIpLiteral(host: string): boolean {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':');
-}
+function isIpLiteral(host: string): boolean { return isIP(host) !== 0; }
 
-function blockedIpReason(host: string): string | null {
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    const octets = host.split('.').map(Number);
-    if (octets.some((n) => n > 255)) return 'invalid IPv4';
-    return blockedV4(octets);
-  }
-  if (host.includes(':')) return blockedV6(host);
-  return null;
-}
-
-function blockedV4(o: number[]): string | null {
-  const [a, b] = o;
-  if (a === 0) return 'reserved 0.0.0.0/8';
-  if (a === 10) return 'private 10.0.0.0/8';
-  if (a === 127) return 'loopback 127.0.0.0/8';
-  if (a === 169 && b === 254) return 'link-local 169.254.0.0/16 (cloud metadata)';
-  if (a === 172 && b >= 16 && b <= 31) return 'private 172.16.0.0/12';
-  if (a === 192 && b === 168) return 'private 192.168.0.0/16';
-  if (a === 100 && b >= 64 && b <= 127) return 'CGNAT 100.64.0.0/10';
-  if (a === 192 && b === 0 && o[2] === 0) return 'reserved 192.0.0.0/24';
-  if (a >= 224) return 'multicast/reserved address';
-  return null;
-}
-
-function blockedV6(host: string): string | null {
-  const h = host.toLowerCase();
-  if (h === '::1') return 'loopback ::1';
-  if (h === '::') return 'unspecified ::';
-  if (h.startsWith('fe8') || h.startsWith('fe9') || h.startsWith('fea') || h.startsWith('feb')) {
-    return 'link-local fe80::/10';
-  }
-  if (h.startsWith('fc') || h.startsWith('fd')) return 'unique-local fc00::/7';
-  const mapped = h.match(/::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
-  if (mapped) return blockedV4(mapped[1].split('.').map(Number));
-  return null;
+export function blockedIpReason(host: string): string | null {
+  try {
+    // URL normalizes alternate IPv4 notation first; process() normalizes mapped IPv6.
+    const address = ipaddr.process(host);
+    return address.range() === 'unicast' ? null : 'non-public IP destination';
+  } catch { return isIpLiteral(host) || host.includes(':') ? 'invalid IP destination' : null; }
 }

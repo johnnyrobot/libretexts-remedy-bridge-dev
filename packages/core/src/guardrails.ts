@@ -7,6 +7,10 @@ export const CXONE_ALLOWED_HOST = 'dev.libretexts.org';
 export const CXONE_ALLOWED_ROOT = 'Sandboxes/johnnyphung';
 export const CXONE_CANONICAL_ALLOWLIST = '^Sandboxes/johnnyphung(?:/|$)';
 
+export class ConditionalWriteUnavailableError extends Error {
+  constructor() { super('CXone conditional-write protection is unproven; production mutation is unavailable.'); }
+}
+
 export class WriteNotAllowedError extends Error {
   constructor(_hostname: string, _path: string) {
     super(`Write refused: target is outside the configured CXone owner sandbox.`);
@@ -72,6 +76,7 @@ export function assertWriteAllowed(
   page: { hostname: string; path: string },
   env: NodeJS.ProcessEnv = process.env,
 ): void {
+  if (env.NODE_ENV === 'production') throw new ConditionalWriteUnavailableError();
   const config = validateCxoneConfiguration(env);
   const hostname = page.hostname.trim().toLowerCase().replace(/\.$/, '');
   const normalized = normalizeSandboxPath(page.path);

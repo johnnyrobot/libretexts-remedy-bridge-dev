@@ -26,7 +26,10 @@ export class SignedWriter {
   private reloadGeneration = 0;
   private readonly observedRevocations = new Set<string>();
   private readonly previews = new Map<string, StoredPreview>();
-  private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {}
+  private readonly productionWriteBlocked: boolean;
+  private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {
+    this.productionWriteBlocked = !['development', 'test'].includes(env.NODE_ENV ?? '');
+  }
   static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env) {
     const db = env.REMEDY_CLAIM_DB, fence = env.REMEDY_CLAIM_FENCE_DIR, epoch = env.REMEDY_REVIEWER_TRUST_EPOCH;
     if (!db || basename(db) !== 'claims.sqlite3' || !fence || !epoch) throw new Error('claim_store_unavailable');
@@ -51,7 +54,7 @@ export class SignedWriter {
   }
   invalidate(token: string) { this.previews.delete(token); }
   async ready() {
-    if (!this.admitting || !this.ledger.ready) return false;
+    if (this.productionWriteBlocked || !this.admitting || !this.ledger.ready) return false;
     try {
       const generation = this.reloadGeneration, verifier = this.verifier;
       verifier.rememberRevocations(this.observedRevocations);
@@ -102,6 +105,7 @@ export class SignedWriter {
     return claims;
   }
   async mutate(action: 'cxone.apply' | 'cxone.restore', body: Record<string, unknown>, pageInput: string | number) {
+    if (this.productionWriteBlocked) rejected(503, 'conditional_write_unproven');
     if (!this.admitting) rejected(503, 'reviewer_configuration_unavailable');
     if (typeof body.preview_token !== 'string' || !body.preview_token) rejected(409, 'preview_required');
     if ('reviewerAssertion' in body || 'previewToken' in body || 'previewHash' in body || 'fixMode' in body) rejected(400, 'invalid_request');

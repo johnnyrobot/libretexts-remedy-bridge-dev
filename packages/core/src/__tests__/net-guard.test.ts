@@ -44,3 +44,7 @@ describe('net-guard SSRF allowlist', () => {
     expect(() => assertImageFetchAllowed('https://dev.libretexts.org/x.png')).not.toThrow();
   });
 });
+
+it.each(['http://[::ffff:7f00:1]/x', 'http://[::ffff:a00:1]/x', 'http://[::ffff:a9fe:a9fe]/x', 'http://2130706433/x', 'http://0x7f000001/x', 'http://[ff02::1]/x'])('blocks canonical private/mapped/non-unicast destination %s', url => {
+  expect(isImageFetchAllowed(url).ok).toBe(false);
+});

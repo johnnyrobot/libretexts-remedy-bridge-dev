@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import sharp from 'sharp';
 import { LLMClient } from '../llm-client.js';
 
 const answer = (content = 'A red circle.', model = 'glm-5.3-flash:cloud') => new Response(JSON.stringify({
@@ -106,7 +107,8 @@ describe('Ollama to OpenAI failover', () => {
     vi.stubEnv('OPENAI_API_KEY', 'fallback-only');
     const fetcher = vi.fn().mockResolvedValueOnce(new Response('unauthorized', { status: 401 })).mockResolvedValueOnce(answer());
     vi.stubGlobal('fetch', fetcher);
-    await new LLMClient({ maxRetries: 1 }).vision({ image: { kind: 'url', url: 'data:image/png;base64,eA==' }, prompt: 'Alt text' });
+    const image = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'white' } }).png().toBuffer();
+    await new LLMClient({ maxRetries: 1 }).vision({ image: { kind: 'url', url: 'data:image/png;base64,' + image.toString('base64') }, prompt: 'Alt text' });
     expect(fetcher.mock.calls[1][0]).toBe('https://api.openai.com/v1/chat/completions');
     expect(fetcher.mock.calls[1][1].headers.Authorization).toBe('Bearer fallback-only');
     expect(JSON.parse(fetcher.mock.calls[1][1].body).model).toBe('gpt-5.6-luna');
