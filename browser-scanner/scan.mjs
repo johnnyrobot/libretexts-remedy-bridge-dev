@@ -6,7 +6,7 @@ import { pageURL, allowedRequest, publicIPv4 } from './policy.mjs';
 import { captureResourceResponse } from './resource-evidence.mjs';
 const hash = value => createHash('sha256').update(value).digest('hex');
 const hosts = new Set((process.env.RENDER_ALLOWED_HOSTS || 'dev.libretexts.org,cdn.libretexts.net,cdn.jsdelivr.net,cdnjs.cloudflare.com,fonts.googleapis.com,fonts.gstatic.com,use.fontawesome.com,bio.libretexts.org,files.mtstatic.com,commons.libretexts.org,test.libretexts.org,www.myopenmath.com,hypothes.is,cdn.hypothes.is,static.cloudflareinsights.com,staging-chatbot.libretexts.org,staging.traffic.libretexts.org').split(',').map(s=>s.trim()));
-export async function scan(raw) {
+export async function scan(raw,onBrowserOwned=async()=>{}) {
   const url = pageURL(raw);
   // Pin approved public DNS answers for the lifetime of this browser; no private-network access.
   const rules = [];
@@ -16,7 +16,10 @@ export async function scan(raw) {
     if (!addresses.length || addresses.some(a => !publicIPv4(a.address))) throw Error('Non-public resource host.');
     rules.push(`MAP ${host} ${addresses[0].address}`);
   }
-  const browser = await chromium.launch({ chromiumSandbox: true, args: ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp', `--host-resolver-rules=${rules.join(',')},MAP * ~NOTFOUND`] });
+  const browserServer = await chromium.launchServer({ host:'127.0.0.1', chromiumSandbox: true, args: ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp', `--host-resolver-rules=${rules.join(',')},MAP * ~NOTFOUND`] });
+  try {
+  await onBrowserOwned(browserServer.process().pid);
+  const browser = await chromium.connect(browserServer.wsEndpoint());
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, userAgent: 'LibreTexts-Remedy-Accessibility/1.0', serviceWorkers: 'block', acceptDownloads: false });
   const blocked = new Set(), blockedWrites = new Set(), blockedSockets = new Set(), failed = new Set(), assets = new Map(), pending = [];
   await context.routeWebSocket('**/*', socket => {blockedSockets.add(socket.url());socket.close();});
@@ -78,5 +81,6 @@ export async function scan(raw) {
       passedRules:[...results.passes,...sourceCoverage.passes].map(r=>r.id), inapplicableRules:[...results.inapplicable,...sourceCoverage.inapplicable].map(r=>r.id),
       humanChecksRequired:['Mathematical meaning and navigation with screen reader','No duplicate math announcements','Keyboard and complete processes','Reflow, zoom and text spacing','Visual and linguistic review'] };
   } catch (e) { return {state:'error',scannedAt:new Date().toISOString(),url,error:e.message,mathDiagnostics:await page.evaluate(()=>({version:window.MathJax?.version,pending:window.MathJax?.Hub?.queue?.pending,running:window.MathJax?.Hub?.queue?.running,queueLength:window.MathJax?.Hub?.queue?.queue?.length,fonts:document.fonts.status,mathCount:document.querySelectorAll('math,mjx-container,.MathJax').length})).catch(()=>null),blockedResources:[...blocked],failedResources:[...failed]}; }
-  finally { clearTimeout(deadline); await context.close(); await browser.close(); }
+  finally { clearTimeout(deadline); await context.close().catch(()=>{}); await browser.close().catch(()=>{}); }
+  } finally { await browserServer.close(); }
 }
