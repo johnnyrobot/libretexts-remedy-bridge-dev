@@ -59,7 +59,7 @@ All existing capability names remain strict booleans. Additive `profile` metadat
  "required_capabilities":["scan","preview"],"unavailable_reasons":[]}}
 ```
 
-HTTP200/ok:true requires scan+preview only; HTTP503/ok:false/state:degraded
+HTTP 200 / ok:true requires scan+preview only; HTTP 503 / ok:false / state:degraded
 retains `error:capabilities_unavailable`. Missing read configuration makes both
 false and reports `profile.unavailable_reasons:["cxone_configuration_invalid"]`.
 An actual required scan/preview dependency/engine failure makes its capability
@@ -79,9 +79,9 @@ optional for profile readiness. A helper/store failure makes it false; a drained
 restart after safe local repair is needed if the helper failed closed. HTTP
 POST `/v1/cxone/page/operation-status` retains the exact existing `{issuer,jti}`
 query and metadata-only response. Auth stays mandatory. Absent optional status
-returns503 `operation_status_unavailable`; a configured failed store returns503
-`claim_store_unavailable`; a valid unknown operation returns404. Neither failure
-nor404 authorizes retrying a past mutation. Conductor still checks current
+returns 503 `operation_status_unavailable`; a configured failed store returns 503
+`claim_store_unavailable`; a valid unknown operation returns 404. Neither failure
+nor 404 authorizes retrying a past mutation. Conductor still checks current
 permission and its stored operation mapping before forwarding a lookup.
 
 Full-write remains the default and retains its all-four capability readiness
@@ -94,7 +94,7 @@ release readiness also depends on the remaining LT-111 integration/runtime gates
 ## Unavailable mutations and preserved review evidence
 
 All HTTP apply/restore aliases (`/v1/cxone/page/apply-fix`,
-`/v1/cxone/page/restore`, `/api/apply`) authenticate first, then return503 before
+`/v1/cxone/page/restore`, `/api/apply`) authenticate first, then return 503 before
 body processing, work admission, preview consumption, claim/snapshot/audit or
 external calls, including a cryptographically valid signed request:
 
