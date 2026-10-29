@@ -61,28 +61,32 @@ function extractBodyString(body: unknown, res: unknown): string {
 function unwrapEditorChrome(html: string): string {
   if (!html.includes('id="preview-content"')) return html;
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
-  const content = dom.window.document.querySelector('#preview-content');
-  return content ? content.innerHTML : html;
+  try {
+    const content = dom.window.document.querySelector('#preview-content');
+    return content ? content.innerHTML : html;
+  } finally { dom.window.close(); }
 }
 
 export function scanHtml(html: string, rules: Rule[] = defaultRules): Finding[] {
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
-  const doc = dom.window.document;
-  const findings: Finding[] = [];
-  for (const rule of rules) {
-    const raw = rule.detect(doc);
-    for (const r of raw) {
-      findings.push({
-        ...r,
-        ruleId: rule.id,
-        wcag: rule.wcag,
-        severity: rule.severity,
-        source: 'remedy',
-        fixable: typeof rule.fix === 'function' && (r.fixable ?? true),
-      });
+  try {
+    const doc = dom.window.document;
+    const findings: Finding[] = [];
+    for (const rule of rules) {
+      const raw = rule.detect(doc);
+      for (const r of raw) {
+        findings.push({
+          ...r,
+          ruleId: rule.id,
+          wcag: rule.wcag,
+          severity: rule.severity,
+          source: 'remedy',
+          fixable: typeof rule.fix === 'function' && (r.fixable ?? true),
+        });
+      }
     }
-  }
-  return findings;
+    return findings;
+  } finally { dom.window.close(); }
 }
 
 export async function scanHtmlFull(
@@ -93,13 +97,8 @@ export async function scanHtmlFull(
   const axeEnabled = opts.axe ?? true;
   const deterministic = scanHtml(html, rules);
   if (!axeEnabled) return deterministic;
-  try {
-    const axe = await scanHtmlWithAxe({ html });
-    return [...deterministic, ...axe];
-  } catch (err) {
-    if (process.env.DEBUG) console.error('axe scan failed, returning deterministic findings only:', err);
-    return deterministic;
-  }
+  const axe = await scanHtmlWithAxe({ html });
+  return [...deterministic, ...axe];
 }
 
 export function buildStats(findings: Finding[]): ScanResult['stats'] {
@@ -138,3 +137,5 @@ export async function scanPage(
     html,
   };
 }
+
+export { ScanEngineError } from './scan-axe.js';
