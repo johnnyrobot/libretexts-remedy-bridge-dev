@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 /**
  * Remediation pipeline orchestrator.
  *
@@ -92,6 +93,7 @@ export async function runPipeline(
   opts: PipelineOptions = {},
 ): Promise<PipelineResult> {
   const env = opts.env ?? process.env;
+  if (opts.mode === 'apply') assertMutationProfileAllowed(env);
   const expert = opts.expert ?? createExpertClient(env);
   const rules = opts.rules ?? defaultRules;
   const mode: FixMode = opts.mode ?? 'preview';

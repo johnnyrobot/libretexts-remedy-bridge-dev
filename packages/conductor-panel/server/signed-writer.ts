@@ -2,7 +2,7 @@ import { PreviewCache, PreviewPool } from './preview-cache.js';
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
-import { createExpertClient, resolvePageRef, fetchPageHtml, writePageRevision, revertPage, WriteOutcomeError, type PageRef, type SnapshotEntry, WriteEligibilityError } from '@libretexts/remedy-core';
+import { assertMutationProfileAllowed, readBridgeProfile, ReviewOnlyProfileError, createExpertClient, resolvePageRef, fetchPageHtml, writePageRevision, revertPage, WriteOutcomeError, type PageRef, type SnapshotEntry, WriteEligibilityError } from '@libretexts/remedy-core';
 import { DurableLedger, LedgerError, type Reason } from './durable-ledger.js';
 import { ReviewerVerifier, ReviewAuthError, type ReviewBinding } from './reviewer-auth.js';
 
@@ -21,6 +21,16 @@ function rejected(status: number, error: string, invalidate = false): never { th
   evidence_effect: invalidate ? 'invalidate' : 'preserve',
 }); }
 
+/** Pure review identity; creating it grants no permission to mutate. */
+export function describeReviewedPreview(input: ReviewedPreview) {
+    const after = digest(input.afterHtml);
+    const binding: ReviewBinding = { action: input.mode === 'restore' ? 'cxone.restore' : 'cxone.apply',
+      target: { hostname: input.hostname, page_id: String(input.pageId), page_path: input.pagePath }, preview_token: input.token,
+      before_sha256: digest(input.beforeHtml), after_sha256: after, fix_mode: input.mode, tier: input.tier,
+      snapshot: input.mode === 'restore' ? { timestamp: input.snapshotTs!, sha256: after } : null };
+    return { review_binding: binding, review_expires_at: Math.floor(input.expiresAt / 1000), page_id: input.pageId, page_path: input.pagePath, hostname: input.hostname };
+}
+
 /** Owns the signed HTTP lifecycle. Legacy HTTP handlers cannot invoke this writer. */
 export class SignedWriter {
   private admitting = true;
@@ -28,11 +38,14 @@ export class SignedWriter {
   private readonly observedRevocations = new Set<string>();
   private readonly previews: PreviewCache<StoredPreview>;
   private readonly productionWriteBlocked: boolean;
+  private readonly reviewOnly: boolean;
   private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv, pool:PreviewPool) {
+    this.reviewOnly = readBridgeProfile(env) === 'review-only';
     this.previews=new PreviewCache<StoredPreview>(pool);
     this.productionWriteBlocked = !['development', 'test'].includes(env.NODE_ENV ?? '');
   }
   static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env, pool = new PreviewPool()) {
+    assertMutationProfileAllowed(env);
     const db = env.REMEDY_CLAIM_DB, fence = env.REMEDY_CLAIM_FENCE_DIR, epoch = env.REMEDY_REVIEWER_TRUST_EPOCH;
     if (!db || basename(db) !== 'claims.sqlite3' || !fence || !epoch) throw new Error('claim_store_unavailable');
     const ledger = await DurableLedger.open({ directory: dirname(db), fencePath: join(fence, 'fence.json'), trustEpoch: epoch });
@@ -45,14 +58,9 @@ export class SignedWriter {
   }
   preview(input: ReviewedPreview) {
     for (const [token, p] of this.previews) if (p.expiresAt <= Date.now()) this.previews.consume(token);
-    const after = digest(input.afterHtml);
-    const binding: ReviewBinding = { action: input.mode === 'restore' ? 'cxone.restore' : 'cxone.apply',
-      target: { hostname: input.hostname, page_id: String(input.pageId), page_path: input.pagePath }, preview_token: input.token,
-      before_sha256: digest(input.beforeHtml), after_sha256: after, fix_mode: input.mode, tier: input.tier,
-      snapshot: input.mode === 'restore' ? { timestamp: input.snapshotTs!, sha256: after } : null };
-    this.previews.set(input.token, { ...input, binding });
-    return { review_binding: binding, review_expires_at: Math.floor(input.expiresAt / 1000),
-      page_id: input.pageId, page_path: input.pagePath, hostname: input.hostname };
+    const result = describeReviewedPreview(input);
+    this.previews.set(input.token, { ...input, binding: result.review_binding });
+    return result;
   }
   invalidate(token: string) { this.previews.consume(token); }
   async ready() {
@@ -107,6 +115,7 @@ export class SignedWriter {
     return claims;
   }
   async mutate(action: 'cxone.apply' | 'cxone.restore', body: Record<string, unknown>, pageInput: string | number) {
+    if (this.reviewOnly) throw new ReviewOnlyProfileError();
     if (this.productionWriteBlocked) rejected(503, 'conditional_write_unproven');
     if (!this.admitting) rejected(503, 'reviewer_configuration_unavailable');
     if (typeof body.preview_token !== 'string' || !body.preview_token) rejected(409, 'preview_required');

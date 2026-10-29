@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 /**
  * Restore attribution/license page tags on a sandbox page.
  *
@@ -118,6 +119,7 @@ export async function writePageTags({
   revisionSummary,
   env = process.env,
 }: WritePageTagsOptions): Promise<WritePageTagsResult> {
+  if (!dryRun) assertMutationProfileAllowed(env);
   assertWriteAllowed(page, env);
   return withPageWriteLock(page, async () => {
     page = await canonicalWriteTarget(expert, page.id, page, env);
@@ -181,6 +183,7 @@ export interface RevertPageTagsOptions {
 
 /** Put a page's tag list back to exactly what a snapshot recorded. Replace, not merge. */
 export async function revertPageTags({ expert, snapshotPath, env = process.env }: RevertPageTagsOptions): Promise<WritePageTagsResult> {
+  assertMutationProfileAllowed(env);
   const snapshot = JSON.parse(await readFile(snapshotPath, 'utf8')) as {
     meta: { pageId: number; pagePath: string; hostname: string };
     tags: string[];
@@ -248,6 +251,7 @@ export async function restoreTagsFromManifest(
   manifest: TagRestoreManifest,
   { expert, env = process.env, dryRun = false, onlyPageId, revisionSummary }: RestoreTagsOptions,
 ): Promise<RestoreTagsPageResult[]> {
+  if (!dryRun) assertMutationProfileAllowed(env);
   const hostname = env.SERVER_DOMAIN ?? 'dev.libretexts.org';
   const pages = onlyPageId === undefined ? manifest.pages : manifest.pages.filter((p) => p.sandboxPageId === onlyPageId);
   const out: RestoreTagsPageResult[] = [];

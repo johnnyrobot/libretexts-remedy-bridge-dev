@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 import { JSDOM } from 'jsdom';
 import { createPatch } from 'diff';
 import type Expert from '@libretexts/cxone-expert-node';
@@ -40,6 +41,7 @@ export async function fixPage(
   opts: FixPageOptions = {},
 ): Promise<FixResult & { findings: Finding[] }> {
   const env = opts.env ?? process.env;
+  if (opts.mode === 'apply') assertMutationProfileAllowed(env);
   const expert = opts.expert ?? createExpertClient(env);
   const rules = opts.rules ?? defaultRules;
   const mode: FixMode = opts.mode ?? 'preview';

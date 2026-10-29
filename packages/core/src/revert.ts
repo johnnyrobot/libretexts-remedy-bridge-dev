@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 /**
  * Revert path — restore a page to a saved snapshot.
  *
@@ -87,6 +88,7 @@ export async function revertPage(
   opts: RevertOptions = {},
 ): Promise<RevertResult> {
   const env = opts.env ?? process.env;
+  if (!opts.dryRun) assertMutationProfileAllowed(env);
   const expert = opts.expert ?? createExpertClient(env);
   const page = await resolvePageRef(expert, pageInput, env);
   const expected = opts.expectedTarget;

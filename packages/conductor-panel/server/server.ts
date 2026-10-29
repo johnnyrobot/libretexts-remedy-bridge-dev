@@ -1,3 +1,4 @@
+import { ReadOnlyStatus } from './read-only-status.js';
 import { PreviewCache, PreviewPool, finiteLimit, CapacityError } from './preview-cache.js';
 import { WorkOwner, ownedRead, WorkCancelled } from './work-owner.js';
 import { requestBudget } from '../../../tools/request-policy.cjs';
@@ -11,7 +12,7 @@ import { requestBudget } from '../../../tools/request-policy.cjs';
 import { createPatch } from 'diff';
 import { requireLoopbackHost } from './loopback.js';
 import { loadSecurity } from './security-config.js';
-import { SignedWriter, SignedRequestError } from './signed-writer.js';
+import { SignedWriter, SignedRequestError, describeReviewedPreview } from './signed-writer.js';
 import { LedgerError } from './durable-ledger.js';
 import { ReviewAuthError } from './reviewer-auth.js';
 import { authenticateService, parseStrictJson } from './reviewer-auth.js';
@@ -23,6 +24,8 @@ import { extname, resolve, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import {
+  readBridgeProfile,
+  ReviewOnlyProfileError,
   reviseAltText,
   reviewableImages,
   describeComplexImage,
@@ -65,8 +68,10 @@ loadDotenv({ path: resolve(REPO_ROOT, '.env') });
 
 const isReadWorker = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(new URL('./read-worker.ts', import.meta.url));
 const previewPool = new PreviewPool();
+const profile = readBridgeProfile();
 const security = loadSecurity();
-const signedWriter = security.required && !isReadWorker ? await SignedWriter.open(security.verifier!,process.env,previewPool) : null;
+const readOnlyStatus = profile === 'review-only' && !isReadWorker ? await ReadOnlyStatus.open(process.env) : null;
+const signedWriter = security.required && profile === 'full-write' && !isReadWorker ? await SignedWriter.open(security.verifier!,process.env,previewPool) : null;
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
 // This unauthenticated staff tool must remain on loopback (ADR-0001).
@@ -614,6 +619,8 @@ async function readResult(pathname:string,body:Record<string,unknown>,signal:Abo
 }
 export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
 const workOwner = new WorkOwner();
+const readHealth = {scan:true,preview:true};
+const readCapability = (path:string) => ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' : ['/v1/cxone/page/preview-fix','/api/preview','/v1/cxone/page/revise-preview'].includes(path) ? 'preview' : null;
 owners.add(workOwner);
 const instance = createServer(async (req, res) => {
   setSecurityHeaders(res);
@@ -627,15 +634,22 @@ const instance = createServer(async (req, res) => {
   catch { json(res, 400, { error: 'invalid_request' }); return; }
   if (pathname === '/readyz' && req.method === 'GET') {
     if (!security.serviceKey || !authenticateService(req.rawHeaders, security.serviceKey)) { json(res, 401, { error: 'service_authentication_required' }); return; }
+    previewPool.prune();
+    const previewCapacity = previewPool.size < previewPool.limits.entries && previewPool.bytes < previewPool.limits.bytes;
     const configured = isCxoneIntegrationEnabled(process.env) && validateCxoneConfiguration(process.env).valid;
-    const readable = await signedWriter?.readable() === true;
+    const readable = await (signedWriter ?? readOnlyStatus)?.readable() === true;
     const writable = await signedWriter?.ready() === true;
-    const capabilities = { scan: configured, preview: configured, mutate: configured && writable, operation_status: readable };
-    const ready = Object.values(capabilities).every(Boolean);
-    json(res, ready ? 200 : 503, { ok: ready, state: ready ? 'ready' : 'degraded', capabilities, ...(ready ? {} : { error: 'capabilities_unavailable' }) }); return;
+    const capabilities = { scan: configured && (profile !== 'review-only' || workOwner.accepting && readHealth.scan), preview: configured && (profile !== 'review-only' || workOwner.accepting && readHealth.preview && previewCapacity), mutate: configured && writable, operation_status: readable };
+    const required = profile === 'review-only' ? ['scan', 'preview'] as const : ['scan','preview','mutate','operation_status'] as const;
+    const ready = required.every(name => capabilities[name]);
+    const metadata = {contract:'cxone-review-v1',name:profile,required_capabilities:required,unavailable_reasons:ready?[]:[!configured?'cxone_configuration_invalid':!workOwner.accepting?'owned_work_unavailable':!readHealth.scan||!readHealth.preview?'read_dependency_unavailable':!previewCapacity?'preview_capacity_unavailable':'capabilities_unavailable']};
+    json(res, ready ? 200 : 503, { ok: ready, state: ready ? 'ready' : 'degraded', capabilities, profile:metadata, ...(ready ? {} : { error: 'capabilities_unavailable' }) }); return;
   }
   if (security.required && !pathname.startsWith('/v1/cxone/') && !pathname.startsWith('/api/')) {
     json(res, 404, { error: 'not_found' }); return;
+  }
+  if (profile === 'review-only' && mutationRoutes.has(pathname)) {
+    const error = new ReviewOnlyProfileError(); json(res,error.status,error.body); return;
   }
   setCors(res, req);
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
@@ -650,6 +664,14 @@ const instance = createServer(async (req, res) => {
   res.once('close',disconnected);
   try {
   await workOwner.run(signal,mutation,()=>requestBudget.run(budget,async()=>{
+  if (profile === 'review-only' && pathname === '/v1/cxone/page/operation-status') {
+    try {
+      if (req.method !== 'POST') throw new HttpError(405,{error:'method_not_allowed'});
+      if (!readOnlyStatus) throw new HttpError(503,{error:'operation_status_unavailable'});
+      json(res,200,await readOnlyStatus.status(await readJson(req)));
+    } catch(error) { signedError(res,error); }
+    return;
+  }
   if (signedWriter && ['/v1/cxone/page/apply-fix', '/v1/cxone/page/restore', '/v1/cxone/page/operation-status', '/api/apply'].includes(pathname)) {
     try {
       if (req.method !== 'POST') throw new HttpError(405, { error: 'method_not_allowed' });
@@ -683,7 +705,16 @@ const instance = createServer(async (req, res) => {
       return;
     }
     const body = req.method === 'POST' ? await readJson(req) : {};
-    const result = mutation ? await handler(body) : await readResult(pathname,body,signal,execute);
+    let result: unknown;
+    const capability = readCapability(pathname);
+    try {
+      result = mutation ? await handler(body) : await readResult(pathname,body,signal,execute);
+      if (capability) readHealth[capability] = true;
+    } catch(error) {
+      const e = error as {status?:number;body?:{error?:string}};
+      if (capability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) && !signal.aborted && (e.status === undefined || e.status >= 500)) readHealth[capability] = false;
+      throw error;
+    }
     json(res, 200, decoratePreview(pathname, result));
   } catch (err) {
     if (err instanceof ScanEngineError) { json(res, 503, { error: 'scan_engine_failed', evidence_usable: false }); return; }
@@ -724,7 +755,7 @@ export const server = createBridgeServer();
 
 let writerClosed: Promise<void> | undefined;
 export function closeSignedWriter() {
-  return writerClosed ??= (async()=>{await Promise.all([...owners].map(owner=>owner.drain()));await signedWriter?.close();})();
+  return writerClosed ??= (async()=>{await Promise.all([...owners].map(owner=>owner.drain()));await signedWriter?.close();await readOnlyStatus?.close();})();
 }
 server.once('close', () => { void closeSignedWriter(); });
 /** Explicit local key reload; any validation/storage failure keeps admission disabled. */
@@ -744,21 +775,21 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
 
 function decoratePreview(pathname: string, result: unknown): unknown {
-  if (!signedWriter || !['/v1/cxone/page/preview-fix', '/v1/cxone/page/revise-preview', '/v1/cxone/page/restore-preview', '/api/preview'].includes(pathname)) return result;
+  if ((!signedWriter && profile !== 'review-only') || !['/v1/cxone/page/preview-fix', '/v1/cxone/page/revise-preview', '/v1/cxone/page/restore-preview', '/api/preview'].includes(pathname)) return result;
   const out = result as Record<string, unknown>;
   const token = out.preview_token ?? out.previewToken;
   if (typeof token !== 'string') return result; // Image-description response has no new preview.
   const targeted = targetedPreviewSessions.get(token), pipeline = pipelinePreviewSessions.get(token), restore = restoreSessions.get(token);
   const session = targeted ?? pipeline ?? restore;
   if (!session) throw new Error('preview_unavailable');
-  try {return { ...out, ...signedWriter.preview({ token, expiresAt: session.expiresAt,
+  try {return { ...out, ...(signedWriter ? signedWriter.preview.bind(signedWriter) : describeReviewedPreview)({ token, expiresAt: session.expiresAt,
     noiseOnlyChange: (session as any).noiseOnlyChange,
     pageId: session.pageId, pagePath: session.pagePath, hostname: session.hostname,
     beforeHtml: session.beforeHtml, afterHtml: session.afterHtml,
     mode: restore ? 'restore' : pipeline ? 'pipeline' : 'deterministic',
     tier: pipeline?.tier ?? null, snapshotTs: restore?.snapshotTs,
     rules: targeted?.appliedRuleIds ?? pipeline?.appliedRuleIds ?? ['__revert__'],
-  }) };} catch(error){signedWriter.invalidate(token);throw error;}
+  }) };} catch(error){signedWriter?.invalidate(token);throw error;}
 }
 function signedError(res: ServerResponse, error: unknown,mutation=false) {
   if(error instanceof CapacityError || error instanceof WorkCancelled || (error instanceof Error && error.name==='TimeoutError')) {res.setHeader('retry-after','5');json(res,503,{error:error instanceof CapacityError?'capacity_unavailable':'work_cancelled',...(mutation?{outcome:'not_attempted',retryable:false,operation_id:null,evidence_effect:'preserve'}:{})});return;}

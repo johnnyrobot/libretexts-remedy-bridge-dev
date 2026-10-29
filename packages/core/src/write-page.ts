@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 import { requestBudget } from '../../../tools/request-policy.cjs';
 import type Expert from '@libretexts/cxone-expert-node';
 import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain, WriteEligibilityError } from './write-safety.js';
@@ -66,6 +67,7 @@ export async function writePageRevision({
   beforeDispatch,
   noiseOnlyChange,
 }: WritePageRevisionOptions): Promise<WritePageRevisionResult> {
+  assertMutationProfileAllowed(env);
   if (beforeHtml === afterHtml || (mode !== 'revert' && (noiseOnlyChange ?? isNoiseOnlyChange(beforeHtml, afterHtml)))) {
     return { written: false, revisionSummary };
   }

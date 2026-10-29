@@ -30,6 +30,8 @@ export interface LedgerOptions {
   directory: string; fencePath: string; trustEpoch: string;
   /** Explicit local provisioning only: existing/partial stores are never initialized. */
   initialize?: boolean; python?: string;
+  /** Query-only helper: never takes writer ownership or performs crash recovery. */
+  readOnly?: boolean;
 }
 export class LedgerError extends Error {
   constructor(readonly code: 'claim_store_unavailable' | 'claim_conflict' | 'invalid_transition' | 'operation_not_found') {
@@ -46,7 +48,7 @@ export class DurableLedger {
   private sequence = 0;
   private pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private readonly exited: Promise<void>;
-  private constructor(private readonly child: ChildProcessWithoutNullStreams, private readonly ownerFile: FileHandle) {
+  private constructor(private readonly child: ChildProcessWithoutNullStreams, private readonly ownerFile?: FileHandle) {
     this.exited = new Promise(resolve => child.once('close', () => { this.fail(); resolve(); }));
     child.on('error', () => this.fail());
     child.stdin.on('error', () => this.fail());
@@ -54,20 +56,21 @@ export class DurableLedger {
     child.stderr.resume();
   }
   static async open(options: LedgerOptions): Promise<DurableLedger> {
-    let ownerFile: FileHandle;
+    let ownerFile: FileHandle | undefined;
     let directory: string;
     try {
       directory = await realpath(options.directory);
-      ownerFile = await open(join(directory, 'owner.lock'), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
+      if (!options.readOnly) ownerFile = await open(join(directory, 'owner.lock'), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
     } catch { throw new LedgerError('claim_store_unavailable'); }
     const args = [fileURLToPath(new URL('./ledger-helper.py', import.meta.url)),
-      '--directory', directory, '--fence', options.fencePath, '--epoch', options.trustEpoch, '--owner-fd', '3'];
-    if (options.initialize) args.push('--initialize');
+      '--directory', directory, '--fence', options.fencePath, '--epoch', options.trustEpoch];
+    if (options.readOnly) args.push('--readonly-serve'); else args.push('--owner-fd','3');
+    if (options.initialize && !options.readOnly) args.push('--initialize');
     let ledger: DurableLedger;
     try {
-      const child = spawn(options.python ?? 'python3', ['-u', ...args], { stdio: ['pipe', 'pipe', 'pipe', ownerFile.fd] });
+      const child = spawn(options.python ?? 'python3', ['-u', ...args], { stdio: ownerFile ? ['pipe', 'pipe', 'pipe', ownerFile.fd] : ['pipe','pipe','pipe'] });
       ledger = new DurableLedger(child as ChildProcessWithoutNullStreams, ownerFile);
-    } catch { await ownerFile.close(); throw new LedgerError('claim_store_unavailable'); }
+    } catch { await ownerFile?.close(); throw new LedgerError('claim_store_unavailable'); }
     const lines = createInterface({ input: ledger.child.stdout });
     try {
       await new Promise<void>((resolve, reject) => {
@@ -82,7 +85,7 @@ export class DurableLedger {
       });
       lines.on('line', line => ledger.receive(line));
       return ledger;
-    } catch { ledger.fail(); await ledger.exited; await ownerFile.close(); throw new LedgerError('claim_store_unavailable'); }
+    } catch { ledger.fail(); await ledger.exited; await ownerFile?.close(); throw new LedgerError('claim_store_unavailable'); }
   }
   get ready(): boolean { return this.available; }
   private fail() {
@@ -133,6 +136,6 @@ export class DurableLedger {
     this.available = false;
     this.child.stdin.end();
     await this.exited;
-    await this.ownerFile.close();
+    await this.ownerFile?.close();
   }
 }

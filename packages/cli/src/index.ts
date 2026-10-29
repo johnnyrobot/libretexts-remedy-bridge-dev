@@ -7,6 +7,7 @@ import { realpathSync } from 'node:fs';
 import { Command } from 'commander';
 import kleur from 'kleur';
 import {
+  assertMutationProfileAllowed,
   scanPage,
   fixPage,
   runPipeline,
@@ -30,6 +31,11 @@ import { pipelineFile } from './pipeline-file.js';
 import { confirm } from './confirm.js';
 
 export const program = new Command();
+
+program.hook('preAction', (_command, action) => {
+  const opts = action.opts();
+  if (opts.apply || (['revert','tags-restore','tags-revert'].includes(action.name()) && !opts.dryRun)) assertMutationProfileAllowed();
+});
 
 program
   .name('remedy')
