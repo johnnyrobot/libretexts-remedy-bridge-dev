@@ -199,8 +199,9 @@ npm run dev:api --workspace @libretexts/remedy-conductor-panel
 ```
 
 The bridge listens on `http://127.0.0.1:5175` by default and consumes the root
-`.env` credentials. `GET /healthz` reports an independent `disabled`, `ready`,
-or `misconfigured` CXone state without making the bridge process unhealthy.
+`.env` credentials. `GET /healthz` reports sanitized process liveness only.
+The signed profile uses authenticated `GET /readyz` capability checks; see
+[the signed writer integration contract](docs/release/lt-1-signed-writer.md).
 
 Guarded apply now requires the single-use token returned with the reviewed
 preview. See [the local write integration and recovery contract](docs/release/lt-116-reviewed-writes.md)

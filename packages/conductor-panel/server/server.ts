@@ -7,6 +7,8 @@
  */
 import { createPatch } from 'diff';
 import { requireLoopbackHost } from './loopback.js';
+import { loadSecurity } from './security-config.js';
+import { authenticateService, parseStrictJson } from './reviewer-auth.js';
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -37,8 +39,6 @@ import {
   buildConductorCriteria,
   toConductorFindings,
   buildWcagReview,
-  CXONE_ALLOWED_HOST,
-  CXONE_ALLOWED_ROOT,
   isCxoneIntegrationEnabled,
   validateCxoneConfiguration,
   type PageRef,
@@ -53,6 +53,8 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
 
 loadDotenv({ path: resolve(REPO_ROOT, '.env') });
+
+const security = loadSecurity();
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
 // This unauthenticated staff tool must remain on loopback (ADR-0001).
@@ -107,17 +109,6 @@ const targetedPreviewSessions = new Map<string, {
 type Handler = (body: Record<string, unknown>) => Promise<unknown>;
 
 const routes: Record<string, Handler> = {
-  '/healthz': async () => {
-    const enabled = isCxoneIntegrationEnabled(process.env);
-    const config = enabled ? validateCxoneConfiguration(process.env) : { valid: true };
-    return {
-      ok: enabled ? config.valid : true,
-      state: enabled ? (config.valid ? 'ready' : 'misconfigured') : 'disabled',
-      enabled,
-      write_scope: { host: CXONE_ALLOWED_HOST, root: CXONE_ALLOWED_ROOT },
-      ...(enabled && !config.valid ? { error: 'cxone_configuration_invalid' } : {}),
-    };
-  },
   '/v1/cxone/page/scan': async (body) => {
     const page = requirePageInput(body);
     const result = await scanPage(page);
@@ -581,17 +572,34 @@ function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): Pipeline
 
 export const server = createServer(async (req, res) => {
   setSecurityHeaders(res);
+  if (req.url === '/healthz' && req.method === 'GET') { json(res, 200, { ok: true }); return; }
+  // Authenticate even unknown paths and OPTIONS, before parsing or upstream work.
+  if (security.required && !authenticateService(req.rawHeaders, security.serviceKey!)) {
+    json(res, 401, { error: 'service_authentication_required' }); return;
+  }
+  let pathname: string;
+  try { pathname = new URL(req.url ?? '/', 'http://localhost').pathname; }
+  catch { json(res, 400, { error: 'invalid_request' }); return; }
+  if (pathname === '/readyz' && req.method === 'GET') {
+    if (!security.serviceKey || !authenticateService(req.rawHeaders, security.serviceKey)) { json(res, 401, { error: 'service_authentication_required' }); return; }
+    const configured = isCxoneIntegrationEnabled(process.env) && validateCxoneConfiguration(process.env).valid;
+    const capabilities = { scan: configured, preview: configured, mutate: false, operation_status: false };
+    json(res, 503, { ok: false, state: 'degraded', capabilities, error: 'signed_writer_unavailable' }); return;
+  }
+  if (security.required && !pathname.startsWith('/v1/cxone/') && !pathname.startsWith('/api/')) {
+    json(res, 404, { error: 'not_found' }); return;
+  }
+  if (security.required && ['/v1/cxone/page/apply-fix', '/v1/cxone/page/restore', '/api/apply'].includes(pathname)) {
+    json(res, 503, { error: 'signed_writer_unavailable', outcome: 'not_attempted', retryable: false, operation_id: null }); return;
+  }
   setCors(res, req);
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
   if (req.method !== 'POST' && req.method !== 'GET') {
-    json(res, 405, { error: 'method not allowed' });
-    return;
+    json(res, 405, { error: 'method_not_allowed' }); return;
   }
-
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
   const handler = routes[pathname];
   if (!handler) {
-    if (req.method === 'GET') {
+    if (req.method === 'GET' && !security.required) {
       await serveStatic(pathname, res);
       return;
     }
@@ -657,7 +665,12 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
   }
   const text = Buffer.concat(chunks).toString('utf8');
   if (!text) return {};
-  return JSON.parse(text);
+  if (!security.required) return JSON.parse(text);
+  try {
+    const value = parseStrictJson(Buffer.concat(chunks));
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error();
+    return value as Record<string, unknown>;
+  } catch { throw new HttpError(400, { error: 'invalid_request' }); }
 }
 
 function json(res: ServerResponse, status: number, body: unknown) {
