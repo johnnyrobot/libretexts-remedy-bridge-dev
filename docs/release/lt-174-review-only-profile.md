@@ -1,7 +1,9 @@
 # CXone review profile contract — cxone-review-v1 (LT-174)
 
-This is an explicitly non-writing release profile for the Remedy Bridge
-(`libretexts-remedy-bridge`), which provides CXone Expert textbook page I/O.
+This is an optional non-writing rollout mode of the full Remedy Bridge
+(`libretexts-remedy-bridge`) integration, which provides CXone Expert textbook
+page I/O. Signed apply/restore/recovery remain in the same maintained build;
+LibreTexts chooses rollout timing and whether to select this mode.
 An engine/Scanner-only deployment omits Bridge entirely and needs no CXone
 configuration. Server/Conductor owners consume this contract under LT-175/176;
 this repo does not enable or certify those integrations or deployment readiness.

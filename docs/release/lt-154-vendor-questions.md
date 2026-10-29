@@ -6,6 +6,13 @@ one. No message was sent.
 
 ## Decision and scope
 
+LibreTexts' integration/deployment team owns obtaining these answers and
+arranging separately authorized validation before production automatic-write
+enablement. This packet is a handoff requirement, not a request for Johnny to
+contact the vendor. The full integration remains delivered in one maintained
+build; LibreTexts chooses timing and may select optional review-only rollout.
+
+
 Keep the [conditional-edit production hold](cxone-conditional-edit-gate.md).
 The public sources checked below do not establish an atomic content-POST
 precondition that distinguishes every intervening revision. This is an evidence
@@ -155,7 +162,7 @@ Record every unanswered question as **unknown**; do not turn an example response
 or a successful trial into a guarantee. Obtain exact syntax and documented
 outcome examples before designing a new transport implementation.
 
-The release decision needs a documented atomic precondition that distinguishes
+The automatic-write enablement decision needs a documented atomic precondition that distinguishes
 every intervening revision, explicit no-content-write rejection semantics, a
 validated response classifier, and a conservative reconciliation plan for
 unknown outcomes. Any later sandbox work needs separate approval naming the

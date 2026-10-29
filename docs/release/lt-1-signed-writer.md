@@ -1,5 +1,14 @@
 # LT-1 signed writer integration
 
+The signing/apply/restore/status/recovery implementation and optional review-only
+mode ship in the same maintained Bridge build. [The root README](../../README.md)
+is the current entry point; [cxone-review-v1](lt-174-review-only-profile.md) defines
+the optional mode. Historical slice notes below record implementation order,
+not a required rollout sequence. LibreTexts chooses rollout timing; its
+integration/deployment team owns vendor confirmation, authorized validation and
+future production write enablement. No key, mode or these instructions clear
+the conditional-write hold or authorize live actions.
+
 The approved wire contract is [r2 plus the Chief addendum](../proposals/lt-1-reviewer-wire-v1.md). Frozen corpus: `lt1-wire-v1-r2`, JSON SHA256 `fbdb4e1cb6a66ed47f2de5393a23e84a37b509ef2bf23aa001a36452c5a50e4b`.
 
 ## Native verifier and hop authentication slice
@@ -39,7 +48,7 @@ python3 packages/conductor-panel/server/ledger-helper.py \
   --epoch chosen-trust-epoch --initialize < /dev/null
 ```
 
-It holds ownership until stdin closes and refuses partial or mismatched existing stores. This command does not provision a real key or authorize a production rollout. Real storage/key provisioning remains Johnny's deployment step. No filesystem helper can detect a deliberate simultaneous rollback of database, independent fence, epoch and keys; that administrative action is unsupported.
+It holds ownership until stdin closes and refuses partial or mismatched existing stores. This command does not provision a real key or authorize a production rollout. Real storage/key provisioning belongs to the separately authorized deployment workflow; none is performed or authorized here. No filesystem helper can detect a deliberate simultaneous rollback of database, independent fence, epoch and keys; that administrative action is unsupported.
 
 Disable write admission and drain the process **before** any storage restore or code rollback. Preserve ledger/fence/snapshots/audit and required-signature configuration. Never restore the independent current fence with a database backup, delete lock files, truncate claims, clear quarantine or restart to bypass uncertainty. A fence/epoch mismatch keeps writes disabled; creating a new trust epoch requires new keys/IDs, old-key revocation, invalidated previews and explicit reconciliation of every unresolved target. The separate [LT-159 offline resolution action](lt-159-offline-resolution.md) can append an explicitly reviewed settlement record under exclusive ownership; it never changes the original unknown outcome or production hold.
 
@@ -70,6 +79,6 @@ signed apply/restore returns 503 `conditional_write_unproven` before any durable
 claim or CXone dispatch. Core/CLI production write authorization is also closed.
 There is no environment flag to bypass the hold. Only explicit `development`/`test` signed runtimes retain local mutation; local synthetic nonproduction
 tests retain the owner sandbox policy. See [source evidence and the unexecuted
-Johnny-only sandbox procedure](cxone-conditional-edit-gate.md). A timestamp check
+separately authorized LibreTexts validation procedure](cxone-conditional-edit-gate.md). A timestamp check
 without every-revision atomicity proof does not clear this gate. General request
 admission/cancellation and assembled-stack deployment proof remain separate gates.

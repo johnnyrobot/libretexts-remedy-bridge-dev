@@ -1,7 +1,8 @@
 # Operator-only conditional edit canary preparation (LT-154)
 
 Production mutation stays unavailable. The [vendor questions](lt-154-vendor-questions.md)
-require a current vendor contract before Johnny selects an exact disposable page.
+require a current vendor contract before LibreTexts' authorized integration/
+deployment operator selects an exact disposable page.
 Passing finite accepted/stale/same-timestamp trials cannot establish atomicity.
 This preparation neither sends a vendor message nor clears the production hold.
 
@@ -18,7 +19,7 @@ SC1087 (the inherited template's `$e[Enter` expansion) and SC2329 (unused shared
 helpers); stages themselves have no excluded finding. No interactive/operator
 run was executed by an agent.
 
-Only Johnny or an explicitly authorized operator may run:
+Only an explicitly authorized LibreTexts validation operator may run:
 
 ```sh
 bash tools/cxone-canary-wizard.sh --operator
@@ -64,8 +65,9 @@ count or replay/resume actions: a stopped run requires a new explicit operator
 review of its preserved ledger and remaining allowance. Do not delete history,
 snapshots, audit records, the disposable page, or evidence as cleanup.
 
-Credential provisioning, actual host/page authorization, vendor outreach and
-live evidence collection remain Johnny-only. Keep the credential file restricted;
+LibreTexts' integration/deployment team owns vendor confirmation and arranging
+explicit authorization for credentials, exact targets and live validation. None
+of those actions is authorized by this preparation or requested from Johnny. Keep the credential file restricted;
 never paste a password/token into the wizard, browser or chat. No keyring,
 production configuration or feature flag is changed. Readiness remains
 `mutate:false`; these files are candidate preparation under LT-111, not deployment
