@@ -1,5 +1,11 @@
 FROM node:22-bookworm-slim
 
+# Required-mode ownership and FULL/WAL ledger use the local POSIX Python helper.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 \
+    && python3 -c "import sqlite3, fcntl" \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY package.json package-lock.json tsconfig.base.json ./

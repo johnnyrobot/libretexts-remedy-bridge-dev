@@ -185,6 +185,18 @@ export class ReviewerVerifier {
     } catch { throw new Error('reviewer_configuration_invalid'); }
   }
 
+  hasActiveKey(now = Math.floor(Date.now() / 1000)): boolean {
+    this.effectiveRevocations(now);
+    return [...this.keys.values()].some(({policy}) => policy.enabled && !this.revoked.has(policy.kid) && policy.not_before <= now && now < policy.not_after);
+  }
+
+  matchesIssuer(value: unknown): boolean { return value === this.issuer; }
+
+  /** Restore durable revocation tombstones before admission; no API removes them. */
+  rememberRevocations(kids: Iterable<string>): void {
+    for (const id of kids) { if (!kidPattern.test(id)) invalid(); this.revoked.add(id); }
+  }
+
   /** Persist this union before acknowledging reload/admission; never remove ledger tombstones. */
   effectiveRevocations(now = Math.floor(Date.now() / 1000)): string[] {
     if (!integer(now)) invalid();

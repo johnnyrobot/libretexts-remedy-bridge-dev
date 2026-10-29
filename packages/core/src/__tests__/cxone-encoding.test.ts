@@ -28,3 +28,13 @@ it.each([['ESM', Expert], ['CommonJS', CommonJSExpert]])('%s SDK declares UTF-8 
     await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+it.each([['ESM', Expert], ['CommonJS', CommonJSExpert]])('%s SDK never follows or retries a mutation redirect', async (_format, SDK) => {
+  const requests: string[] = [];
+  const server = createServer((req,res) => { requests.push(req.url!);req.resume();if(requests.length===1){res.writeHead(307,{location:'/duplicate-mutation'});res.end();}else{res.setHeader('content-type','application/json');res.end('{}');} });
+  await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));
+  try {
+    const client=new SDK({tld:`http://127.0.0.1:${(server.address()as{port:number}).port}`,auth:{type:'server',params:{key:'fake',secret:'fake',user:'fake'}}});
+    await expect(client.pages.postPageContents(1,'<p>Reviewed</p>',{edittime:'now'})).rejects.toThrow();
+    expect(requests).toHaveLength(1);
+  } finally {server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}
+});

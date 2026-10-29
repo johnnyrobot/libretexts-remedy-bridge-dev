@@ -41,7 +41,7 @@ describe('writePageTags', () => {
     const calls: unknown[][] = [];
     const expert = fakeExpert([], calls);
     expert.pages.getPageInfo = async () => ({ '@id': 4219, path: 'Bookshelves/Outside' }) as any;
-    await expect(writePageTags({ expert, page: { id: 4219, path: 'Sandboxes/johnnyphung/biology/1.02', hostname: 'dev.libretexts.org' }, tags: ['license:ccby'], env: await testEnv() })).rejects.toThrow('outside');
+    await expect(writePageTags({ expert, page: { id: 4219, path: 'Sandboxes/johnnyphung/biology/1.02', hostname: 'dev.libretexts.org' }, tags: ['license:ccby'], env: await testEnv() })).rejects.toMatchObject({ reason: 'target_mismatch' });
     expect(calls).toHaveLength(0);
   });
 

@@ -9,6 +9,8 @@
  * snapshot before the restore write).
  */
 import type Expert from '@libretexts/cxone-expert-node';
+import type { PageRef } from './types.js';
+import { WriteEligibilityError } from './write-safety.js';
 import { createExpertClient, normalizePageInput, resolvePageRef } from './client.js';
 import {
   hashContent,
@@ -32,6 +34,8 @@ export interface RevertOptions {
   requestedBy?: string;
   /** Reject a restore if the live page changed since the reviewed preview. */
   expectedCurrentHash?: string;
+  /** Reject a move/rename before validating selected snapshot identity. */
+  expectedTarget?: PageRef;
   /** Bind the selected snapshot bytes to the restore preview. */
   expectedRestoredHash?: string;
   /** Custom revision summary written to CXone. */
@@ -78,6 +82,8 @@ export async function revertPage(
   const env = opts.env ?? process.env;
   const expert = opts.expert ?? createExpertClient(env);
   const page = await resolvePageRef(expert, pageInput, env);
+  const expected = opts.expectedTarget;
+  if (expected && (page.id !== expected.id || page.path !== expected.path || page.hostname !== expected.hostname)) throw new WriteEligibilityError('target_mismatch');
 
   let chosen: { metaPath: string; htmlPath: string; ts: string; hash: string; html: string };
 

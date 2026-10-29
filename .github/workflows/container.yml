@@ -1,0 +1,16 @@
+name: Container runtime
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  signed-writer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build bridge with its POSIX ledger runtime
+        run: docker build -t remedy-bridge:ci .
+      - name: Exercise actual bridge and ledger without external networking
+        run: docker run --rm --network none remedy-bridge:ci npm test

@@ -19,7 +19,7 @@ describe('reviewed write safety', () => {
   it('rejects a canonical target outside the asserted sandbox', async () => {
     const f = await fixture();
     f.expert.pages.getPageInfo.mockResolvedValue({ '@id': f.page.id, path: 'Bookshelves/Outside' });
-    await expect(writePageRevision(f.options)).rejects.toThrow('outside');
+    await expect(writePageRevision(f.options)).rejects.toMatchObject({ reason: 'target_mismatch' });
     expect(f.post).not.toHaveBeenCalled();
   });
   it('writes exactly reviewed bytes and serializes distinct simultaneous attempts', async () => {

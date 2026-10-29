@@ -8,6 +8,9 @@
 import { createPatch } from 'diff';
 import { requireLoopbackHost } from './loopback.js';
 import { loadSecurity } from './security-config.js';
+import { SignedWriter, SignedRequestError } from './signed-writer.js';
+import { LedgerError } from './durable-ledger.js';
+import { ReviewAuthError } from './reviewer-auth.js';
 import { authenticateService, parseStrictJson } from './reviewer-auth.js';
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
@@ -55,6 +58,7 @@ const REPO_ROOT = resolve(HERE, '../../..');
 loadDotenv({ path: resolve(REPO_ROOT, '.env') });
 
 const security = loadSecurity();
+const signedWriter = security.required ? await SignedWriter.open(security.verifier!) : null;
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
 // This unauthenticated staff tool must remain on loopback (ADR-0001).
@@ -81,7 +85,7 @@ interface PipelinePreviewSession {
   appliedRuleIds: string[];
 }
 
-const restoreSessions = new Map<string, { pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; expiresAt: number }>();
+const restoreSessions = new Map<string, { pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; beforeHtml: string; afterHtml: string; expiresAt: number }>();
 
 const pipelinePreviewSessions = new Map<string, PipelinePreviewSession>();
 const targetedPreviewSessions = new Map<string, {
@@ -162,7 +166,7 @@ const routes: Record<string, Handler> = {
     const result = await revertPage(requirePageInput(body), { snapshotTs, dryRun: true });
     for (const [key, session] of restoreSessions) if (session.expiresAt <= Date.now()) restoreSessions.delete(key);
     const token = randomUUID(), hash = hashContent(result.currentHtml);
-    restoreSessions.set(token, { pageId: result.pageId, pagePath: result.pagePath, hostname: result.hostname, snapshotTs: result.snapshotUsed.ts, hash, afterHash: hashContent(result.revertedToHtml), expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS });
+    restoreSessions.set(token, { pageId: result.pageId, pagePath: result.pagePath, hostname: result.hostname, snapshotTs: result.snapshotUsed.ts, hash, beforeHtml: result.currentHtml, afterHtml: result.revertedToHtml, afterHash: hashContent(result.revertedToHtml), expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS });
     return { preview_token: token, preview_hash: hash, snapshot_timestamp: snapshotTs,
       before_html: result.currentHtml, after_html: result.revertedToHtml,
       unchanged: result.currentHtml === result.revertedToHtml };
@@ -302,6 +306,7 @@ const routes: Record<string, Handler> = {
     const session = targetedPreviewSessions.get(oldToken);
     if (!session || session.expiresAt <= Date.now()) throw new HttpError(409, { error: 'expired_preview', message: 'Fix preview expired; generate it again.' });
     targetedPreviewSessions.delete(oldToken);
+    signedWriter?.invalidate(oldToken);
     const page = await resolvePageRef(createExpertClient(), requirePageInput(body), process.env);
     if (!matchesPreviewTarget(page, session)) throw new HttpError(409, { error: 'preview_page_mismatch', message: 'Preview belongs to a different page.' });
     const edits = body.alt_edits as Array<{ src: string; text: string }>;
@@ -583,19 +588,33 @@ export const server = createServer(async (req, res) => {
   if (pathname === '/readyz' && req.method === 'GET') {
     if (!security.serviceKey || !authenticateService(req.rawHeaders, security.serviceKey)) { json(res, 401, { error: 'service_authentication_required' }); return; }
     const configured = isCxoneIntegrationEnabled(process.env) && validateCxoneConfiguration(process.env).valid;
-    const capabilities = { scan: configured, preview: configured, mutate: false, operation_status: false };
-    json(res, 503, { ok: false, state: 'degraded', capabilities, error: 'signed_writer_unavailable' }); return;
+    const readable = await signedWriter?.readable() === true;
+    const writable = await signedWriter?.ready() === true;
+    const capabilities = { scan: configured, preview: configured, mutate: configured && writable, operation_status: readable };
+    const ready = Object.values(capabilities).every(Boolean);
+    json(res, ready ? 200 : 503, { ok: ready, state: ready ? 'ready' : 'degraded', capabilities, ...(ready ? {} : { error: 'capabilities_unavailable' }) }); return;
   }
   if (security.required && !pathname.startsWith('/v1/cxone/') && !pathname.startsWith('/api/')) {
     json(res, 404, { error: 'not_found' }); return;
-  }
-  if (security.required && ['/v1/cxone/page/apply-fix', '/v1/cxone/page/restore', '/api/apply'].includes(pathname)) {
-    json(res, 503, { error: 'signed_writer_unavailable', outcome: 'not_attempted', retryable: false, operation_id: null }); return;
   }
   setCors(res, req);
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
   if (req.method !== 'POST' && req.method !== 'GET') {
     json(res, 405, { error: 'method_not_allowed' }); return;
+  }
+  if (signedWriter && ['/v1/cxone/page/apply-fix', '/v1/cxone/page/restore', '/v1/cxone/page/operation-status', '/api/apply'].includes(pathname)) {
+    try {
+      if (req.method !== 'POST') throw new HttpError(405, { error: 'method_not_allowed' });
+      if (pathname === '/api/apply') throw new HttpError(403, { error: 'signed_panel_unavailable' });
+      if (!pathname.endsWith('/operation-status') && !isCxoneIntegrationEnabled(process.env)) throw new HttpError(503, {error:'cxone_integration_disabled'});
+      const body = await readJson(req);
+      let page: string | number = '';
+      if (!pathname.endsWith('/operation-status')) { try { page = requirePageInput(body); } catch { throw new HttpError(400, {error:'invalid_request'}); } }
+      const result = pathname.endsWith('/operation-status') ? await signedWriter.status(body)
+        : await signedWriter.mutate(pathname.endsWith('/restore') ? 'cxone.restore' : 'cxone.apply', body, page);
+      json(res, 200, result);
+    } catch (error) { signedError(res, error); }
+    return;
   }
   const handler = routes[pathname];
   if (!handler) {
@@ -617,8 +636,9 @@ export const server = createServer(async (req, res) => {
     }
     const body = req.method === 'POST' ? await readJson(req) : {};
     const result = await handler(body);
-    json(res, 200, result);
+    json(res, 200, decoratePreview(pathname, result));
   } catch (err) {
+    if (security.required) { signedError(res, err); return; }
     if (err instanceof WriteOutcomeError) {
       json(res, 409, { error: 'write_outcome_unknown', write_outcome: 'unknown', retry_safe: false, snapshot_path: err.snapshotPath,
         message: 'Write outcome is unknown. Do not retry. Reconcile CXone revision history and the saved snapshot before further writes.' });
@@ -640,9 +660,49 @@ export const server = createServer(async (req, res) => {
   }
 });
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) server.listen(PORT, HOST, () => {
-  console.log(`[conductor-api] listening on http://${HOST}:${PORT}`);
-});
+let writerClosed: Promise<void> | undefined;
+export function closeSignedWriter() { return writerClosed ??= signedWriter?.close() ?? Promise.resolve(); }
+server.once('close', () => { void closeSignedWriter(); });
+/** Explicit local key reload; any validation/storage failure keeps admission disabled. */
+export async function reloadReviewerKeys() {
+  if (!signedWriter) throw new Error('signed_writer_unavailable');
+  const generation = signedWriter.pause();
+  const next = loadSecurity();
+  if (!next.required) throw new Error('reviewer_configuration_invalid');
+  await signedWriter.reload(next.verifier!, generation);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  server.listen(PORT, HOST, () => { console.log(`[conductor-api] listening on http://${HOST}:${PORT}`); });
+  process.on('SIGHUP', () => { void reloadReviewerKeys().catch(() => { console.error('[conductor-api] reviewer_reload_failed'); }); });
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => { server.close(); });
+}
+
+
+function decoratePreview(pathname: string, result: unknown): unknown {
+  if (!signedWriter || !['/v1/cxone/page/preview-fix', '/v1/cxone/page/revise-preview', '/v1/cxone/page/restore-preview', '/api/preview'].includes(pathname)) return result;
+  const out = result as Record<string, unknown>;
+  const token = out.preview_token ?? out.previewToken;
+  if (typeof token !== 'string') return result; // Image-description response has no new preview.
+  const targeted = targetedPreviewSessions.get(token), pipeline = pipelinePreviewSessions.get(token), restore = restoreSessions.get(token);
+  const session = targeted ?? pipeline ?? restore;
+  if (!session) throw new Error('preview_unavailable');
+  return { ...out, ...signedWriter.preview({ token, expiresAt: session.expiresAt,
+    pageId: session.pageId, pagePath: session.pagePath, hostname: session.hostname,
+    beforeHtml: session.beforeHtml, afterHtml: session.afterHtml,
+    mode: restore ? 'restore' : pipeline ? 'pipeline' : 'deterministic',
+    tier: pipeline?.tier ?? null, snapshotTs: restore?.snapshotTs,
+    rules: targeted?.appliedRuleIds ?? pipeline?.appliedRuleIds ?? ['__revert__'],
+  }) };
+}
+function signedError(res: ServerResponse, error: unknown) {
+  if (error instanceof SignedRequestError) { json(res, error.status, error.body); return; }
+  if (error instanceof ReviewAuthError) { json(res, error.status, { error: error.code, outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
+  if (error instanceof LedgerError) { json(res, error.code === 'claim_conflict' ? 409 : 503,
+    { error: error.code === 'claim_conflict' ? 'claim_conflict' : 'claim_store_unavailable', outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
+  if (error instanceof HttpError) { json(res, error.status, { error: error.body.error }); return; }
+  json(res, 500, { error: 'internal_error' });
+}
 
 function isCxoneRoute(pathname: string): boolean {
   return pathname.startsWith('/v1/cxone/') || pathname === '/api/scan' || pathname === '/api/preview' || pathname === '/api/apply';

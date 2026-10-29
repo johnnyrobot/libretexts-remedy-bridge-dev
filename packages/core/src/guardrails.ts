@@ -103,6 +103,8 @@ export interface AuditEntry {
   operator: string;
   /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
   requestedBy?: string;
+  /** Verified signer identity when supplied by the required HTTP writer. */
+  reviewer?: { issuer: string; subject: string };
   revisionSummary?: string;
   /** Path on disk to the HTML snapshot of the before-state (if saved). */
   snapshotPath?: string;
@@ -148,6 +150,8 @@ export interface SnapshotMeta {
   operator: string;
   /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
   requestedBy?: string;
+  /** Verified signer identity when supplied by the required HTTP writer. */
+  reviewer?: { issuer: string; subject: string };
   /** SHA-256 hash (first 16 hex chars) of the HTML. */
   hash: string;
   /** Rule ids that will be applied after this snapshot. */
