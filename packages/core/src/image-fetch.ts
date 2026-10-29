@@ -37,21 +37,53 @@ function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
     promise.then(value => { signal.removeEventListener('abort', onAbort); resolve(value); }, error => { signal.removeEventListener('abort', onAbort); reject(error); });
   });
 }
+/** Percent escapes represent octets, including non-UTF8 raster signatures. */
+function decodeInlineOctets(payload: string, limit: number): Buffer {
+  if (payload.length > 3 * limit) throw new ImageFetchError('too-large');
+  const walk = (output?: Buffer) => {
+    let cursor = 0, size = 0;
+    while (cursor < payload.length) {
+      const percent = payload.indexOf('%', cursor);
+      const end = percent === -1 ? payload.length : percent;
+      const literal = payload.slice(cursor, end);
+      if (output) output.write(literal, size, 'utf8');
+      size += Buffer.byteLength(literal, 'utf8');
+      if (percent !== -1) {
+        const hex = payload.slice(percent + 1, percent + 3);
+        if (!/^[a-f0-9]{2}$/i.test(hex)) throw new ImageFetchError('unsupported');
+        if (output) output[size] = parseInt(hex, 16);
+        size++; cursor = percent + 3;
+      } else cursor = end;
+      if (size > limit) throw new ImageFetchError('too-large');
+    }
+    return size;
+  };
+  const size = walk(); // Validate and bound before allocating decoded storage.
+  const output = Buffer.allocUnsafe(size);
+  walk(output);
+  return output;
+}
 function inlineImage(url: string): ImageFetchResult {
-  const match = /^data:(image\/[a-z0-9.+-]+)(;base64)?,([\s\S]*)$/i.exec(url);
-  if (!match) throw new ImageFetchError('unsupported');
-  const payload = match[3];
-  if (payload.length > (match[2] ? 4 * Math.ceil(MAX_IMAGE_BYTES / 3) : MAX_IMAGE_BYTES)) throw new ImageFetchError('too-large');
-  let bytes: Buffer;
-  try {
-    if (match[2]) {
-      if (payload.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(payload)) throw new Error();
-      bytes = Buffer.from(payload, 'base64');
-      if (bytes.toString('base64') !== payload) throw new Error();
-    } else bytes = Buffer.from(decodeURIComponent(payload), 'utf8');
-  } catch { throw new ImageFetchError('unsupported'); }
+  const comma = url.indexOf(',');
+  if (comma < 0 || comma > 16 * 1024) throw new ImageFetchError('unsupported');
+  const metadata = url.slice(5, comma).split(';');
+  const mime = metadata.shift()!.toLowerCase();
+  if (!/^image\/[a-z0-9.+-]+$/.test(mime)) throw new ImageFetchError('unsupported');
+  const base64 = metadata.at(-1)?.toLowerCase() === 'base64';
+  if (base64) metadata.pop();
+  // Media-type parameters (e.g. charset=utf-8) do not change octet decoding.
+  if (metadata.some(parameter => !/^[a-z0-9!#$&^_.+-]+=[^;]*$/i.test(parameter))) throw new ImageFetchError('unsupported');
+  const payload = url.slice(comma + 1);
+  const encoded = decodeInlineOctets(payload, base64 ? 4 * Math.ceil(MAX_IMAGE_BYTES / 3) : MAX_IMAGE_BYTES);
+  let bytes = encoded;
+  if (base64) {
+    const text = encoded.toString('latin1');
+    if (text.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(text)) throw new ImageFetchError('unsupported');
+    bytes = Buffer.from(text, 'base64');
+    if (bytes.toString('base64') !== text) throw new ImageFetchError('unsupported');
+  }
   if (bytes.length > MAX_IMAGE_BYTES) throw new ImageFetchError('too-large');
-  return { bytes, status: 200, headers: { 'content-type': match[1].toLowerCase() }, url };
+  return { bytes, status: 200, headers: { 'content-type': mime }, url };
 }
 
 /** Complete image transport policy, including DNS, connect, redirects and bytes. */

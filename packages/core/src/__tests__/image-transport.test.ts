@@ -111,3 +111,23 @@ it('pins all validated addresses for native dual-stack fallback without another 
   expect(net.lookups).toEqual(['images.example.test']);
   expect(net.pins).toEqual([['2606:4700:4700::1111', '93.184.216.34']]);
 });
+
+async function inlineRegressionSource(kind: string): Promise<string> {
+  if (kind === 'parameters') return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>');
+  const bytes = await png();
+  return 'data:image/png,' + [...bytes].map(b => '%' + b.toString(16).padStart(2, '0')).join('');
+}
+it.each(['parameters', 'binary-percent'])('loads a valid inline %s image through the AI byte caller', async kind => {
+  const source = await inlineRegressionSource(kind);
+  const image = await imageSourceFromUrl(source);
+  expect(image.kind).toBe('bytes');
+  if (image.kind !== 'bytes') throw new Error('Expected bytes');
+  expect((await sharp(image.bytes).metadata()).width).toBe(2);
+});
+it.each(['parameters', 'binary-percent'])('keeps valid inline %s images available for fixes', async kind => {
+  const source = await inlineRegressionSource(kind);
+  const findings = scanHtml(`<img src="${source}">`);
+  const result = await markUnavailableImageFixes(findings, { hostname: 'dev.libretexts.org', path: '/test' });
+  expect(result[0].fixable).toBe(true);
+  expect(result[0].data?.imageAvailabilityReason).toBeUndefined();
+});
