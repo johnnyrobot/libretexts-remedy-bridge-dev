@@ -11,6 +11,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import stat
@@ -270,8 +271,9 @@ class Ledger:
         if command == 'report':
             return self.report(self.db)
         if command == 'status':
-            row = self.db.execute('SELECT * FROM claims WHERE issuer=? AND jti=?', (data['issuer'], data['jti'])).fetchone()
-            return self.status_row(row, self.resolution(self.db, row['operation_id']) if row else None)
+            # Same query-only snapshot/fence checks in both profiles. Do not
+            # project proof from a row read independently of its trust context.
+            return readonly_report(self.args, data)
         if command == 'claim':
             operation_id, timestamp = str(uuid.uuid4()), now()
             action = data['binding']['action']
@@ -321,6 +323,26 @@ class Ledger:
         raise ValueError()
 
 
+def terminal_proof(row, metadata):
+    if row['outcome'] not in ('known_success', 'not_attempted'):
+        return None
+    success = row['outcome'] == 'known_success'
+    if (row['state'] != 'terminal' or row['target_active'] != 0
+            or row['action'] not in ('cxone.apply', 'cxone.restore')
+            or not re.fullmatch(r'[0-9a-f]{64}', row['binding_sha256'])
+            or not row['issuer'] or not row['jti'] or not row['hostname']
+            or not re.fullmatch(r'[1-9][0-9]*', row['page_id'])
+            or (success and (row['reason'] is not None or row['audit_recorded'] not in (0, 1)))
+            or (not success and (row['audit_recorded'] is not None or row['reason'] not in
+                                 ('no_change', 'stale_preview', 'target_mismatch', 'pre_dispatch_failure')))):
+        raise ValueError()
+    return {'contract': 'cxone-terminal-v1',
+            **{key: row[key] for key in ('issuer', 'jti', 'operation_id', 'action', 'binding_sha256', 'outcome', 'reason', 'state')},
+            'target': {'hostname': row['hostname'], 'page_id': row['page_id']},
+            'audit_recorded': bool(row['audit_recorded']) if success else None,
+            'terminal_updated_at': row['updated_at'], **metadata}
+
+
 def readonly_report(args, query=None):
     """Take a consistent local evidence snapshot without opening the writer.
 
@@ -350,8 +372,11 @@ def readonly_report(args, query=None):
             result = Ledger.status_row(row, Ledger.resolution(db, row['operation_id']) if row else None)
         metadata = dict(db.execute('SELECT trust_epoch,durability_seq FROM meta WHERE singleton=1').fetchone())
         after = Ledger.read_fence(fence)
-        if before != after or metadata != before:
+        if (before != after or metadata != before or type(metadata['durability_seq']) is not int
+                or not 0 <= metadata['durability_seq'] <= 9007199254740991):
             raise ValueError()
+        if query is not None and result is not None:
+            result['terminal_proof'] = terminal_proof(row, metadata)
         return result
     finally:
         db.close()

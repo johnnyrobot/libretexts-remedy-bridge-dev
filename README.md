@@ -199,7 +199,13 @@ or wait; no mandatory first-rollout order is imposed.
 ## History, deployment, backup and rollback
 
 Historical `POST /v1/cxone/page/operation-status` remains authenticated and
-read-only. Review-only can query existing pending history without opening a
+read-only. Its additive [terminal-proof contract](docs/contracts/cxone-terminal-v1.md)
+projects stored, bound `known_success`/`not_attempted` evidence without rewriting
+the operation. Those trusted terminal facts need no redundant offline ceremony;
+Conductor still requires its separately reviewed explicit recovery, current
+permissions, fresh scan and local version check. Lookup never unlocks a claim.
+Pending/absent/untrusted state remains held; `unknown_write` still needs the
+existing durable offline operator resolution, including when a reply was lost. Review-only can query existing pending history without opening a
 writer, changing outcomes, recovering claims or clearing quarantine. A lookup
 failure or 404 never authorizes retrying a past mutation. Signed mode preserves
 nonce/token tombstones, snapshots, audit and independent fencing. Unknown writes
@@ -231,7 +237,7 @@ so this is not an advisory-free or vendor-patched SDK. Do not skip the patch.
 Known minor follow-ups include LT-182 (invalid locator can temporarily degrade
 readiness until successful work) and LT-183 (review-only tag dry-run support/
 rejection clarity); HTML scan/preview is the advertised review capability.
-Cross-stack known-success/lost-reply receipt compatibility remains LT-179/127
-work; a read-only lookup does not automatically clear local pending state.
+Bridge terminal proof is delivered by LT-179; cross-stack known-success/lost-reply
+recovery acceptance remains LT-180/127 work; a read-only lookup does not automatically clear local pending state.
 Global LT-111/113 still tracks execution/security/data bounds, actual cross-stack
 compatibility and the immutable deployment/backup/upgrade/rollback bundle.

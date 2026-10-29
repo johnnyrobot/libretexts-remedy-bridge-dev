@@ -28,7 +28,7 @@ function apply(p:any,a=assertion(p)){return post('/v1/cxone/page/apply-fix',{pag
 it('exposes authoritative exact binding/expiry and writes once with verified attribution and durable status',async()=>{
  const p=await preview();expect(p.status).toBe(200);expect(p.body.review_expires_at).toBeGreaterThan(Math.floor(Date.now()/1000));expect(p.body.review_binding).toMatchObject({action:'cxone.apply',target:{hostname:'dev.libretexts.org',page_id:'1',page_path:cxone.path},fix_mode:'deterministic',tier:null,snapshot:null});
  const a=assertion(p.body),r=await apply(p.body,a);expect(r.status).toBe(200);expect(r.body).toMatchObject({outcome:'known_success',applied:true,evidence_effect:'invalidate'});expect(cxone.writes).toEqual([p.body.after_html]);
- expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toEqual(r.body);
+ expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject(r.body);
  expect((await apply(p.body,a)).status).toBe(409);expect(cxone.writes).toHaveLength(1);
  const audit=await readFile(join(dir,'audit.log'),'utf8');expect(audit).toContain('verified-user');expect(audit).not.toContain('forged');expect(audit).toContain(issuer);expect(audit).not.toContain(a.compact);
 });
