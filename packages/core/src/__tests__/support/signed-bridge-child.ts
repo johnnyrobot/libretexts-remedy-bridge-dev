@@ -11,7 +11,8 @@ globalThis.fetch = async (input, init) => {
   if (request.method === 'POST' && process.env.TEST_CRASH_STAGE === 'after_response') process.kill(process.pid, 'SIGKILL');
   return response;
 };
-const { server } = await import('../../../../conductor-panel/server/server.js');
+const { createBridgeServer,executeReadInline } = await import('../../../../conductor-panel/server/server.js');
+const server = createBridgeServer(executeReadInline);
 await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
 process.send?.({port:(server.address() as {port:number}).port});
 process.on('message', message => { if (message === 'stop') server.close(); });

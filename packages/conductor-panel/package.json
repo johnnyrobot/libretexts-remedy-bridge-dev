@@ -3,14 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
-  "description": "Staff UI for LibreTexts Remedy — scan, preview, apply.",
+  "description": "Staff UI for LibreTexts Remedy \u2014 scan, preview, apply.",
   "type": "module",
   "scripts": {
     "test": "node --import tsx --test server/*.test.ts",
     "dev": "concurrently -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch server/server.ts",
     "dev:web": "vite",
-    "build": "vite build",
+    "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

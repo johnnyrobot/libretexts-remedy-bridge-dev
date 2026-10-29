@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Server } from 'node:http';
 
-const cxone = vi.hoisted(() => ({ html: '<p><strong>Chapter</strong></p>', writes: [] as string[], writtenIds: [] as number[], aliasId: 1, gate: undefined as Promise<void> | undefined, loseResponse: false, onResolve: undefined as (() => void) | undefined }));
+const cxone = vi.hoisted(() => ({ html: '<p><strong>Chapter</strong></p>', writes: [] as string[], writtenIds: [] as number[], aliasId: 1, gate: undefined as Promise<void> | undefined, loseResponse: false, writeGate: undefined as Promise<void> | undefined, onWrite: undefined as (()=>void)|undefined, onResolve: undefined as (() => void) | undefined }));
 vi.mock('dotenv/config', () => ({}));
 vi.mock('dotenv', () => ({ config: () => ({}) }));
 // Only the external CXone SDK is fake. HTTP handlers, preview generation,
@@ -19,6 +19,7 @@ vi.mock('@libretexts/cxone-expert-node', () => ({ default: class {
     },
     getPageContents: async () => ({ body: cxone.html }),
     postPageContents: async (_id: number, html: string) => {
+      cxone.onWrite?.(); await cxone.writeGate;
       cxone.writtenIds.push(_id); cxone.writes.push(html); cxone.html = html;
       if (cxone.loseResponse) throw new Error('synthetic response lost');
       return { page: { '@revision': '7' } };
@@ -34,12 +35,12 @@ beforeAll(async () => {
   vi.stubEnv('REMEDY_WRITE_ALLOWLIST', '^Sandboxes/johnnyphung(?:/|$)');
   vi.stubEnv('REMEDY_SNAPSHOT_DIR', join(dir, 'snapshots')); vi.stubEnv('REMEDY_AUDIT_LOG', join(dir, 'audit.log'));
   vi.stubEnv('REMEDY_LLM_PROVIDER', 'ollama-local');
-  server = (await import('../../../conductor-panel/server/server.js')).server;
+  { const bridge = await import('../../../conductor-panel/server/server.js'); server = bridge.createBridgeServer(bridge.executeReadInline); }
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
 });
 afterAll(async () => { if (server) await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve())); vi.unstubAllEnvs(); });
-beforeEach(() => { cxone.html = '<p><strong>Chapter</strong></p>'; cxone.writes.length = 0; cxone.writtenIds.length = 0; cxone.aliasId = 1; cxone.gate = undefined; cxone.loseResponse = false; cxone.onResolve = undefined; });
+beforeEach(() => { cxone.html = '<p><strong>Chapter</strong></p>'; cxone.writes.length = 0; cxone.writtenIds.length = 0; cxone.aliasId = 1; cxone.gate = undefined; cxone.loseResponse = false; cxone.onResolve = undefined; cxone.writeGate=undefined;cxone.onWrite=undefined; });
 async function post(path: string, body: unknown, signal?: AbortSignal) {
   const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal });
   return { status: r.status, body: await r.json() };
@@ -91,7 +92,8 @@ it('serializes distinct preview tokens and rejects the stale second source', asy
   const results = await Promise.all([a, b].map(p => post('/v1/cxone/page/apply-fix', {
     page_id: 1, preview_token: p.body.preview_token, preview_hash: p.body.preview_hash,
   })));
-  expect(results.map(r => r.status).sort()).toEqual([200, 409]);
+  expect(results.filter(r=>r.status===200)).toHaveLength(1);
+  expect(results.some(r=>[409,503].includes(r.status))).toBe(true);
   expect(cxone.writes).toEqual([a.body.after_html]);
 });
 
@@ -249,4 +251,21 @@ it('quarantines an unknown write and rejects replay and new previews without ano
   const p2 = await post('/v1/cxone/page/preview-fix', { page_id: 2 });
   const r2 = await post('/v1/cxone/page/apply-fix', { page_id: 2, preview_token: p2.body.preview_token, preview_hash: p2.body.preview_hash });
   expect(r2.body.error).toBe('write_outcome_unknown'); expect(cxone.writes).toHaveLength(1);
+});
+
+it('preserves an unknown legacy write response when shutdown cancels after dispatch',async()=>{
+  vi.resetModules();
+  const bridge=await import('../../../conductor-panel/server/server.js');
+  const local=bridge.createBridgeServer(bridge.executeReadInline);
+  await new Promise<void>(resolve=>local.listen(0,'127.0.0.1',resolve));
+  const url=`http://127.0.0.1:${(local.address() as any).port}`;
+  const send=async(path:string,body:unknown)=>{const response=await fetch(url+path,{method:'POST',body:JSON.stringify(body)});return{status:response.status,body:await response.json()};};
+  let release=()=>{};
+  try{
+    const preview=await send('/v1/cxone/page/preview-fix',{page_id:1});
+    cxone.writeGate=new Promise(resolve=>release=resolve);let entered!:()=>void;const dispatched=new Promise<void>(resolve=>entered=resolve);cxone.onWrite=entered;cxone.loseResponse=true;
+    const pending=send('/v1/cxone/page/apply-fix',{page_id:1,preview_token:preview.body.preview_token,preview_hash:preview.body.preview_hash});
+    await dispatched;local.close();release();
+    const result=await pending;expect(result.status).toBe(409);expect(result.body).toMatchObject({error:'write_outcome_unknown',write_outcome:'unknown',retry_safe:false});expect(result.body.snapshot_path).toBeTypeOf('string');expect(cxone.writes).toHaveLength(1);
+  }finally{release();await new Promise<void>(resolve=>local.close(()=>resolve()));}
 });

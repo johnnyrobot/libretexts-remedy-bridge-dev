@@ -1,3 +1,4 @@
+import { boundedFetch, requestBudget } from '../../../../tools/request-policy.cjs';
 /**
  * OpenAI-compatible LLM client, covers OpenRouter, Ollama Cloud/local,
  * and Gemini's OpenAI-compat endpoint with one payload shape.
@@ -427,6 +428,7 @@ export class LLMClient {
     let lastErr: unknown;
     try {
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        requestBudget.getStore()?.signal.throwIfAborted();
         // Rotate to this attempt's fallback window (OpenRouter only). Lead the
         // payload's `model` with the window head to keep the two consistent.
         if (windows && windows.length) {
@@ -438,7 +440,7 @@ export class LLMClient {
         const controller = new AbortController();
         const abortTimer = setTimeout(() => controller.abort(), this.timeoutMs);
         try {
-          const res = await fetch(url, {
+          const res = await boundedFetch(url, {
             method: 'POST',
             headers: this.headers(),
             body: JSON.stringify(windows ? { ...wirePayload, model: payload.model, models: payload.models } : wirePayload),
@@ -490,6 +492,7 @@ export class LLMClient {
           if (!text || data.choices?.[0]?.finish_reason === 'length') {
             throw new LLMError('LLM returned an empty or truncated answer');
           }
+          requestBudget.getStore()?.signal.throwIfAborted();
           if (this.cache) {
             await this.cache.set(cacheKey, {
               ts: new Date().toISOString(),
@@ -502,6 +505,7 @@ export class LLMClient {
           }
           return text;
         } catch (err) {
+          requestBudget.getStore()?.signal.throwIfAborted();
           lastErr = err;
           if (err instanceof LLMError && err.status && !RETRYABLE_STATUSES.has(err.status)) throw err;
           if (attempt < maxAttempts) {
@@ -655,5 +659,11 @@ function parseRetryAfter(raw: string | null): number | null {
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  const signal=requestBudget.getStore()?.signal;
+  signal?.throwIfAborted();
+  return new Promise((resolve,reject)=>{
+    const abort=()=>{clearTimeout(timer);reject(signal?.reason);};
+    const timer=setTimeout(()=>{signal?.removeEventListener('abort',abort);resolve();},ms);
+    signal?.addEventListener('abort',abort,{once:true});
+  });
 }

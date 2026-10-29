@@ -25,6 +25,7 @@ it.each(['before_send','during_send','after_response'])('actual Node crash at %s
  const request=post('/v1/cxone/page/apply-fix',{page_id:1,preview_token:p.preview_token,preview_hash:p.preview_hash,reviewer_assertion:`${h}.${payload}.${sign(null,Buffer.from(`${h}.${payload}`),keys.privateKey).toString('base64url')}`}).catch(()=>null);
  if(stage==='during_send'){await mutation;child.kill('SIGKILL');}await exited;await request;
  // The pipe helper exits on parent EOF; startup never breaks a held lock.
- await new Promise(r=>setTimeout(r,80));const ledger=await DurableLedger.open(store);
+ let ledger:DurableLedger|undefined;const deadline=Date.now()+5000;
+ while(!ledger){try{ledger=await DurableLedger.open(store);}catch(error){if(Date.now()>=deadline)throw error;await new Promise(r=>setTimeout(r,20));}}
  try{expect(await ledger.status({issuer,jti})).toMatchObject({outcome:'unknown_write',applied:null,evidence_effect:'invalidate',requires_reconciliation:true});await expect(ledger.claim({issuer,jti:randomBytes(32).toString('base64url'),preview_token:'fresh',target:{hostname:'dev.libretexts.org',page_id:'1'},binding:p.review_binding,subject:'synthetic-user',expires_at:now+60})).rejects.toMatchObject({code:'claim_conflict'});expect(writes).toBe(stage==='before_send'?0:1);}finally{await ledger.close();}
 },15000);

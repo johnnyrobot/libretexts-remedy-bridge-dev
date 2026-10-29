@@ -13,4 +13,13 @@ jobs:
       - name: Build bridge with its POSIX ledger runtime
         run: docker build -t remedy-bridge:ci .
       - name: Exercise actual bridge and ledger without external networking
-        run: docker run --rm --network none remedy-bridge:ci npm test
+        run: docker run --rm --init --network none --memory=2g --cpus=2 --pids-limit=256 remedy-bridge:ci npm test
+
+  browser-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the non-root sandboxed browser runtime
+        run: docker build -t remedy-browser:ci browser-scanner
+      - name: Exercise actual Chromium with network disabled and finite resources
+        run: docker run --rm --init --network none --memory=2g --cpus=2 --pids-limit=256 --shm-size=1g --security-opt seccomp=browser-scanner/seccomp_profile.json -e RUN_BROWSER_TESTS=1 remedy-browser:ci npm test

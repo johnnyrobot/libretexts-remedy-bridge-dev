@@ -12,7 +12,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/core/package.json packages/core/package.json
 COPY packages/cli/package.json packages/cli/package.json
 COPY packages/conductor-panel/package.json packages/conductor-panel/package.json
-COPY tools/patch-cxone-utf8.mjs tools/patch-cxone-utf8.mjs
+COPY tools/patch-cxone-utf8.mjs tools/request-policy.cjs tools/
 RUN npm ci --no-audit
 
 COPY . .
