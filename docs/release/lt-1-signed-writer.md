@@ -24,7 +24,7 @@ Preview, revise-preview and restore-preview return `review_binding` and integer 
 
 Mutation/status metadata follows r2: `pending` holds evidence; matched `no_change` preserves it; `stale_preview`/`target_mismatch`, known success and unknown writes invalidate it. Known success survives audit-append failure. Unknown dispatch is 502 with reconciliation required; its target remains quarantined after restart/new previews. Incomplete success persistence stops global write admission rather than acknowledging unrecorded success. A restored stale ledger fails against its independent fence. Neither an HTTP failure, pending status nor 404 authorizes a retry.
 
-Read-only `POST /v1/cxone/page/operation-status` accepts exactly `{issuer,jti}` with the configured issuer and canonical nonce. It returns metadata only: no HTML, assertion, reviewer details, paths or secrets. It works before the caller has an operation ID and never dispatches CXone requests. A healthy local store plus valid CXone configuration makes authenticated readiness advertise mutation/status capability; invalid key reload disables mutation while status remains available.
+Read-only `POST /v1/cxone/page/operation-status` accepts exactly `{issuer,jti}` with the configured issuer and canonical nonce. It returns metadata only: no HTML, assertion, reviewer details, paths or secrets. It works before the caller has an operation ID and never dispatches CXone requests. In nonproduction mode, a healthy local store plus valid CXone configuration makes authenticated readiness advertise mutation/status capability; invalid key reload disables mutation while status remains available.
 
 Public keys load once. After an explicit local keyring replacement, send the Bridge process `SIGHUP`; this pauses admission, validates the complete file, persists effective revocations, rehydrates all historical revocations and installs the new verifier before resuming. Failure leaves writes disabled. Editing a file alone is not acknowledged revocation. Service key changes require a drained restart. Rotated/retired IDs remain consumed; clock movement and a later reload cannot re-enable a revoked ID. No private signing key belongs on Bridge.
 
@@ -61,3 +61,15 @@ Save stdout to a protected local report. It reads SQLite in read-only/query-only
 Behavioral tests exercise actual Bridge/core/SDK/SQLite/helper paths with synthetic keys and fake external CXone only. Tests cover frozen cryptographic vectors, HTTP auth/duplicates, exact binding/expiry, no-op/stale/renamed targets, pending lookup, lost response before operation ID, audit failure, restore, revocation/reload, replay/restart/quarantine, two simultaneous processes and lock retention after helper death. Actual Node children crash before send, during send and after external response; restart conservatively quarantines each dispatch marker. Injected SQLite/fence ENOSPC and flush crashes, stale-backup/fence mismatch and read-only reconciliation are covered. NativeNode22 and24 focused suites run locally; UbuntuNode22 CI supplies independent Linux execution. Counts and review dispositions belong in the PR/handoff.
 
 This does not certify Conductor's signer/operation mapping, Server's forwarding/authentication or final full-stack integration. External editors can still race the final read/POST without conditional-edit support. No live CXone call, upstream deployment, public panel, tunnel, production keys or full-stack readiness is claimed. LT-1/LT-113/LT-111 stay open, alongside LT-122/123/124, dependency advisories, general request/resource ownership and the pinned storage/topology/backup/upgrade/rollback release bundle. TestSprite remains unrun because its required tunnel/public target is outside this task's authorization.
+
+## Conditional-edit release hold (LT-113)
+
+Production startup now captures an immutable mutation hold: authenticated readiness
+reports `mutate:false`, while scan/preview/status remain available. Even a valid
+signed apply/restore returns 503 `conditional_write_unproven` before any durable
+claim or CXone dispatch. Core/CLI production write authorization is also closed.
+There is no environment flag to bypass the hold. Local synthetic nonproduction
+tests retain the owner sandbox policy. See [source evidence and the unexecuted
+Johnny-only sandbox procedure](cxone-conditional-edit-gate.md). A timestamp check
+without every-revision atomicity proof does not clear this gate. General request
+admission/cancellation and assembled-stack deployment proof remain separate gates.

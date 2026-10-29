@@ -1,9 +1,11 @@
 import type { Finding, PageRef } from './types.js';
-import { isImageFetchAllowed } from './net-guard.js';
+import { fetchBoundedImage, ImageFetchError, type ImageFetchOptions } from './image-fetch.js';
 
 export interface MarkUnavailableImageFixesOptions {
   env?: NodeJS.ProcessEnv;
-  fetchImpl?: typeof fetch;
+  /** DNS/transport seams shared with the AI byte fetch. */
+  imageFetch?: ImageFetchOptions;
+  signal?: AbortSignal;
   timeoutMs?: number;
   concurrency?: number;
 }
@@ -20,7 +22,7 @@ interface ImageAvailabilityUnavailable {
   url: string;
   status?: number;
   mimeType?: string;
-  reason: 'http-status' | 'non-image-content' | 'timeout' | 'fetch-error' | 'unsupported-url';
+  reason: 'http-status' | 'non-image-content' | 'timeout' | 'fetch-error' | 'unsupported-url' | 'blocked-destination' | 'too-large' | 'cancelled' | 'unsupported';
   message: string;
 }
 
@@ -41,7 +43,7 @@ export async function markUnavailableImageFixes(
 ): Promise<Finding[]> {
   if (opts.env?.REMEDY_IMAGE_PREFLIGHT === 'false') return findings;
 
-  const fetchImpl = opts.fetchImpl ?? fetch;
+  const imageFetch = { ...opts.imageFetch, env: opts.env ?? opts.imageFetch?.env, signal: opts.signal ?? opts.imageFetch?.signal };
   const timeoutMs = opts.timeoutMs ?? numberFromEnv(opts.env, 'REMEDY_IMAGE_PREFLIGHT_TIMEOUT_MS', DEFAULT_TIMEOUT_MS);
   const concurrency = opts.concurrency ?? numberFromEnv(opts.env, 'REMEDY_IMAGE_PREFLIGHT_CONCURRENCY', DEFAULT_CONCURRENCY);
   const candidates = findings
@@ -59,7 +61,7 @@ export async function markUnavailableImageFixes(
       const current = candidates[cursor++];
       const src = String(current.finding.data?.src ?? '').trim();
       const url = absoluteImageUrl(src, page.hostname);
-      const availability = await cachedProbe(cache, url, page, fetchImpl, timeoutMs);
+      const availability = await cachedProbe(cache, url, page, imageFetch, timeoutMs);
       if (!availability.ok) {
         nextFindings[current.index] = blockedFinding(current.finding, availability);
       }
@@ -80,12 +82,12 @@ function cachedProbe(
   cache: Map<string, Promise<ImageAvailability>>,
   url: string,
   page: Pick<PageRef, 'hostname' | 'path'>,
-  fetchImpl: typeof fetch,
+  imageFetch: ImageFetchOptions,
   timeoutMs: number,
 ): Promise<ImageAvailability> {
   const existing = cache.get(url);
   if (existing) return existing;
-  const probe = probeImageUrl(url, page, fetchImpl, timeoutMs);
+  const probe = probeImageUrl(url, page, imageFetch, timeoutMs);
   cache.set(url, probe);
   return probe;
 }
@@ -93,62 +95,21 @@ function cachedProbe(
 async function probeImageUrl(
   url: string,
   page: Pick<PageRef, 'hostname' | 'path'>,
-  fetchImpl: typeof fetch,
+  imageFetch: ImageFetchOptions,
   timeoutMs: number,
 ): Promise<ImageAvailability> {
-  if (url.startsWith('data:')) {
-    return url.startsWith('data:image/')
-      ? { ok: true, url, status: 200, mimeType: url.slice(5, url.indexOf(';')) || 'image/*' }
-      : unavailable(url, 'unsupported-url', 'Image data URL is not an image.');
-  }
-  if (!/^https?:\/\//i.test(url)) {
-    return unavailable(url, 'unsupported-url', 'Image URL cannot be fetched by Remedy.');
-  }
-
-  // SSRF guard: never probe loopback/private/link-local/metadata targets that
-  // happen to appear as an image src in scraped page content.
-  const guard = isImageFetchAllowed(url);
-  if (!guard.ok) {
-    return unavailable(url, 'unsupported-url', `Image URL blocked by SSRF guard: ${guard.reason}.`);
-  }
-
-  const head = await fetchForProbe(url, 'HEAD', page, fetchImpl, timeoutMs);
-  if (head.ok || !shouldRetryWithGet(head.status)) return head;
-  return fetchForProbe(url, 'GET', page, fetchImpl, timeoutMs);
-}
-
-async function fetchForProbe(
-  url: string,
-  method: 'HEAD' | 'GET',
-  page: Pick<PageRef, 'hostname' | 'path'>,
-  fetchImpl: typeof fetch,
-  timeoutMs: number,
-): Promise<ImageAvailability> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl(url, {
-      method,
-      headers: method === 'GET'
-        ? { ...probeHeaders(page), Range: 'bytes=0-0' }
-        : probeHeaders(page),
-      signal: controller.signal,
-    });
-    const availability = classifyResponse(url, response);
-    await response.body?.cancel().catch(() => undefined);
-    return availability;
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      return unavailable(url, 'timeout', `Image URL timed out after ${timeoutMs}ms.`);
-    }
-    const detail = err instanceof Error ? err.message : String(err);
-    return unavailable(url, 'fetch-error', `Image URL could not be fetched by Remedy: ${detail}`);
-  } finally {
-    clearTimeout(timer);
+    const response = await fetchBoundedImage(url, { ...imageFetch, probe: true, timeoutMs, headers: probeHeaders(page) });
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(response.headers)) if (value !== undefined) headers.set(key, Array.isArray(value) ? value.join(',') : value);
+    return classifyResponse(url, { status: response.status, ok: response.status >= 200 && response.status < 300, headers });
+  } catch (error) {
+    const reason = error instanceof ImageFetchError ? error.reason : 'fetch-error';
+    return unavailable(url, reason === 'transport' ? 'fetch-error' : reason, `Image requires manual review: ${reason}.`);
   }
 }
 
-function classifyResponse(url: string, response: Response): ImageAvailability {
+function classifyResponse(url: string, response: Pick<Response, 'status' | 'ok' | 'headers'>): ImageAvailability {
   const mimeType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() || undefined;
   if (!response.ok) {
     return unavailable(
@@ -180,11 +141,7 @@ function classifyResponse(url: string, response: Response): ImageAvailability {
   return { ok: true, url, status: response.status, mimeType };
 }
 
-function shouldRetryWithGet(status?: number): boolean {
-  return status === 403 || status === 405 || status === 501;
-}
-
-function probeHeaders(page: Pick<PageRef, 'hostname' | 'path'>): HeadersInit {
+function probeHeaders(page: Pick<PageRef, 'hostname' | 'path'>): Record<string, string> {
   return {
     ...IMAGE_FETCH_HEADERS,
     Referer: `https://${page.hostname}${page.path || '/'}`,

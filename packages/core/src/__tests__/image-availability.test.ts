@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toConductorFindings } from '../conductor-compat.js';
 import { markUnavailableImageFixes } from '../image-availability.js';
+import { imageNetwork } from './support/image-network.js';
 import { scanHtml } from '../scan.js';
 
 describe('image availability preflight', () => {
@@ -9,22 +10,12 @@ describe('image availability preflight', () => {
       <img src="https://cdn.mathpix.com/cropped/missing.jpg?height=400&width=1000" alt="">
       <img src="/available.png">
     `);
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.includes('missing.jpg')) {
-        return new Response('missing', {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        });
-      }
-      return new Response('', {
-        status: 200,
-        headers: { 'content-type': 'image/png' },
-      });
-    };
+    const network = imageNetwork(url => url.href.includes('missing.jpg')
+      ? { status: 404, headers: { 'content-type': 'application/json' } }
+      : { headers: { 'content-type': 'image/png' } });
 
     const marked = await markUnavailableImageFixes(findings, { hostname: 'dev.libretexts.org', path: '/Sandboxes/johnnyphung' }, {
-      fetchImpl,
+      imageFetch: network.options,
       timeoutMs: 25,
       concurrency: 2,
     });

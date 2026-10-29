@@ -10,7 +10,7 @@
 
 import sharp from 'sharp';
 import { LlmCache, hashPayload, resolveCacheDir } from './llm-cache.js';
-import { assertImageFetchAllowed } from '../net-guard.js';
+import { fetchBoundedImage, MAX_IMAGE_BYTES, ImageFetchError, type ImageFetchOptions } from '../image-fetch.js';
 
 export type ProviderId = 'openai' | 'openrouter' | 'ollama-cloud' | 'ollama-local' | 'gemini-compat' | 'custom';
 
@@ -590,37 +590,19 @@ function extractText(data: ChatCompletionResponse): string {
 }
 
 async function encodeImage(src: ImageSource): Promise<string> {
-  if (src.kind === 'url') {
-    if (/^https?:\/\//.test(src.url)) {
-      // Providers like OpenRouter and Ollama accept URLs directly.
-      return src.url;
-    }
-    // Already a data: URL.
-    return src.url;
-  }
+  if (src.kind === 'url') return encodeImage(await imageSourceFromUrl(src.url));
+  if (src.bytes.length > MAX_IMAGE_BYTES) throw new ImageFetchError('too-large');
   const b64 = Buffer.from(src.bytes).toString('base64');
   return `data:${src.mimeType};base64,${b64}`;
 }
 
-async function fetchImageAsBytes(url: string): Promise<{ bytes: Buffer; mimeType: string }> {
-  // SSRF guard: image URLs originate from scraped page content, so refuse to
-  // fetch loopback/private/link-local/metadata targets before the bytes are
-  // ever sent on to the LLM. Throws SsrfBlockedError when disallowed.
-  assertImageFetchAllowed(url);
-  const res = await fetch(url);
-  if (!res.ok) throw new LLMError(`Fetch image ${url}: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  const mime =
-    res.headers.get('content-type')?.split(';')[0]?.trim() ||
-    guessMimeTypeFromUrl(url) ||
-    'image/png';
-  return { bytes: buf, mimeType: mime };
-}
-
-export async function imageSourceFromUrl(url: string): Promise<ImageSource> {
+export async function imageSourceFromUrl(url: string, opts: ImageFetchOptions = {}): Promise<ImageSource> {
   // Some providers (e.g. gemini-compat, ollama-local) do better with inline bytes.
   // Fetch once and embed; URL providers don't lose anything.
-  const { bytes, mimeType } = await fetchImageAsBytes(url);
+  const response = await fetchBoundedImage(url, opts);
+  if (response.status < 200 || response.status >= 300) throw new ImageFetchError('transport');
+  const bytes = response.bytes;
+  const mimeType = response.headers['content-type']?.split(';')[0]?.trim() || guessMimeTypeFromUrl(url) || 'application/octet-stream';
   const decoded = sharp(bytes, { limitInputPixels: 40_000_000 });
   const meta = await decoded.metadata();
   if ((meta.pages || 1) > 1) throw new LLMError('Animated or multipage images require manual review', 422);

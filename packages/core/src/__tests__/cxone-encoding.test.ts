@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import Expert from '@libretexts/cxone-expert-node';
 
 const CommonJSExpert = createRequire(import.meta.url)('@libretexts/cxone-expert-node').default;
@@ -37,4 +37,18 @@ it.each([['ESM', Expert], ['CommonJS', CommonJSExpert]])('%s SDK never follows o
     await expect(client.pages.postPageContents(1,'<p>Reviewed</p>',{edittime:'now'})).rejects.toThrow();
     expect(requests).toHaveLength(1);
   } finally {server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}
+});
+
+it.each([['ESM', Expert], ['CommonJS', CommonJSExpert]])('%s SDK routes request instances through pinned supported Axios', async (_format, SDK) => {
+  const axios = createRequire(import.meta.url)('axios');
+  expect(axios.VERSION).toBe('1.21.0');
+  const create = vi.spyOn(axios, 'create');
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { headers: { 'content-type': 'application/json' } }));
+  try {
+    const client = new SDK({ tld: 'https://synthetic.example.test', auth: { type: 'server', params: { key: 'fake', secret: 'fake', user: 'fake' } } });
+    await client.pages.getPageInfo(1);
+    expect(create.mock.calls.length).toBeGreaterThan(1);
+    expect(create.mock.results.every(result => result.value.defaults.adapter === 'fetch')).toBe(true);
+    expect(fetcher).toHaveBeenCalledOnce();
+  } finally { create.mockRestore(); fetcher.mockRestore(); }
 });

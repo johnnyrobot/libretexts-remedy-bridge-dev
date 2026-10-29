@@ -58,7 +58,7 @@ Every write has two independent rollback channels:
 1. **On-disk snapshot** (our own, kept forever) — before every `--apply`, the entire
    before-HTML plus a metadata JSON is written to
    `.remedy/snapshots/{pageId}/{timestamp}_{hash}.{html,json}`.
-   `remedy revert <page>` reads the newest one (or a specific one pinned by `--snapshot <ts>`)
+   `remedy revert <page>` reads the newest valid HTML pair matching the canonical target (or a specific one pinned by `--snapshot <ts>`)
    and writes it back as a new CXone revision. The revert itself **also** saves a
    pre-revert snapshot so the rollback is itself reversible.
 2. **CXone revision history** (platform-native) — every write creates a new revision on
@@ -200,6 +200,9 @@ npm run dev:api --workspace @libretexts/remedy-conductor-panel
 
 The bridge listens on `http://127.0.0.1:5175` by default and consumes the root
 `.env` credentials. `GET /healthz` reports sanitized process liveness only.
+Production mutation is currently unavailable pending proven atomic CXone conditional edits;
+`/readyz` reports `mutate:false` and signed writes return 503 `conditional_write_unproven`.
+See [the conditional-edit gate and later sandbox procedure](docs/release/cxone-conditional-edit-gate.md).
 The signed profile uses authenticated `GET /readyz` capability checks; see
 [the signed writer integration contract](docs/release/lt-1-signed-writer.md).
 
