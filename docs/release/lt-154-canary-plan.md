@@ -41,7 +41,7 @@ HTTP status behavior, an admin console path, or an idempotency mechanism.
 | Same timestamp | One independent edit, observed timestamp comparison; stale apply/restore only for an actual collision | Attempts9–11; otherwise explicitly untested |
 | Cleanup/export | Exact current known trial revision; restore initial baseline as a new revision; verify and export sanitized evidence | Attempt12 maximum, plus operator evidence summary |
 
-Each attempt requires confirmation, durable local reservation and a verified
+Each attempt requires confirmation, local reservation and a verified
 `success` or `rejection` outcome matching its expected role. Record HTTP status,
 sanitized response, subsequent body/hash/revision and history. A rejection is
 valid only when the current foreign/intervening revision remains untouched;

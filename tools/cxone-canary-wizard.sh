@@ -209,7 +209,7 @@ if [[ "${1:---dry-run}" != "--operator" ]]; then
 fi
 TOTAL_STAGES=7
 ENV_FILE=/dev/null
-banner "CXone disposable-page canary — operator only"
+canary_banner
 warn "Passing finite trials cannot prove atomicity. This records a manual procedure; it sends no requests."
 confirm "Do you have Johnny's explicit approval for this exact canary, evidence and cleanup?" || return 1
 umask 077
@@ -281,6 +281,14 @@ say "Do not delete the page, history, snapshots or evidence. Do not re-run to re
 write_env OPERATOR_FINISHED_UTC "$(date -u +%FT%TZ)"
 warn "Canary observations are candidate evidence only. Production hold remains; no deployment is authorized."
 finish
+}
+
+canary_banner() {
+  _clear
+  say "CXone disposable-page canary — operator only; seven stages."
+  warn "After interruption, preserve evidence and stop. Do not rerun, resume or reset the attempt count."
+  say "A stopped run needs a separate operator review of recorded requests and remaining allowance."
+  pause "Ready to inspect the approved procedure?"
 }
 
 manual_attempt() {
