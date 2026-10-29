@@ -2,6 +2,8 @@ node_modules
 packages/*/node_modules
 .git
 .env
+.env.*
+!.env.example
 .remedy
 coverage
 out

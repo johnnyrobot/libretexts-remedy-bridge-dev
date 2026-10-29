@@ -73,6 +73,7 @@ it('restores only the signed, exact reviewed snapshot output',async()=>{
  const {saveSnapshot}=await import('../guardrails.js');const saved=await saveSnapshot('<p>Restore exact</p>',{pageId:1,pagePath:cxone.path,hostname:'dev.libretexts.org',operator:'synthetic',rules:[],source:'fix'},process.env);
  const p=await post('/v1/cxone/page/restore-preview',{page_id:1,snapshot_timestamp:saved.meta.ts});expect(p.status).toBe(200);expect(p.body.review_binding).toMatchObject({action:'cxone.restore',fix_mode:'restore',tier:null,snapshot:{timestamp:saved.meta.ts,sha256:p.body.review_binding.after_sha256}});
  const a=assertion(p.body),r=await post('/v1/cxone/page/restore',{page_id:1,preview_token:p.body.preview_token,preview_hash:p.body.preview_hash,reviewer_assertion:a.compact});expect(r.status).toBe(200);expect(r.body).toMatchObject({outcome:'known_success',restored:true,applied:false});expect(cxone.writes).toEqual(['<p>Restore exact</p>']);
+ const audit=(await readFile(join(dir,'audit.log'),'utf8')).trim().split('\n').map(line=>JSON.parse(line)).filter(row=>row.mode==='revert').at(-1);expect(audit.revertedFrom).toBe(saved.metaPath);expect(audit.revisionSummary).toContain(saved.meta.ts);
 });
 it('acknowledges key revocation durably, rejects reenabling an old ID and supports explicit rotation',async()=>{
  const {reloadReviewerKeys}=await import('../../../conductor-panel/server/server.js');const config=JSON.parse(await readFile(join(dir,'keys.json'),'utf8'));const p=(await preview()).body,a=assertion(p);config.keys[0].revoked_at=Math.floor(Date.now()/1000);await writeFile(join(dir,'keys.json'),JSON.stringify(config));await reloadReviewerKeys();
@@ -124,6 +125,14 @@ it('persists other-key revocation observed on a wrong-action rejection before a 
 });
 it('invalidates evidence for a late target move outside the owner sandbox',async()=>{
  const p=(await preview()).body;cxone.onRead=()=>{cxone.path='Bookshelves/Renamed';cxone.onRead=undefined;};const r=await apply(p);expect(r.status).toBe(409);expect(r.body).toMatchObject({reason:'target_mismatch',evidence_effect:'invalidate'});expect(cxone.writes).toEqual([]);
+});
+it('canonicalizes an accepted uppercase configured hostname throughout signed previews and writes',async()=>{
+ const previous=process.env.SERVER_DOMAIN!;vi.stubEnv('SERVER_DOMAIN','DEV.LIBRETEXTS.ORG');
+ try{const p=(await preview()).body;expect(p.review_binding.target.hostname).toBe('dev.libretexts.org');expect((await apply(p)).status).toBe(200);expect(cxone.writes).toHaveLength(1);}finally{vi.stubEnv('SERVER_DOMAIN',previous);}
+});
+it('invalidates restore evidence when the target moves during snapshot validation',async()=>{
+ const {saveSnapshot}=await import('../guardrails.js');const saved=await saveSnapshot('<p>Restore rename</p>',{pageId:1,pagePath:cxone.path,hostname:'dev.libretexts.org',operator:'synthetic',rules:[],source:'fix'},process.env);
+ const p=(await post('/v1/cxone/page/restore-preview',{page_id:1,snapshot_timestamp:saved.meta.ts})).body,a=assertion(p);cxone.onRead=()=>{cxone.path='Sandboxes/johnnyphung/Renamed';cxone.onRead=undefined;};const r=await post('/v1/cxone/page/restore',{page_id:1,preview_token:p.preview_token,preview_hash:p.preview_hash,reviewer_assertion:a.compact});expect(r.status).toBe(409);expect(r.body).toMatchObject({reason:'target_mismatch',evidence_effect:'invalidate'});expect(cxone.writes).toEqual([]);
 });
 it('returns fixed unknown metadata and retains quarantine after transport loss and restart',async()=>{
  const p=(await preview()).body,a=assertion(p);cxone.lose=true;const r=await apply(p,a);expect(r.status).toBe(502);expect(r.body).toMatchObject({outcome:'unknown_write',applied:null,restored:false,evidence_effect:'invalidate',requires_reconciliation:true,reconciliation:'required',error:'write_outcome_unknown'});expect(JSON.stringify(r.body)).not.toMatch(/private upstream|\.json|snapshot|reviewer_assertion/);

@@ -122,6 +122,7 @@ export class SignedWriter {
     const operation = await this.ledger.claim({ issuer: claims.iss, jti: claims.jti, preview_token: preview.token,
       subject: claims.sub, expires_at: claims.exp, target: preview.binding.target, binding: preview.binding });
     let started = false;
+    let revertedFrom: string | undefined;
     const unavailable = () => new SignedRequestError(503, { error: 'claim_store_unavailable', outcome: 'pending', operation_id: operation.operation_id, retryable: false, evidence_effect: 'hold' });
     const terminal = async (reason: Reason, status: number, error: string): Promise<never> => {
       let result;
@@ -138,15 +139,16 @@ export class SignedWriter {
       const current = await fetchPageHtml(expert, canonical.id);
       if (current !== preview.beforeHtml) return await terminal('stale_preview', 409, 'stale_preview');
       if (preview.mode === 'restore') {
-        const restored = await revertPage(canonical.id, { dryRun: true, snapshotTs: preview.snapshotTs, expert, env: this.env });
+        const restored = await revertPage(canonical.id, { dryRun: true, snapshotTs: preview.snapshotTs, expert, env: this.env, expectedTarget: canonical });
+        revertedFrom = restored.snapshotUsed.metaPath;
         if (restored.revertedToHtml !== preview.afterHtml || restored.snapshotUsed.ts !== preview.snapshotTs) return await terminal('stale_preview', 409, 'stale_preview');
       }
       await this.authorize(body.reviewer_assertion, preview);
       const result = await writePageRevision({ expert, pageInput: canonical.id, page: canonical,
         beforeHtml: preview.beforeHtml, afterHtml: preview.afterHtml, rules: preview.rules, env: this.env,
-        revisionSummary: preview.mode === 'restore' ? 'Remedy: restore reviewed snapshot' : 'Remedy: apply signed reviewed output',
+        revisionSummary: preview.mode === 'restore' ? `Remedy: restore reviewed snapshot ${preview.snapshotTs}` : 'Remedy: apply signed reviewed output',
         source: preview.mode === 'restore' ? 'revert' : preview.mode === 'pipeline' ? 'pipeline' : 'fix',
-        mode: preview.mode === 'restore' ? 'revert' : 'apply', requestedBy: claims.sub,
+        mode: preview.mode === 'restore' ? 'revert' : 'apply', requestedBy: claims.sub, revertedFrom,
         reviewer: { issuer: claims.iss, subject: claims.sub },
         beforeDispatch: async (snapshot: SnapshotEntry) => {
           await syncSnapshot(snapshot);

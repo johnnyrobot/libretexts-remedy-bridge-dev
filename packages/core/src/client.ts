@@ -44,7 +44,7 @@ export function createExpertClient(env: NodeJS.ProcessEnv = process.env): Expert
   if (!validateCxoneConfiguration(env).valid) throw new InvalidCxoneConfigurationError();
 
   return new Expert({
-    tld: env.SERVER_DOMAIN!,
+    tld: env.SERVER_DOMAIN!.trim().toLowerCase(),
     auth: {
       type: 'server',
       params: {
@@ -117,6 +117,6 @@ export async function resolvePageRef(
     id: pageId,
     path,
     title,
-    hostname: env.SERVER_DOMAIN ?? 'unknown',
+    hostname: (env.SERVER_DOMAIN ?? 'unknown').trim().toLowerCase(),
   };
 }
