@@ -11,17 +11,13 @@
 import type Expert from '@libretexts/cxone-expert-node';
 import { createExpertClient, normalizePageInput, resolvePageRef } from './client.js';
 import {
-  appendAudit,
-  assertWriteAllowed,
-  extractRevisionId,
   hashContent,
   listSnapshots,
-  operatorFromEnv,
   readSnapshot,
-  saveSnapshot,
   type SnapshotEntry,
 } from './guardrails.js';
 import { fetchPageHtml } from './scan.js';
+import { writePageRevision } from './write-page.js';
 
 export interface RevertOptions {
   expert?: Expert;
@@ -36,6 +32,8 @@ export interface RevertOptions {
   requestedBy?: string;
   /** Reject a restore if the live page changed since the reviewed preview. */
   expectedCurrentHash?: string;
+  /** Bind the selected snapshot bytes to the restore preview. */
+  expectedRestoredHash?: string;
   /** Custom revision summary written to CXone. */
   revisionSummary?: string;
 }
@@ -57,6 +55,9 @@ export interface RevertResult {
   /** Path to the extra safety snapshot of currentHtml (taken before restore). */
   preRevertSnapshotPath?: string;
   written: boolean;
+  writeOutcome?: 'succeeded';
+  auditRecorded?: boolean;
+  auditError?: 'audit_append_failed';
   cxoneRevisionId?: string | number;
 }
 
@@ -115,9 +116,13 @@ export async function revertPage(
     chosen = { ...pick, ts: pick.meta.ts, hash: pick.meta.hash, html };
   }
 
+  if (opts.expectedRestoredHash && hashContent(chosen.html) !== opts.expectedRestoredHash) {
+    throw new Error('Restored output changed since preview; preview again');
+  }
+
   // Fetch current live HTML — needed for a pre-revert safety snapshot and for
   // deciding whether a write is actually necessary.
-  const currentHtml = await fetchPageHtml(expert, pageInput);
+  const currentHtml = await fetchPageHtml(expert, page.id);
 
   if (opts.expectedCurrentHash && hashContent(currentHtml) !== opts.expectedCurrentHash) {
     throw new Error('Page changed since restore preview; preview again');
@@ -147,47 +152,12 @@ export async function revertPage(
     };
   }
 
-  assertWriteAllowed(page, env);
-
-  // Save an ADDITIONAL snapshot of the current state before reverting —
-  // the revert is itself a write, and we want it reversible.
-  const preRevertSnapshot = await saveSnapshot(currentHtml, {
-    pageId: page.id,
-    pagePath: page.path,
-    hostname: page.hostname,
-    operator: operatorFromEnv(env),
-    requestedBy: opts.requestedBy,
-    rules: ['__revert__'],
-    revisionSummary: `pre-revert safety snapshot (→ ${chosen.ts})`,
-    source: 'revert',
-  }, env);
-
-  const summary =
-    opts.revisionSummary ?? `remedy revert: restore snapshot ${chosen.ts} (${chosen.hash})`;
-
-  const postResponse = await expert.pages.postPageContents(
-    normalizePageInput(pageInput, env) as number,
-    chosen.html,
-    {
-      edittime: 'now',
-      comment: summary,
-    } as unknown as Parameters<typeof expert.pages.postPageContents>[2],
-  );
-
-  await appendAudit({
-    ts: new Date().toISOString(),
-    page: { id: page.id, path: page.path, hostname: page.hostname },
-    rules: ['__revert__'],
-    mode: 'revert',
-    beforeHash: hashContent(currentHtml),
-    afterHash: chosen.hash,
-    operator: operatorFromEnv(env),
-    requestedBy: opts.requestedBy,
-    revisionSummary: summary,
-    snapshotPath: preRevertSnapshot.metaPath,
-    revertedFrom: chosen.metaPath,
-    cxoneRevisionId: extractRevisionId(postResponse),
-  }, env.REMEDY_AUDIT_LOG);
+  const summary = opts.revisionSummary ?? `remedy revert: restore snapshot ${chosen.ts} (${chosen.hash})`;
+  const write = await writePageRevision({
+    expert, pageInput: page.id, page, beforeHtml: currentHtml, afterHtml: chosen.html,
+    rules: ['__revert__'], env, revisionSummary: summary, source: 'revert', mode: 'revert',
+    requestedBy: opts.requestedBy, revertedFrom: chosen.metaPath,
+  });
 
   return {
     pageId: page.id,
@@ -196,9 +166,12 @@ export async function revertPage(
     snapshotUsed: { metaPath: chosen.metaPath, htmlPath: chosen.htmlPath, ts: chosen.ts, hash: chosen.hash },
     currentHtml,
     revertedToHtml: chosen.html,
-    preRevertSnapshotPath: preRevertSnapshot.metaPath,
-    written: true,
-    cxoneRevisionId: extractRevisionId(postResponse),
+    preRevertSnapshotPath: write.snapshotPath,
+    written: write.written,
+    cxoneRevisionId: write.cxoneRevisionId,
+    writeOutcome: write.writeOutcome,
+    auditRecorded: write.auditRecorded,
+    auditError: write.auditError,
   };
 }
 

@@ -21,6 +21,7 @@ it('restore rejects stale previews, cross-page snapshots and corrupted snapshots
     const other = await saveSnapshot('<p>Other</p>', { ...meta, pageId: 999 }, env);
     await expect(revertPage(4218, { env, expert, snapshotPath: other.metaPath })).rejects.toThrow('does not match');
     expect(post).not.toHaveBeenCalled();
+    await expect(revertPage(4218, { ...base, expectedRestoredHash: 'wrong' })).rejects.toThrow('Restored output changed');
     const result = await revertPage(4218, { ...base, expectedCurrentHash: hashContent('<p>New</p>') });
     expect(result.written).toBe(true); expect(result.preRevertSnapshotPath).toBeTruthy(); expect(post).toHaveBeenCalledTimes(1);
     const recovery = JSON.parse(await readFile(result.preRevertSnapshotPath!, 'utf8'));

@@ -32,6 +32,7 @@ import {
   runLocalPipeline,
   hashContent,
   writePageRevision,
+  WriteOutcomeError,
   conductorScanKeys,
   buildConductorCriteria,
   toConductorFindings,
@@ -40,6 +41,8 @@ import {
   CXONE_ALLOWED_ROOT,
   isCxoneIntegrationEnabled,
   validateCxoneConfiguration,
+  type PageRef,
+  type PipelineResult,
   type DojException,
   type WcagReview,
 } from '@libretexts/remedy-core';
@@ -76,7 +79,7 @@ interface PipelinePreviewSession {
   appliedRuleIds: string[];
 }
 
-const restoreSessions = new Map<string, { pageId: number; snapshotTs: string; hash: string; expiresAt: number }>();
+const restoreSessions = new Map<string, { pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; expiresAt: number }>();
 
 const pipelinePreviewSessions = new Map<string, PipelinePreviewSession>();
 const targetedPreviewSessions = new Map<string, {
@@ -168,7 +171,7 @@ const routes: Record<string, Handler> = {
     const result = await revertPage(requirePageInput(body), { snapshotTs, dryRun: true });
     for (const [key, session] of restoreSessions) if (session.expiresAt <= Date.now()) restoreSessions.delete(key);
     const token = randomUUID(), hash = hashContent(result.currentHtml);
-    restoreSessions.set(token, { pageId: result.pageId, snapshotTs, hash, expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS });
+    restoreSessions.set(token, { pageId: result.pageId, pagePath: result.pagePath, hostname: result.hostname, snapshotTs: result.snapshotUsed.ts, hash, afterHash: hashContent(result.revertedToHtml), expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS });
     return { preview_token: token, preview_hash: hash, snapshot_timestamp: snapshotTs,
       before_html: result.currentHtml, after_html: result.revertedToHtml,
       unchanged: result.currentHtml === result.revertedToHtml };
@@ -177,17 +180,16 @@ const routes: Record<string, Handler> = {
     const token = requireStr(body.preview_token, 'preview_token');
     const session = restoreSessions.get(token);
     if (!session || session.expiresAt <= Date.now()) throw new HttpError(409, { error: 'expired_preview', message: 'Restore preview expired; preview again.' });
+    restoreSessions.delete(token);
     const page = requirePageInput(body);
     const pageRef = await resolvePageRef(createExpertClient(), page, process.env);
-    if (pageRef.id !== session.pageId || body.preview_hash !== session.hash) throw new HttpError(409, { error: 'stale_preview', message: 'Restore preview does not match this page.' });
-    // Consume before the write so a double-click cannot replay a restoration.
-    restoreSessions.delete(token);
+    if (!matchesPreviewTarget(pageRef, session) || body.preview_hash !== session.hash) throw new HttpError(409, { error: 'stale_preview', message: 'Restore preview does not match this page.' });
     try {
-      const result = await revertPage(page, { snapshotTs: session.snapshotTs, expectedCurrentHash: session.hash, requestedBy: optionalStr(body.requested_by ?? body.requestedBy) });
-      return { restored: result.written, snapshot_timestamp: session.snapshotTs,
+      const result = await revertPage(pageRef.id, { snapshotTs: session.snapshotTs, expectedCurrentHash: session.hash, expectedRestoredHash: session.afterHash, requestedBy: optionalStr(body.requested_by ?? body.requestedBy) });
+      return { restored: result.written, write_outcome: result.writeOutcome, audit_recorded: result.auditRecorded, snapshot_timestamp: session.snapshotTs,
         snapshot_path: result.preRevertSnapshotPath, restored_hash: hashContent(result.revertedToHtml) };
     } catch (err) {
-      if (err instanceof Error && err.message.includes('Page changed')) throw new HttpError(409, { error: 'stale_preview', message: err.message });
+      if (err instanceof Error && (err.message.includes('Page changed') || err.message.startsWith('Restored output changed'))) throw new HttpError(409, { error: 'stale_preview', message: err.message });
       throw err;
     }
   },
@@ -227,22 +229,8 @@ const routes: Record<string, Handler> = {
         tier,
         mode: 'preview',
       });
-      const token = randomUUID();
-      const previewHash = hashContent(result.beforeHtml);
-      pipelinePreviewSessions.set(token, {
-        token,
-        expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS,
-        pageId: result.pageId,
-        pagePath: result.pagePath,
-        hostname: result.hostname,
-        tier,
-        beforeHash: previewHash,
-        beforeHtml: result.beforeHtml,
-        afterHtml: result.finalHtml,
-        diff: result.diff,
-        finalFindingsCount: result.finalFindingsCount,
-        appliedRuleIds: result.appliedRuleIds,
-      });
+      const session = cachePipelinePreview(result, tier);
+      const token = session.token, previewHash = session.beforeHash;
       return {
         fix_mode: 'pipeline',
         page_wide: true,
@@ -322,8 +310,9 @@ const routes: Record<string, Handler> = {
     const oldToken = requireStr(body.preview_token, 'preview_token');
     const session = targetedPreviewSessions.get(oldToken);
     if (!session || session.expiresAt <= Date.now()) throw new HttpError(409, { error: 'expired_preview', message: 'Fix preview expired; generate it again.' });
+    targetedPreviewSessions.delete(oldToken);
     const page = await resolvePageRef(createExpertClient(), requirePageInput(body), process.env);
-    if (page.id !== session.pageId) throw new HttpError(409, { error: 'preview_page_mismatch', message: 'Preview belongs to a different page.' });
+    if (!matchesPreviewTarget(page, session)) throw new HttpError(409, { error: 'preview_page_mismatch', message: 'Preview belongs to a different page.' });
     const edits = body.alt_edits as Array<{ src: string; text: string }>;
     let after: string;
     try { after = reviseAltText(session.afterHtml, edits, (session.editableImages || []).map(i => i.src)); }
@@ -335,7 +324,7 @@ const routes: Record<string, Handler> = {
       appliedRuleIds: [...new Set([...session.appliedRuleIds, 'img-alt'])],
       appliedFindingIds: [...new Set([...(session.appliedFindingIds || []), ...reviewedIds])],
       fixErrors: (session.fixErrors || []).filter((e: any) => !reviewedIds.includes(e.findingId)) };
-    targetedPreviewSessions.delete(oldToken); targetedPreviewSessions.set(token, revised);
+    targetedPreviewSessions.set(token, revised);
     return { preview_token: token, preview_hash: session.beforeHash, before_html: session.beforeHtml, after_html: after,
       diff, review_images: (session.editableImages || []).map(i => ({id: i.findingId, ruleId: 'img-alt', data: {src: i.src}})), fix_errors: revised.fixErrors, applied_finding_ids: revised.appliedFindingIds, llm_calls: session.llmCalls };
   },
@@ -343,6 +332,9 @@ const routes: Record<string, Handler> = {
   '/v1/cxone/page/apply-fix': async (body) => {
     const page = requirePageInput(body);
     const fixMode = optionalFixMode(body.fix_mode ?? body.fixMode);
+    if (!optionalStr(body.preview_token ?? body.previewToken)) {
+      throw new HttpError(409, { error: 'preview_required', message: 'Apply requires the single-use token returned with the reviewed output. Preview again.' });
+    }
     if (fixMode === 'pipeline') {
       prunePipelinePreviewSessions();
       const previewHash = requireStr(body.preview_hash ?? body.previewHash, 'preview_hash');
@@ -362,18 +354,22 @@ const routes: Record<string, Handler> = {
         });
       }
 
+      pipelinePreviewSessions.delete(previewToken);
+      if (body.tier !== undefined && requireTier(body.tier) !== session.tier) {
+        throw new HttpError(409, { error: 'preview_tier_mismatch', message: 'Tier changed since preview; preview again.' });
+      }
       const env = process.env;
       const expert = createExpertClient(env);
       const pageRef = await resolvePageRef(expert, page, env);
-      if (pageRef.id !== session.pageId) {
+      if (!matchesPreviewTarget(pageRef, session)) {
         throw new HttpError(409, {
           error: 'preview_page_mismatch',
           message: 'Pipeline preview was created for a different page; refresh and preview again.',
         });
       }
-      const currentHtml = await fetchPageHtml(expert, page);
+      const currentHtml = await fetchPageHtml(expert, pageRef.id);
       const currentHash = hashContent(currentHtml);
-      if (currentHash !== previewHash) {
+      if (currentHash !== previewHash || currentHtml !== session.beforeHtml) {
         throw new HttpError(409, {
           error: 'stale_preview',
           message: 'Page content changed since preview; refresh and preview again.',
@@ -383,7 +379,7 @@ const routes: Record<string, Handler> = {
       const revisionSummary = `Remedy pipeline: applied Tier ${session.tier} page-wide preview`;
       const write = await writePageRevision({
         expert,
-        pageInput: page,
+        pageInput: pageRef.id,
         page: pageRef,
         beforeHtml: currentHtml,
         afterHtml: session.afterHtml,
@@ -393,13 +389,15 @@ const routes: Record<string, Handler> = {
         env,
         requestedBy: optionalStr(body.requested_by ?? body.requestedBy),
       });
-      pipelinePreviewSessions.delete(previewToken);
       return {
         fix_mode: 'pipeline',
         page_wide: true,
         applied: write.written,
+        write_outcome: write.writeOutcome,
+        audit_recorded: write.auditRecorded,
         revision_summary: write.revisionSummary,
         snapshot_path: write.snapshotPath,
+        cxone_revision_id: write.cxoneRevisionId,
         attempted_rule_ids: session.appliedRuleIds,
         applied_rule_ids: session.appliedRuleIds,
         final_findings_count: session.finalFindingsCount,
@@ -426,18 +424,19 @@ const routes: Record<string, Handler> = {
         });
       }
 
+      targetedPreviewSessions.delete(previewToken);
       const env = process.env;
       const expert = createExpertClient(env);
       const pageRef = await resolvePageRef(expert, page, env);
-      if (pageRef.id !== session.pageId) {
+      if (!matchesPreviewTarget(pageRef, session)) {
         throw new HttpError(409, {
           error: 'preview_page_mismatch',
           message: 'Preview was created for a different page; refresh and preview again.',
         });
       }
-      const currentHtml = await fetchPageHtml(expert, page);
+      const currentHtml = await fetchPageHtml(expert, pageRef.id);
       const currentHash = hashContent(currentHtml);
-      if (currentHash !== previewHash) {
+      if (currentHash !== previewHash || currentHtml !== session.beforeHtml) {
         throw new HttpError(409, {
           error: 'stale_preview',
           message: 'Page content changed since preview; refresh and preview again.',
@@ -447,7 +446,7 @@ const routes: Record<string, Handler> = {
       const revisionSummary = `Remedy: fixed ${session.appliedFindingIds?.length ?? findingIds.length} selected finding(s)`;
       const write = await writePageRevision({
         expert,
-        pageInput: page,
+        pageInput: pageRef.id,
         page: pageRef,
         beforeHtml: currentHtml,
         afterHtml: session.afterHtml,
@@ -457,13 +456,15 @@ const routes: Record<string, Handler> = {
         env,
         requestedBy: optionalStr(body.requested_by ?? body.requestedBy),
       });
-      targetedPreviewSessions.delete(previewToken);
       return {
         fix_mode: 'deterministic',
         page_wide: false,
         applied: write.written,
+        write_outcome: write.writeOutcome,
+        audit_recorded: write.auditRecorded,
         revision_summary: write.revisionSummary,
         snapshot_path: write.snapshotPath,
+        cxone_revision_id: write.cxoneRevisionId,
         attempted_rule_ids: session.attemptedRuleIds,
         applied_rule_ids: session.appliedRuleIds,
         attempted_finding_ids: session.attemptedFindingIds,
@@ -476,40 +477,7 @@ const routes: Record<string, Handler> = {
       };
     }
 
-    const preview = await fixPage(page, {
-      mode: 'preview',
-      findingIds,
-    });
-    const currentHash = hashContent(preview.before);
-    if (currentHash !== previewHash) {
-      throw new HttpError(409, {
-        error: 'stale_preview',
-        message: 'Page content changed since preview; refresh and preview again.',
-      });
-    }
-
-    const result = await fixPage(page, {
-      mode: 'apply',
-      findingIds,
-      revisionSummary: `Remedy: fixed ${findingIds.length} selected finding(s)`,
-      requestedBy: optionalStr(body.requested_by ?? body.requestedBy),
-    });
-    return {
-      fix_mode: 'deterministic',
-      page_wide: false,
-      applied: result.written,
-      revision_summary: result.revisionSummary,
-      snapshot_path: result.snapshotPath,
-      attempted_rule_ids: result.attempted,
-      applied_rule_ids: result.applied,
-      attempted_finding_ids: result.attemptedFindingIds,
-      applied_finding_ids: result.appliedFindingIds,
-      fix_errors: result.fixErrors,
-      llm_calls: result.llmCalls,
-      byte_preserved: result.bytePreserved,
-      fallback_reason: result.fallbackReason,
-      splices_applied: result.splicesApplied,
-    };
+    throw new HttpError(409, { error: 'preview_required', message: 'Apply requires the single-use token returned with the reviewed output. Preview again.' });
   },
 
   '/api/scan': async (body) => {
@@ -525,7 +493,10 @@ const routes: Record<string, Handler> = {
     const page = requireStr(body.page, 'page');
     const tier = requireTier(body.tier);
     const r = await runPipeline(page, { tier, mode: 'preview' });
+    const session = cachePipelinePreview(r, tier);
     return {
+      previewToken: session.token,
+      previewHash: session.beforeHash,
       pageId: r.pageId,
       pagePath: r.pagePath,
       hostname: r.hostname,
@@ -541,11 +512,8 @@ const routes: Record<string, Handler> = {
   '/api/apply': async (body) => {
     const page = requireStr(body.page, 'page');
     const tier = requireTier(body.tier);
-    const r = await runPipeline(page, { tier, mode: 'apply' });
-    return {
-      applied: r.applied,
-      applyError: r.applyError,
-    };
+    const r = await routes['/v1/cxone/page/apply-fix']({ ...body, page, tier, fix_mode: 'pipeline' }) as Record<string, unknown>;
+    return { ...r, revisionSummary: r.revision_summary, snapshotPath: r.snapshot_path };
   },
 
   '/api/local/fixtures': async () => {
@@ -594,7 +562,24 @@ const routes: Record<string, Handler> = {
   },
 };
 
-const server = createServer(async (req, res) => {
+function matchesPreviewTarget(page: PageRef, session: { pageId: number; pagePath: string; hostname: string }): boolean {
+  return page.id === session.pageId && page.path === session.pagePath && page.hostname === session.hostname;
+}
+
+function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): PipelinePreviewSession {
+  prunePipelinePreviewSessions();
+  const session: PipelinePreviewSession = {
+    token: randomUUID(), expiresAt: Date.now() + PIPELINE_PREVIEW_TTL_MS,
+    pageId: result.pageId, pagePath: result.pagePath, hostname: result.hostname, tier,
+    beforeHash: hashContent(result.beforeHtml), beforeHtml: result.beforeHtml,
+    afterHtml: result.finalHtml, diff: result.diff, finalFindingsCount: result.finalFindingsCount,
+    appliedRuleIds: result.appliedRuleIds,
+  };
+  pipelinePreviewSessions.set(session.token, session);
+  return session;
+}
+
+export const server = createServer(async (req, res) => {
   setSecurityHeaders(res);
   setCors(res, req);
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
@@ -626,6 +611,15 @@ const server = createServer(async (req, res) => {
     const result = await handler(body);
     json(res, 200, result);
   } catch (err) {
+    if (err instanceof WriteOutcomeError) {
+      json(res, 409, { error: 'write_outcome_unknown', write_outcome: 'unknown', retry_safe: false, snapshot_path: err.snapshotPath,
+        message: 'Write outcome is unknown. Do not retry. Reconcile CXone revision history and the saved snapshot before further writes.' });
+      return;
+    }
+    if (err instanceof Error && err.message.startsWith('Page changed since')) {
+      json(res, 409, { error: 'stale_preview', message: 'Page changed since preview; preview again.' });
+      return;
+    }
     if (err instanceof HttpError) {
       json(res, err.status, err.body);
       return;
@@ -638,7 +632,7 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) server.listen(PORT, HOST, () => {
   console.log(`[conductor-api] listening on http://${HOST}:${PORT}`);
 });
 

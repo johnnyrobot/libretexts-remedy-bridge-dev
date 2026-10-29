@@ -11,6 +11,8 @@ describe('writePageRevision', () => {
     const calls: unknown[] = [];
     const expert = {
       pages: {
+        getPageInfo: async () => ({ '@id': 123, path: 'Sandboxes/johnnyphung/Test/Page' }),
+        getPageContents: async () => ({ body: '<p>Before</p>' }),
         postPageContents: async (...args: unknown[]) => {
           calls.push(args);
           return { page: { '@revision': '42' } };

@@ -51,6 +51,9 @@ export interface FixResult {
   after: string;
   diff: string;
   written: boolean;
+  writeOutcome?: 'succeeded';
+  auditRecorded?: boolean;
+  auditError?: 'audit_append_failed';
   revisionSummary?: string;
   snapshotPath?: string;
   bytePreserved?: boolean;

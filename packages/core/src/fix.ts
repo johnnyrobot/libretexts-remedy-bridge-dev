@@ -9,7 +9,7 @@ import { bytePreservePatch } from './patch/index.js';
 import { LLMClient } from './ai/llm-client.js';
 import { markUnavailableImageFixes } from './image-availability.js';
 import type { Finding, FixError, FixMode, FixResult, PageRef, Rule } from './types.js';
-import { writePageRevision } from './write-page.js';
+import { writePageRevision, type WritePageRevisionResult } from './write-page.js';
 
 export interface FixPageOptions {
   expert?: Expert;
@@ -125,6 +125,7 @@ export async function fixPage(
   );
 
   let written = false;
+  let writeOutcome: WritePageRevisionResult | undefined;
   let snapshotPath: string | undefined;
   let revisionSummary = opts.revisionSummary;
   if (mode === 'apply' && before !== after) {
@@ -142,6 +143,7 @@ export async function fixPage(
       requestedBy: opts.requestedBy,
       env,
     });
+    writeOutcome = write;
     written = write.written;
     snapshotPath = write.snapshotPath;
   }
@@ -155,6 +157,9 @@ export async function fixPage(
     after,
     diff,
     written,
+    writeOutcome: writeOutcome?.writeOutcome,
+    auditRecorded: writeOutcome?.auditRecorded,
+    auditError: writeOutcome?.auditError,
     revisionSummary,
     snapshotPath,
     bytePreserved: patch?.ok,

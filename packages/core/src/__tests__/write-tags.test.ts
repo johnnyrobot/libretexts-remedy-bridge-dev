@@ -6,9 +6,10 @@ import type Expert from '@libretexts/cxone-expert-node';
 import { WriteNotAllowedError } from '../guardrails.js';
 import { restoreTagsFromManifest, revertPageTags, selectRestorableTags, writePageTags } from '../write-tags.js';
 
-function fakeExpert(currentTags: string[], calls: unknown[][]): Expert {
+function fakeExpert(currentTags: string[], calls: unknown[][], path = 'Sandboxes/johnnyphung/biology/1.02'): Expert {
   return {
     pages: {
+      getPageInfo: async () => ({ '@id': 4219, path }),
       getPageTags: async () => ({
         tag: currentTags.map((v) => ({ '@value': v, title: v })),
       }),
@@ -36,6 +37,14 @@ async function testEnv(): Promise<NodeJS.ProcessEnv> {
 }
 
 describe('writePageTags', () => {
+  it('rejects manifest-like asserted sandbox metadata for a different canonical page', async () => {
+    const calls: unknown[][] = [];
+    const expert = fakeExpert([], calls);
+    expert.pages.getPageInfo = async () => ({ '@id': 4219, path: 'Bookshelves/Outside' }) as any;
+    await expect(writePageTags({ expert, page: { id: 4219, path: 'Sandboxes/johnnyphung/biology/1.02', hostname: 'dev.libretexts.org' }, tags: ['license:ccby'], env: await testEnv() })).rejects.toThrow('outside');
+    expect(calls).toHaveLength(0);
+  });
+
   it('refuses a page outside the sandbox before touching the SDK', async () => {
     const calls: unknown[][] = [];
     const expert = fakeExpert([], calls);
@@ -213,7 +222,7 @@ describe('restoreTagsFromManifest', () => {
   it('skips pages whose source cross-check failed and applies the rest', async () => {
     const env = await testEnv();
     const calls: unknown[][] = [];
-    const expert = fakeExpert([], calls);
+    const expert = fakeExpert([], calls, manifest.pages[0].sandboxPath);
 
     const results = await restoreTagsFromManifest(manifest, { expert, env, revisionSummary: 'REM-02' });
 
@@ -228,7 +237,7 @@ describe('restoreTagsFromManifest', () => {
   it('dry run plans every eligible page and writes nothing', async () => {
     const env = await testEnv();
     const calls: unknown[][] = [];
-    const expert = fakeExpert([], calls);
+    const expert = fakeExpert([], calls, manifest.pages[0].sandboxPath);
 
     const results = await restoreTagsFromManifest(manifest, { expert, env, dryRun: true });
 
@@ -240,7 +249,7 @@ describe('restoreTagsFromManifest', () => {
   it('restricts the run to a single page when asked', async () => {
     const env = await testEnv();
     const calls: unknown[][] = [];
-    const expert = fakeExpert([], calls);
+    const expert = fakeExpert([], calls, manifest.pages[0].sandboxPath);
 
     const results = await restoreTagsFromManifest(manifest, { expert, env, onlyPageId: 4219 });
 
