@@ -1,3 +1,4 @@
+import { assertMutationProfileAllowed } from './profile.js';
 import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readFile, readdir, writeFile, lstat, open } from 'node:fs/promises';
@@ -76,6 +77,7 @@ export function assertWriteAllowed(
   page: { hostname: string; path: string },
   env: NodeJS.ProcessEnv = process.env,
 ): void {
+  assertMutationProfileAllowed(env);
   if (env.NODE_ENV === 'production') throw new ConditionalWriteUnavailableError();
   const config = validateCxoneConfiguration(env);
   const hostname = page.hostname.trim().toLowerCase().replace(/\.$/, '');

@@ -24,3 +24,5 @@ export { scanRenderedPage, mergeRenderedFindings } from './rendered-scan.js';
 export { deduplicateMathJaxInitializer } from './mathjax-initializer.js';
 
 export { WriteOutcomeError, WriteEligibilityError } from './write-safety.js';
+
+export { readBridgeProfile, assertMutationProfileAllowed, ReviewOnlyProfileError, type BridgeProfile } from './profile.js';

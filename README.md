@@ -213,3 +213,8 @@ for caller migration, success/unknown outcomes and remaining release limits.
 The operator-only [vendor questionnaire](docs/release/lt-154-vendor-questions.md)
 and [bounded canary preparation](docs/release/lt-154-canary-plan.md) preserve this
 hold. `bash tools/cxone-canary-wizard.sh --dry-run` performs no network or writes.
+
+A limited release can omit Bridge for engine/Scanner-only use, or explicitly set
+`REMEDY_BRIDGE_PROFILE=review-only` for authenticated CXone scan/review/preview.
+Automatic apply/restore remain unavailable. Read the versioned
+[review-only configuration/readiness and manual review contract](docs/release/lt-174-review-only-profile.md).

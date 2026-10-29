@@ -1,3 +1,4 @@
+import { readBridgeProfile } from '@libretexts/remedy-core';
 import { readFileSync } from 'node:fs';
 import { ReviewerVerifier, parseStrictJson, readServiceKey, type ReviewerConfig } from './reviewer-auth.js';
 
@@ -5,6 +6,10 @@ import { ReviewerVerifier, parseStrictJson, readServiceKey, type ReviewerConfig 
 export function loadSecurity(env: NodeJS.ProcessEnv = process.env) {
   const value = env.REMEDY_REVIEWER_REQUIRED;
   if (value !== undefined && value !== 'true' && value !== 'false') throw new Error('reviewer_configuration_invalid');
+  if (readBridgeProfile(env) === 'review-only') {
+    if (value === 'false') throw new Error('reviewer_configuration_invalid');
+    return { required: true, serviceKey: readServiceKey(env.REMEDY_BRIDGE_SERVICE_KEY_FILE!), verifier: null };
+  }
   const production = env.NODE_ENV === 'production';
   if (production && value !== 'true') throw new Error('reviewer_configuration_invalid');
   const required = value === 'true';

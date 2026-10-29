@@ -33,7 +33,7 @@ it('exposes authoritative exact binding/expiry and writes once with verified att
  const audit=await readFile(join(dir,'audit.log'),'utf8');expect(audit).toContain('verified-user');expect(audit).not.toContain('forged');expect(audit).toContain(issuer);expect(audit).not.toContain(a.compact);
 });
 it('authenticates readiness, denies aliases and rejects unsigned or wrong binding requests without mutation',async()=>{
- const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(200);expect(await ready.json()).toEqual({ok:true,state:'ready',capabilities:{scan:true,preview:true,mutate:true,operation_status:true}});
+ const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(200);expect(await ready.json()).toEqual({ok:true,state:'ready',capabilities:{scan:true,preview:true,mutate:true,operation_status:true},profile:{contract:'cxone-review-v1',name:'full-write',required_capabilities:['scan','preview','mutate','operation_status'],unavailable_reasons:[]}});
  const p=(await preview()).body;
  expect((await post('/v1/cxone/page/apply-fix',{page_id:1,preview_token:p.preview_token,preview_hash:p.preview_hash})).status).toBe(401);
  expect((await post('/api/apply',{page:'1',tier:1})).status).toBe(403);

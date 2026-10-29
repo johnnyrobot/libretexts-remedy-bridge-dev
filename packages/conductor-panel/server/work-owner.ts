@@ -11,6 +11,7 @@ export class WorkOwner {
   readonly limit = finiteLimit(process.env.REMEDY_WORK_ACTIVE,2,2);
   readonly queued = finiteLimit(process.env.REMEDY_WORK_QUEUED,8,8,0);
   readonly timeoutMs = finiteLimit(process.env.REMEDY_WORK_TIMEOUT_MS,300000,300000);
+  get accepting(): boolean { return !this.stopped && (this.active < this.limit || this.queue.length < this.queued); }
   async run<T>(signal: AbortSignal, mutation: boolean, work: ()=>Promise<T>): Promise<T> {
     signal.throwIfAborted();
     if (this.stopped || this.active >= this.limit && (mutation || this.queue.length >= this.queued)) throw new CapacityError();

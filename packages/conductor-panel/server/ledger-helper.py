@@ -321,7 +321,7 @@ class Ledger:
         raise ValueError()
 
 
-def readonly_report(args):
+def readonly_report(args, query=None):
     """Take a consistent local evidence snapshot without opening the writer.
 
     WAL readers may perform SQLite's transient shared-memory coordination; the
@@ -341,13 +341,18 @@ def readonly_report(args):
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA query_only=ON')
         db.execute('BEGIN')
-        if db.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
-            raise ValueError()
-        report = Ledger.report(db)
+        if query is None:
+            if db.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                raise ValueError()
+            result = Ledger.report(db)
+        else:
+            row = db.execute('SELECT * FROM claims WHERE issuer=? AND jti=?', (query['issuer'], query['jti'])).fetchone()
+            result = Ledger.status_row(row, Ledger.resolution(db, row['operation_id']) if row else None)
+        metadata = dict(db.execute('SELECT trust_epoch,durability_seq FROM meta WHERE singleton=1').fetchone())
         after = Ledger.read_fence(fence)
-        if before != after or {'trust_epoch': report['trust_epoch'], 'durability_seq': report['durability_seq']} != before:
+        if before != after or metadata != before:
             raise ValueError()
-        return report
+        return result
     finally:
         db.close()
 
@@ -360,6 +365,7 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--initialize', action='store_true')
     mode.add_argument('--readonly-report', action='store_true')
+    mode.add_argument('--readonly-serve', action='store_true')
     mode.add_argument('--offline-resolve', metavar='DECISION_JSON')
     parser.add_argument('--report-file')
     parser.add_argument('--owner-fd', type=int)
@@ -367,6 +373,29 @@ def main():
     parser.add_argument('--test-fault-on', choices=['claim', 'start', 'finish', 'revoke', 'resolve'], default='claim')
     args = parser.parse_args()
     os.umask(0o077)
+    if args.readonly_serve:
+        try:
+            readonly_report(args, {'issuer': '', 'jti': ''})
+        except Exception:
+            emit({'ready': False})
+            return 1
+        emit({'ready': True})
+        while True:
+            line = sys.stdin.readline(16385)
+            if not line:
+                return 0
+            request_id = None
+            try:
+                if len(line) > 16384:
+                    raise ValueError()
+                request = json.loads(line)
+                request_id = request['id']
+                if request['command'] != 'status':
+                    raise ValueError()
+                emit({'id': request_id, 'result': readonly_report(args, request['data'])})
+            except Exception:
+                emit({'id': request_id, 'error': 'claim_store_unavailable'})
+                return 1
     if args.readonly_report:
         try:
             emit(readonly_report(args))
