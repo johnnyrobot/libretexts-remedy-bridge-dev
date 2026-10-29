@@ -24,7 +24,8 @@ Only Johnny or an explicitly authorized operator may run:
 bash tools/cxone-canary-wizard.sh --operator
 ```
 
-The wizard **does not issue requests**. It walks the operator through exact
+Operator mode requires terminal input; piped answers are refused before prompts
+or setup. The wizard **does not issue requests**. It walks the operator through exact
 manual steps and reserves/logs mutation attempts before the human performs them.
 It cannot verify the truth of a human attestation or capture requests made
 outside this procedure. The approved client/request syntax must come from the
@@ -70,3 +71,11 @@ production configuration or feature flag is changed. Readiness remains
 `mutate:false`; these files are candidate preparation under LT-111, not deployment
 approval. The parent LT-154 remains open for vendor guarantees and authorized
 execution/evidence.
+
+The append-only `attempts.tsv` records attempt number, event (`reserved` or
+`outcome`), UTC time, expected outcome, description and state. A descriptive
+`pending` reservation is appended before the operator is paused to act; a
+correlated outcome event is appended afterward without overwriting the original.
+If interruption leaves only a reservation, preserve it as pending/uncertain and
+stop for operator reconciliation. The counter alone is insufficient evidence.
+The local log does not certify remote settlement or replace vendor evidence.

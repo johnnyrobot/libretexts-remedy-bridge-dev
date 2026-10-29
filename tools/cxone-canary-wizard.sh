@@ -207,6 +207,7 @@ if [[ "${1:---dry-run}" != "--operator" ]]; then
     "Use --operator only under Johnny's exact authorization; production hold stays."
   return 0
 fi
+[[ -t 0 ]] || { printf '%s\n' 'Operator mode requires an interactive terminal.'; return 1; }
 TOTAL_STAGES=7
 ENV_FILE=/dev/null
 canary_banner
@@ -292,16 +293,18 @@ canary_banner() {
 }
 
 manual_attempt() {
-  local description="$1" expected="$2" outcome
+  local description="$1" expected="$2" outcome reservation_time
   [[ "$MUTATION_ATTEMPTS" =~ ^[0-9]+$ && "$MUTATION_ATTEMPTS" -lt 12 ]] || { warn "Mutation budget exhausted. Stop."; return 1; }
   say "$description"
   say "Use the vendor-approved exact request. Redirects/retries disabled; one bounded attempt, no automation."
   confirm "Authorize and perform exactly ONE attempt now, after reserving it in the log?" || return 1
   write_env MUTATION_ATTEMPTS "$((MUTATION_ATTEMPTS + 1))"
+  reservation_time=$(date -u +%FT%TZ)
+  printf '%s\treserved\t%s\t%s\t%s\tpending\n' "$MUTATION_ATTEMPTS" "$reservation_time" "$expected" "$description" >> "$CANARY_DIRECTORY/attempts.tsv"
   # Reservation precedes the human action. The user performs it only after this pause.
   pause "Now perform that one request, preserve status/body/revision/history, then press Enter."
   ask outcome "Verified outcome: success / rejection / unknown / foreign / failed:"
-  printf '%s\t%s\t%s\t%s\n' "$MUTATION_ATTEMPTS" "$(date -u +%FT%TZ)" "$expected" "$outcome" >> "$CANARY_DIRECTORY/attempts.tsv"
+  printf '%s\toutcome\t%s\t%s\t%s\t%s\n' "$MUTATION_ATTEMPTS" "$(date -u +%FT%TZ)" "$expected" "$description" "$outcome" >> "$CANARY_DIRECTORY/attempts.tsv"
   [[ "$outcome" == "$expected" ]] || { warn "STOP: preserve evidence; no retry or cleanup after unknown/foreign/unexpected outcome."; return 1; }
 }
 
