@@ -104,3 +104,10 @@ it('keeps a blocked-image fix unresolved and never calls inference or infers dec
   expect(result.findings.some(f => f.ruleId === 'img-alt' && !f.fixable)).toBe(true);
   expect(vision).not.toHaveBeenCalled(); expect(result.after).not.toContain('presentation');
 });
+
+it('pins all validated addresses for native dual-stack fallback without another DNS lookup', async () => {
+  const net = imageNetwork(() => ({}), ['2606:4700:4700::1111', '93.184.216.34']);
+  await fetchBoundedImage('https://images.example.test/a.png', net.options);
+  expect(net.lookups).toEqual(['images.example.test']);
+  expect(net.pins).toEqual([['2606:4700:4700::1111', '93.184.216.34']]);
+});

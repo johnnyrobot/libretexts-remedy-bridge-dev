@@ -44,3 +44,20 @@ it('rejects even a valid signed production apply before claim or CXone dispatch'
 it('keeps production core/CLI HTML and tag authorization closed too', () => {
   expect(() => assertWriteAllowed({ hostname: 'dev.libretexts.org', path: 'Sandboxes/johnnyphung/Test' }, process.env)).toThrow('conditional');
 });
+
+it('keeps signed mutation held for an unspecified environment and cannot reopen by changing it later', async () => {
+  const { SignedWriter } = await import('../../../conductor-panel/server/signed-writer.js');
+  const { ReviewerVerifier } = await import('../../../conductor-panel/server/reviewer-auth.js');
+  const dir = await mkdtemp(join(tmpdir(), 'unspecified-gate-')); await mkdir(join(dir, 'ledger'));
+  const epoch = 'unspecified-test';
+  await (await DurableLedger.open({ directory: join(dir, 'ledger'), fencePath: join(dir, 'fence.json'), trustEpoch: epoch, initialize: true })).close();
+  const verifier = new ReviewerVerifier({ issuer, audience, environment: 'production', trust_epoch: epoch, production: true, keys: [{ kid: 'synthetic-unspecified', issuer, audience, environment: 'production', trust_epoch: epoch, kty: 'OKP', crv: 'Ed25519', x: keys.publicKey.export({ format: 'jwk' }).x!, not_before: 0, not_after: 4102444800, enabled: true, revoked_at: null }] });
+  const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: undefined, REMEDY_CLAIM_DB: join(dir, 'ledger', 'claims.sqlite3'), REMEDY_CLAIM_FENCE_DIR: dir, REMEDY_REVIEWER_TRUST_EPOCH: epoch };
+  const writer = await SignedWriter.open(verifier, env);
+  try {
+    expect(await writer.ready()).toBe(false);
+    env.NODE_ENV = 'development';
+    await expect(writer.mutate('cxone.apply', {}, 904)).rejects.toMatchObject({ body: { error: 'conditional_write_unproven' } });
+    expect(io.writes).toBe(0);
+  } finally { await writer.close(); }
+});

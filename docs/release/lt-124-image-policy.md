@@ -7,7 +7,7 @@ handles alternate IPv4 notation; ipaddr.js handles mapped IPv6 and nonpublic
 ranges. Mixed public/private DNS answers are rejected in their entirety.
 
 The native Node HTTP(S) request uses a lookup callback returning the already
-validated address, with no shared agent or second resolver at connect. The URL
+validated address set (including native dual-stack fallback), with no shared agent or second resolver at connect. The URL
 hostname remains the request host and HTTPS SNI name; certificate verification
 uses Node's default hostname checks. No custom trust bypass or proxy is added.
 At most three redirects are followed manually; each hop repeats URL/DNS policy.

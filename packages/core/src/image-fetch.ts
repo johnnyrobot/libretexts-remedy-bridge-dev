@@ -80,7 +80,7 @@ export async function fetchBoundedImage(raw: string, opts: ImageFetchOptions = {
       const address = addresses[0];
       const pinnedLookup: RequestOptions['lookup'] = (_hostname, options, callback) => {
         // Node must not resolve again at connect (including autoSelectFamily).
-        if (options?.all) callback(null, [address]);
+        if (options?.all) callback(null, addresses);
         else callback(null, address.address, address.family);
       };
       const response = await oneRequest(url, method, { ...opts, signal }, pinnedLookup);

@@ -64,11 +64,11 @@ This does not certify Conductor's signer/operation mapping, Server's forwarding/
 
 ## Conditional-edit release hold (LT-113)
 
-Production startup now captures an immutable mutation hold: authenticated readiness
+Production and unspecified/unknown runtime environments now capture an immutable mutation hold: authenticated readiness
 reports `mutate:false`, while scan/preview/status remain available. Even a valid
 signed apply/restore returns 503 `conditional_write_unproven` before any durable
 claim or CXone dispatch. Core/CLI production write authorization is also closed.
-There is no environment flag to bypass the hold. Local synthetic nonproduction
+There is no environment flag to bypass the hold. Only explicit `development`/`test` signed runtimes retain local mutation; local synthetic nonproduction
 tests retain the owner sandbox policy. See [source evidence and the unexecuted
 Johnny-only sandbox procedure](cxone-conditional-edit-gate.md). A timestamp check
 without every-revision atomicity proof does not clear this gate. General request

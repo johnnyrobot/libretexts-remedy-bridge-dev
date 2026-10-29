@@ -28,7 +28,7 @@ export class SignedWriter {
   private readonly previews = new Map<string, StoredPreview>();
   private readonly productionWriteBlocked: boolean;
   private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {
-    this.productionWriteBlocked = env.NODE_ENV === 'production';
+    this.productionWriteBlocked = !['development', 'test'].includes(env.NODE_ENV ?? '');
   }
   static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env) {
     const db = env.REMEDY_CLAIM_DB, fence = env.REMEDY_CLAIM_FENCE_DIR, epoch = env.REMEDY_REVIEWER_TRUST_EPOCH;
