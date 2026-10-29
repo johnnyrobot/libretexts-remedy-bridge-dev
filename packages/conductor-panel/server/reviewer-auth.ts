@@ -193,7 +193,7 @@ export class ReviewerVerifier {
   matchesIssuer(value: unknown): boolean { return value === this.issuer; }
 
   /** Restore durable revocation tombstones before admission; no API removes them. */
-  rememberRevocations(kids: readonly string[]): void {
+  rememberRevocations(kids: Iterable<string>): void {
     for (const id of kids) { if (!kidPattern.test(id)) invalid(); this.revoked.add(id); }
   }
 

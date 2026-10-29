@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { generateKeyPairSync, randomBytes, sign } from 'node:crypto';
 import type { Server } from 'node:http';
 import { DurableLedger } from '../../../conductor-panel/server/durable-ledger.js';
-const cxone=vi.hoisted(()=>({html:'<p><strong>Chapter</strong></p>',path:'Sandboxes/johnnyphung/Page',writes:[] as string[],lose:false,gate:undefined as Promise<void>|undefined,onWrite:undefined as (()=>void)|undefined}));
+const cxone=vi.hoisted(()=>({html:'<p><strong>Chapter</strong></p>',path:'Sandboxes/johnnyphung/Page',writes:[] as string[],lose:false,gate:undefined as Promise<void>|undefined,onWrite:undefined as (()=>void)|undefined,onRead:undefined as (()=>void)|undefined}));
 vi.mock('dotenv/config',()=>({})); vi.mock('dotenv',()=>({config:()=>({})}));
-vi.mock('@libretexts/cxone-expert-node',()=>({default:class {pages={getPageInfo:async()=>({'@id':1,path:cxone.path}),getPageContents:async()=>({body:cxone.html}),postPageContents:async(_id:number,html:string)=>{cxone.writes.push(html);cxone.html=html;cxone.onWrite?.();await cxone.gate;if(cxone.lose)throw new Error('private upstream error');return {page:{'@revision':'9'}};}}}}));
+vi.mock('@libretexts/cxone-expert-node',()=>({default:class {pages={getPageInfo:async()=>({'@id':1,path:cxone.path}),getPageContents:async()=>{cxone.onRead?.();return {body:cxone.html};},postPageContents:async(_id:number,html:string)=>{cxone.writes.push(html);cxone.html=html;cxone.onWrite?.();await cxone.gate;if(cxone.lose)throw new Error('private upstream error');return {page:{'@revision':'9'}};}}}}));
 let signerKid='synthetic1';
 const keys=generateKeyPairSync('ed25519'), service='b'.repeat(64), issuer='urn:libretexts:conductor:test';
 let server:Server,base:string,dir:string,store:{directory:string,fencePath:string,trustEpoch:string};
@@ -20,7 +20,7 @@ beforeAll(async()=>{
  server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
 });
 afterAll(async()=>{if(server)await new Promise<void>(r=>server.close(()=>r()));vi.unstubAllEnvs();});
-beforeEach(()=>{cxone.html='<p><strong>Chapter</strong></p>';cxone.path='Sandboxes/johnnyphung/Page';cxone.writes=[];cxone.lose=false;cxone.gate=undefined;cxone.onWrite=undefined;});
+beforeEach(()=>{cxone.html='<p><strong>Chapter</strong></p>';cxone.path='Sandboxes/johnnyphung/Page';cxone.writes=[];cxone.lose=false;cxone.gate=undefined;cxone.onWrite=undefined;cxone.onRead=undefined;});
 async function post(path:string,body:unknown){const r=await fetch(base+path,{method:'POST',headers:{'X-Remedy-Service-Key':service},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};}
 const preview=()=>post('/v1/cxone/page/preview-fix',{page_id:1});
 function assertion(p:any,jti=randomBytes(32).toString('base64url')){const now=Math.floor(Date.now()/1000);const h=Buffer.from(JSON.stringify({alg:'Ed25519',kid:signerKid,typ:'remedy-review+jwt'})).toString('base64url');const b=Buffer.from(JSON.stringify({v:1,iss:issuer,aud:'urn:libretexts:remedy-bridge:test',sub:'verified-user',iat:now,nbf:now,exp:Math.min(now+60,p.review_expires_at),jti,binding:p.review_binding})).toString('base64url');return {jti,compact:`${h}.${b}.${sign(null,Buffer.from(`${h}.${b}`),keys.privateKey).toString('base64url')}`};}
@@ -103,6 +103,16 @@ it('a later invalid reload cannot be undone by an earlier in-flight valid reload
  const module=await import('../../../conductor-panel/server/server.js');const {writeFileSync}=await import('node:fs');const previous=await readFile(join(dir,'keys.json'),'utf8');
  const earlier=module.reloadReviewerKeys().catch(()=>{});writeFileSync(join(dir,'keys.json'),'{}');
  try{await expect(module.reloadReviewerKeys()).rejects.toThrow('reviewer_configuration_invalid');await earlier;const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(503);expect(await ready.json()).toMatchObject({capabilities:{mutate:false,operation_status:true}});}finally{await earlier;await writeFile(join(dir,'keys.json'),previous);await module.reloadReviewerKeys();}
+});
+it('persists a scheduled revocation observed after a storage await across restart and clock rollback',async()=>{
+ const previous=await readFile(join(dir,'keys.json'),'utf8'),previousKid=signerKid,config=JSON.parse(previous),before=Date.now();config.keys[0].kid='scheduled-key';config.keys[0].revoked_at=Math.floor(before/1000)+10;signerKid='scheduled-key';await writeFile(join(dir,'keys.json'),JSON.stringify(config));await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();
+ const p=(await preview()).body,a=assertion(p);let clock:ReturnType<typeof vi.spyOn>|undefined;
+ cxone.onRead=()=>{let reads=0;clock=vi.spyOn(Date,'now').mockImplementation(()=>++reads===1?before:before+11000);cxone.onRead=undefined;};
+ try{
+  expect((await apply(p,a)).status).toBe(401);clock?.mockRestore();
+  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+  expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
+ }finally{clock?.mockRestore();cxone.onRead=undefined;signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
 });
 it('returns fixed unknown metadata and retains quarantine after transport loss and restart',async()=>{
  const p=(await preview()).body,a=assertion(p);cxone.lose=true;const r=await apply(p,a);expect(r.status).toBe(502);expect(r.body).toMatchObject({outcome:'unknown_write',applied:null,restored:false,evidence_effect:'invalidate',requires_reconciliation:true,reconciliation:'required',error:'write_outcome_unknown'});expect(JSON.stringify(r.body)).not.toMatch(/private upstream|\.json|snapshot|reviewer_assertion/);

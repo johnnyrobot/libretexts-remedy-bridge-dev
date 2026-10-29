@@ -24,6 +24,7 @@ function rejected(status: number, error: string, invalidate = false): never { th
 export class SignedWriter {
   private admitting = true;
   private reloadGeneration = 0;
+  private readonly observedRevocations = new Set<string>();
   private readonly previews = new Map<string, StoredPreview>();
   private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {}
   static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env) {
@@ -52,8 +53,12 @@ export class SignedWriter {
   async ready() {
     if (!this.admitting || !this.ledger.ready) return false;
     try {
-      await this.ledger.recordRevocations(this.verifier.effectiveRevocations());
-      return this.admitting && this.verifier.hasActiveKey() && await this.readable();
+      const generation = this.reloadGeneration, verifier = this.verifier;
+      verifier.rememberRevocations(this.observedRevocations);
+      const now = Math.floor(Date.now() / 1000);
+      const active = verifier.hasActiveKey(now);
+      await this.persistRevocations(verifier, now);
+      return this.admitting && generation === this.reloadGeneration && active && await this.readable();
     } catch { return false; }
   }
   async readable() {
@@ -68,16 +73,31 @@ export class SignedWriter {
   }
   pause() { this.admitting = false; return ++this.reloadGeneration; }
   async reload(verifier: ReviewerVerifier, generation = this.pause()) {
-    await this.ledger.recordRevocations(verifier.effectiveRevocations());
+    await this.persistRevocations(verifier);
     verifier.rememberRevocations(await this.ledger.getRevocations());
+    verifier.rememberRevocations(this.observedRevocations);
     if (generation !== this.reloadGeneration) throw new Error('reviewer_reload_superseded');
     this.verifier = verifier;
     this.admitting = true;
   }
+  private collectRevocations(verifier: ReviewerVerifier, now?: number) {
+    for (const kid of verifier.effectiveRevocations(now)) this.observedRevocations.add(kid);
+  }
+  private async persistRevocations(verifier = this.verifier, now?: number) {
+    this.collectRevocations(verifier, now);
+    await this.ledger.recordRevocations([...this.observedRevocations]);
+  }
+  private verify(assertion: unknown, preview: StoredPreview) {
+    const verifier = this.verifier;
+    verifier.rememberRevocations(this.observedRevocations);
+    const now = Math.floor(Date.now() / 1000);
+    try { return verifier.verify(assertion, preview.binding, Math.floor(preview.expiresAt / 1000), now); }
+    finally { this.collectRevocations(verifier, now); }
+  }
   private async authorize(assertion: unknown, preview: StoredPreview) {
     if (!this.admitting) throw new ReviewAuthError();
-    await this.ledger.recordRevocations(this.verifier.effectiveRevocations());
-    const claims = this.verifier.verify(assertion, preview.binding, Math.floor(preview.expiresAt / 1000));
+    await this.persistRevocations();
+    const claims = this.verify(assertion, preview);
     if (await this.ledger.isRevoked(claims.kid)) throw new ReviewAuthError();
     return claims;
   }
@@ -89,10 +109,10 @@ export class SignedWriter {
     if (!preview || preview.expiresAt <= Date.now()) rejected(409, 'expired_preview');
     // Verification is synchronous, so the token is consumed before any awaited eligibility read.
     let claims;
-    try { claims = this.verifier.verify(body.reviewer_assertion, preview.binding, Math.floor(preview.expiresAt / 1000)); }
+    try { claims = this.verify(body.reviewer_assertion, preview); }
     catch (error) {
       // An observed revocation remains effective after clock rollback/restart.
-      await this.ledger.recordRevocations(this.verifier.effectiveRevocations());
+      await this.persistRevocations();
       throw error;
     }
     if (preview.binding.action !== action) rejected(403, 'reviewer_binding_mismatch');
@@ -127,16 +147,20 @@ export class SignedWriter {
           started = true;
           // Failure after the durable marker is unknown, including failure before actual send.
           if (!this.admitting) throw new ReviewAuthError();
-          this.verifier.verify(body.reviewer_assertion, preview.binding, Math.floor(preview.expiresAt / 1000));
+          this.verify(body.reviewer_assertion, preview);
           if (!this.ledger.ready) throw new LedgerError('claim_store_unavailable');
         },
       });
+      await this.persistRevocations();
       return await this.ledger.finish(operation.operation_id, result.written
         ? { outcome: 'known_success', audit_recorded: result.auditRecorded === true, cxone_revision_id: result.cxoneRevisionId === undefined ? undefined : String(result.cxoneRevisionId) }
         : { outcome: 'not_attempted', reason: 'no_change' });
     } catch (error) {
-      if (error instanceof SignedRequestError) throw error;
+      // Verification can first observe a scheduled revocation after any await.
+      // Persist every observed tombstone before acknowledging any rejection/outcome.
+      if (this.ledger.ready) { try { await this.persistRevocations(); } catch { /* globally unavailable below */ } }
       if (!this.ledger.ready) throw new SignedRequestError(503, { error: 'claim_store_unavailable', outcome: started ? 'pending' : 'not_attempted', operation_id: operation.operation_id, retryable: false, evidence_effect: started ? 'hold' : 'preserve' });
+      if (error instanceof SignedRequestError) throw error;
       if (started || error instanceof WriteOutcomeError) {
         const result = await this.ledger.finish(operation.operation_id, { outcome: 'unknown_write' });
         throw new SignedRequestError(502, { ...result, error: 'write_outcome_unknown' });
