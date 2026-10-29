@@ -34,6 +34,7 @@ vi.mock('@libretexts/cxone-expert-node', () => ({ default: class { pages = {
 import { scanHtmlFull } from '../scan.js';
 import { fixPage } from '../fix.js';
 import { runPipeline } from '../pipeline.js';
+import { LLMClient } from '../ai/llm-client.js';
 import { runLocalPipeline } from '../local-pipeline.js';
 let server: Server, base: string;
 beforeAll(async () => {
@@ -68,4 +69,18 @@ it.each(['/v1/cxone/page/scan', '/v1/cxone/page/preview-fix'])('returns explicit
   expect(response.status).toBe(503);
   expect(await response.json()).toEqual({ error: 'scan_engine_failed', evidence_usable: false });
   expect(runtime.writes).toBe(0); expect(runtime.closed).toBe(runtime.created);
+});
+
+it('propagates a tier-3 agent rescan failure instead of recovering a usable old-source preview', async () => {
+  runtime.failAt = 4; // source, tier1, tier2, agent mutation
+  const tools = vi.spyOn(LLMClient.prototype, 'chatTools').mockResolvedValue({ role: 'assistant', content: '', tool_calls: [{ id: 'fake', type: 'function', function: { name: 'set_attribute', arguments: JSON.stringify({ selector: 'button', attr: 'aria-label', value: 'Named' }) } }] });
+  try {
+    await expect(runPipeline(902, { tier: 3, mode: 'apply', maxLlmCalls: 0 })).rejects.toThrow('evidence is unusable');
+    expect(runtime.starts).toBe(4); expect(runtime.writes).toBe(0);
+  } finally { tools.mockRestore(); }
+});
+it('refuses a manual-image review preview when source scan evidence fails', async () => {
+  const response = await fetch(base + '/v1/cxone/page/preview-fix', { method: 'POST', body: JSON.stringify({ page_id: 902, review_images: true }) });
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({ error: 'scan_engine_failed', evidence_usable: false });
 });

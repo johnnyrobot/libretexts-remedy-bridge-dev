@@ -28,6 +28,7 @@ import {
   createExpertClient,
   resolvePageRef,
   scanPage,
+  scanHtmlFull,
   ScanEngineError,
   scanRenderedPage,
   mergeRenderedFindings,
@@ -206,6 +207,7 @@ const routes: Record<string, Handler> = {
       const expert = createExpertClient();
       const ref = await resolvePageRef(expert, page, process.env);
       const html = await fetchPageHtml(expert, page);
+      await scanHtmlFull(html);
       const images = reviewableImages(html);
       prunePreviewSessions();
       const token = randomUUID(), hash = hashContent(html);
