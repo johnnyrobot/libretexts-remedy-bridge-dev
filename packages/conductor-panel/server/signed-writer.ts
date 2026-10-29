@@ -122,7 +122,13 @@ export class SignedWriter {
     const operation = await this.ledger.claim({ issuer: claims.iss, jti: claims.jti, preview_token: preview.token,
       subject: claims.sub, expires_at: claims.exp, target: preview.binding.target, binding: preview.binding });
     let started = false;
-    const terminal = (reason: Reason, status: number, error: string) => this.ledger.finish(operation.operation_id, { outcome: 'not_attempted', reason }).then(result => { throw new SignedRequestError(status, { ...result, error }); });
+    const unavailable = () => new SignedRequestError(503, { error: 'claim_store_unavailable', outcome: 'pending', operation_id: operation.operation_id, retryable: false, evidence_effect: 'hold' });
+    const terminal = async (reason: Reason, status: number, error: string): Promise<never> => {
+      let result;
+      try { result = await this.ledger.finish(operation.operation_id, { outcome: 'not_attempted', reason }); }
+      catch { throw unavailable(); }
+      throw new SignedRequestError(status, { ...result, error });
+    };
     try {
       if (body.preview_hash !== createHash('sha256').update(preview.beforeHtml).digest('hex').slice(0, 16) || (body.fix_mode !== undefined && body.fix_mode !== preview.mode) || (body.tier !== undefined && body.tier !== preview.tier)) return await terminal('stale_preview', 409, 'stale_preview');
       const expert = createExpertClient(this.env);
@@ -161,10 +167,12 @@ export class SignedWriter {
       // Verification can first observe a scheduled revocation after any await.
       // Persist every observed tombstone before acknowledging any rejection/outcome.
       if (this.ledger.ready) { try { await this.persistRevocations(); } catch { /* globally unavailable below */ } }
-      if (!this.ledger.ready) throw new SignedRequestError(503, { error: 'claim_store_unavailable', outcome: started ? 'pending' : 'not_attempted', operation_id: operation.operation_id, retryable: false, evidence_effect: started ? 'hold' : 'preserve' });
+      if (!this.ledger.ready) throw unavailable();
       if (error instanceof SignedRequestError) throw error;
       if (started || error instanceof WriteOutcomeError) {
-        const result = await this.ledger.finish(operation.operation_id, { outcome: 'unknown_write' });
+        let result;
+        try { result = await this.ledger.finish(operation.operation_id, { outcome: 'unknown_write' }); }
+        catch { throw unavailable(); }
         throw new SignedRequestError(502, { ...result, error: 'write_outcome_unknown' });
       }
       const reason: Reason = error instanceof WriteEligibilityError ? error.reason : 'pre_dispatch_failure';

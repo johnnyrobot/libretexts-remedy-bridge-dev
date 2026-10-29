@@ -57,11 +57,12 @@ export async function canonicalWriteTarget(expert: Expert, input: string | numbe
   if (typeof normalized === 'number' && normalized !== asserted.id) throw new WriteEligibilityError('target_mismatch');
   const resolved = await resolvePageRef(expert, normalized, env);
   if (!Number.isSafeInteger(resolved.id) || resolved.id <= 0) throw new Error('Write target has invalid canonical page ID');
+  if (resolved.id !== asserted.id || resolved.path !== asserted.path || resolved.hostname !== asserted.hostname) throw new WriteEligibilityError('target_mismatch');
   assertWriteAllowed(resolved, env);
   const canonical = await resolvePageRef(expert, resolved.id, env);
   for (const candidate of [resolved, canonical]) {
-    assertWriteAllowed(candidate, env);
     if (candidate.id !== asserted.id || candidate.path !== asserted.path || candidate.hostname !== asserted.hostname) throw new WriteEligibilityError('target_mismatch');
+    assertWriteAllowed(candidate, env);
   }
   return canonical;
 }

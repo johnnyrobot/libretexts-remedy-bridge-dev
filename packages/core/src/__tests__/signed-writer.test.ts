@@ -122,6 +122,9 @@ it('persists other-key revocation observed on a wrong-action rejection before a 
   await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;signerKid='route-a';expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
  }finally{clock.mockRestore();signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
 });
+it('invalidates evidence for a late target move outside the owner sandbox',async()=>{
+ const p=(await preview()).body;cxone.onRead=()=>{cxone.path='Bookshelves/Renamed';cxone.onRead=undefined;};const r=await apply(p);expect(r.status).toBe(409);expect(r.body).toMatchObject({reason:'target_mismatch',evidence_effect:'invalidate'});expect(cxone.writes).toEqual([]);
+});
 it('returns fixed unknown metadata and retains quarantine after transport loss and restart',async()=>{
  const p=(await preview()).body,a=assertion(p);cxone.lose=true;const r=await apply(p,a);expect(r.status).toBe(502);expect(r.body).toMatchObject({outcome:'unknown_write',applied:null,restored:false,evidence_effect:'invalidate',requires_reconciliation:true,reconciliation:'required',error:'write_outcome_unknown'});expect(JSON.stringify(r.body)).not.toMatch(/private upstream|\.json|snapshot|reviewer_assertion/);
  expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject({operation_id:r.body.operation_id,outcome:'unknown_write'});
@@ -134,4 +137,15 @@ it('returns fixed unknown metadata and retains quarantine after transport loss a
 it('fails readiness and status closed when the independent fence becomes unreadable',async()=>{
  const original=await readFile(store.fencePath,'utf8');await writeFile(store.fencePath,'corrupt');
  try{const r=await post('/v1/cxone/page/operation-status',{issuer,jti:randomBytes(32).toString('base64url')});expect(r.status).toBe(503);expect(r.body.error).toBe('claim_store_unavailable');const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(503);expect(await ready.json()).toMatchObject({capabilities:{mutate:false,operation_status:false}});expect(cxone.writes).toEqual([]);}finally{await writeFile(store.fencePath,original);}
+});
+it('holds evidence and retains the operation ID when unknown finalization runs out of storage',async()=>{
+ await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();
+ const fresh=await mkdtemp(join(tmpdir(),'unknown-finalize-'));await(await import('node:fs/promises')).mkdir(join(fresh,'ledger'));await(await DurableLedger.open({directory:join(fresh,'ledger'),fencePath:join(fresh,'fence.json'),trustEpoch:'test-epoch',initialize:true})).close();
+ const {spawnSync}=await import('node:child_process');const python=spawnSync('python3',['-c','import sys;print(sys.executable)'],{encoding:'utf8'}).stdout.trim();expect(python).toBeTruthy();await mkdir(join(fresh,'bin'));const quoted="'"+python.replaceAll("'","'\\''")+"'";
+ await writeFile(join(fresh,'bin','python3'),'#!/bin/sh\nexec '+quoted+' "$@" --test-fault disk_full_before_commit --test-fault-on finish\n',{mode:0o700});
+ const previous=process.env.PATH!;vi.stubEnv('PATH',join(fresh,'bin')+':'+previous);vi.stubEnv('REMEDY_CLAIM_DB',join(fresh,'ledger','claims.sqlite3'));vi.stubEnv('REMEDY_CLAIM_FENCE_DIR',fresh);vi.resetModules();
+ try{
+  server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+  const p=(await preview()).body;cxone.lose=true;const r=await apply(p);expect(r.status).toBe(503);expect(r.body).toMatchObject({error:'claim_store_unavailable',outcome:'pending',evidence_effect:'hold',retryable:false});expect(r.body.operation_id).toMatch(/^[a-f0-9-]{36}$/);expect(cxone.writes).toHaveLength(1);
+ }finally{vi.stubEnv('PATH',previous);}
 });
