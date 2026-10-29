@@ -50,3 +50,12 @@ it('rejects production downgrade and mode typos at startup', async()=>{
  expect(()=>loadSecurity({REMEDY_REVIEWER_REQUIRED:'tru'})).toThrow('reviewer_configuration_invalid');
  expect(()=>loadSecurity({NODE_ENV:'production',REMEDY_REVIEWER_REQUIRED:'false'})).toThrow('reviewer_configuration_invalid');
 });
+it('authenticates malformed request targets without crashing the process',async()=>{
+ const code=await new Promise<number>(resolve=>{const req=request(base,{method:'OPTIONS',path:'//[',timeout:300},res=>{res.resume();resolve(res.statusCode!);});req.on('timeout',()=>{req.destroy();resolve(0);});req.on('error',()=>resolve(0));req.end();});
+ expect(code).toBe(401);
+ expect((await fetch(base+'/healthz')).status).toBe(200);
+});
+it('rejects 33 empty JSON containers at the documented depth limit',async()=>{
+ const r=await fetch(base+'/api/local/fixtures',{method:'POST',headers:{'X-Remedy-Service-Key':key},body:'{"x":'+'['.repeat(32)+']'.repeat(32)+'}'});
+ expect(r.status).toBe(400);
+});

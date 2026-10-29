@@ -81,6 +81,7 @@ export function parseStrictJson(bytes: Uint8Array): unknown {
     function value(depth: number): unknown {
       if (depth > 32) invalid();
       whitespace();
+      if (depth >= 32 && (source[offset] === '[' || source[offset] === '{')) invalid();
       if (source[offset] === '"') return stringValue();
       if (source[offset] === '{') {
         offset++; whitespace();

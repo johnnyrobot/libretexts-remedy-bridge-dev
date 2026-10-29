@@ -572,12 +572,14 @@ function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): Pipeline
 
 export const server = createServer(async (req, res) => {
   setSecurityHeaders(res);
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
-  if (pathname === '/healthz' && req.method === 'GET') { json(res, 200, { ok: true }); return; }
+  if (req.url === '/healthz' && req.method === 'GET') { json(res, 200, { ok: true }); return; }
   // Authenticate even unknown paths and OPTIONS, before parsing or upstream work.
   if (security.required && !authenticateService(req.rawHeaders, security.serviceKey!)) {
     json(res, 401, { error: 'service_authentication_required' }); return;
   }
+  let pathname: string;
+  try { pathname = new URL(req.url ?? '/', 'http://localhost').pathname; }
+  catch { json(res, 400, { error: 'invalid_request' }); return; }
   if (pathname === '/readyz' && req.method === 'GET') {
     if (!security.serviceKey || !authenticateService(req.rawHeaders, security.serviceKey)) { json(res, 401, { error: 'service_authentication_required' }); return; }
     const configured = isCxoneIntegrationEnabled(process.env) && validateCxoneConfiguration(process.env).valid;
