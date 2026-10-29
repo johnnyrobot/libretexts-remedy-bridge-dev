@@ -72,13 +72,15 @@ function inlineImage(url: string): ImageFetchResult {
   const base64 = metadata.at(-1)?.toLowerCase() === 'base64';
   if (base64) metadata.pop();
   // Media-type parameters (e.g. charset=utf-8) do not change octet decoding.
-  if (metadata.some(parameter => !/^[a-z0-9!#$&^_.+-]+=[^;]*$/i.test(parameter))) throw new ImageFetchError('unsupported');
+  if (metadata.some(parameter => !/^[!#$%&'*+.^_`|~0-9a-z-]+=[^;]*$/i.test(parameter))) throw new ImageFetchError('unsupported');
   const payload = url.slice(comma + 1);
   const encoded = decodeInlineOctets(payload, base64 ? 4 * Math.ceil(MAX_IMAGE_BYTES / 3) : MAX_IMAGE_BYTES);
   let bytes = encoded;
   if (base64) {
     const text = encoded.toString('latin1');
     if (text.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(text)) throw new ImageFetchError('unsupported');
+    const padding = text.endsWith('==') ? 2 : text.endsWith('=') ? 1 : 0;
+    if (text.length / 4 * 3 - padding > MAX_IMAGE_BYTES) throw new ImageFetchError('too-large');
     bytes = Buffer.from(text, 'base64');
     if (bytes.toString('base64') !== text) throw new ImageFetchError('unsupported');
   }

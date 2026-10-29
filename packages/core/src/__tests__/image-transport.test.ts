@@ -131,3 +131,11 @@ it.each(['parameters', 'binary-percent'])('keeps valid inline %s images availabl
   expect(result[0].fixable).toBe(true);
   expect(result[0].data?.imageAvailabilityReason).toBeUndefined();
 });
+
+it('decodes media parameters and percent-escaped base64 while preserving size checks', async () => {
+  const bytes = await png();
+  const source = 'data:image/png;name=diagram.png;charset=UTF-8;base64,' + encodeURIComponent(bytes.toString('base64'));
+  expect(await imageSourceFromUrl(source)).toMatchObject({ kind: 'bytes', mimeType: 'image/png' });
+  await expect(fetchBoundedImage('data:image/png;base64,' + 'A'.repeat(4 * Math.ceil(MAX_IMAGE_BYTES / 3)))).rejects.toMatchObject({ reason: 'too-large' });
+  await expect(fetchBoundedImage('data:image/png,%xx')).rejects.toMatchObject({ reason: 'unsupported' });
+});
