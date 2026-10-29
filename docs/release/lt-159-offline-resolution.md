@@ -55,7 +55,9 @@ the exact report values, never guessed:
 The two acknowledgements are explicit operator attestations. This command cannot
 independently certify their truth. No credentials belong in the report/decision.
 The preserved report and decision are copied into an append-only resolution
-record with a tool-generated UTC timestamp. The entire report must still match
+record with a tool-generated UTC timestamp. Decision and report files are each capped at 16 MiB. A store whose full report
+exceeds that limit remains quarantined until reviewed tooling supports it; do not
+filter the report or delete history to fit. The entire report must still match
 current store state and sequence; another operation or revocation makes it stale.
 
 ```sh

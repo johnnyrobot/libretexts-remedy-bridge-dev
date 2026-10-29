@@ -18,13 +18,14 @@ async function fixture() {
   const snapshot_path = join(root, 'snapshot.html'); await writeFile(snapshot_path, '<p>synthetic</p>');
   for (const n of ['1', '2']) { const op = await owner.claim(claim(n)); await owner.start(op.operation_id, { snapshot_path }); await owner.finish(op.operation_id, { outcome: 'unknown_write' }); }
   const report = await owner.reconciliationReport();
+  const selected = report.operations.find(op => op.target.page_id === '1')!;
   const reportFile = join(root, 'report.json'), decisionFile = join(root, 'decision.json');
   const bytes = JSON.stringify(report); await writeFile(reportFile, bytes);
-  const decision = { operation_id: report.operations[0].operation_id, target: claim('1').target, trust_epoch: 'synthetic', expected_seq: report.durability_seq, expected_state: 'terminal', expected_outcome: 'unknown_write', expected_updated_at: report.operations[0].updated_at,
+  const decision = { operation_id: selected.operation_id, target: claim('1').target, trust_epoch: 'synthetic', expected_seq: report.durability_seq, expected_state: 'terminal', expected_outcome: 'unknown_write', expected_updated_at: selected.updated_at,
     report_sha256: createHash('sha256').update(bytes).digest('hex'), operator: 'synthetic-operator', reason: 'Synthetic externally settled request, evidence reviewed', external_settlement_acknowledged: true, writer_drained: true };
   await writeFile(decisionFile, JSON.stringify(decision));
   const args = [helper, '--directory', directory, '--fence', options.fencePath, '--epoch', 'synthetic', '--offline-resolve', decisionFile, '--report-file', reportFile];
-  return { owner, options, report, decision, decisionFile, args };
+  return { owner, options, report, selected, decision, decisionFile, reportFile, args };
 }
 it('requires a drained exclusive owner, appends resolution, preserves unknown/tombstones and releases exactly one target', async () => {
   const f = await fixture();
@@ -35,7 +36,8 @@ it('requires a drained exclusive owner, appends resolution, preserves unknown/to
   try {
     expect(await ledger.status({ issuer: 'synthetic', jti: 'nonce-1' })).toEqual(result);
     expect(await ledger.status({ issuer: 'synthetic', jti: 'nonce-2' })).toMatchObject({ reconciliation: 'required' });
-    await expect(ledger.claim(claim('1'))).rejects.toMatchObject({ code: 'claim_conflict' });
+    await expect(ledger.claim({ ...claim('1'), preview_token: 'fresh-token' })).rejects.toMatchObject({ code: 'claim_conflict' });
+    await expect(ledger.claim({ ...claim('1'), jti: 'fresh-nonce' })).rejects.toMatchObject({ code: 'claim_conflict' });
     await ledger.claim({ ...claim('3'), target: claim('1').target });
     await expect(ledger.claim({ ...claim('4'), target: claim('2').target })).rejects.toMatchObject({ code: 'claim_conflict' });
   } finally { await ledger.close(); }
@@ -73,7 +75,21 @@ it('runs entirely offline and preserves original claim evidence in the report', 
   await run('python3', ['-c', denyNetwork, ...f.args]);
   const ledger = await DurableLedger.open(f.options);
   try {
-    const op = (await ledger.reconciliationReport()).operations[0];
-    expect({ ...op, reconciliation: 'required', requires_reconciliation: true, updated_at: f.report.operations[0].updated_at }).toEqual(f.report.operations[0]);
+    const op = (await ledger.reconciliationReport()).operations.find(op => op.operation_id === f.selected.operation_id)!;
+    expect({ ...op, reconciliation: 'required', requires_reconciliation: true, updated_at: f.selected.updated_at }).toEqual(f.selected);
   } finally { await ledger.close(); }
+});
+
+it('rejects a genuinely stale preserved report after another durable event', async () => {
+  const f = await fixture(); await f.owner.recordRevocations(['synthetic-retired']); await f.owner.close();
+  await expect(run('python3', f.args)).rejects.toMatchObject({ code: 1 });
+});
+it('refuses missing evidence and missing decision fields without changing claims', async () => {
+  const f = await fixture(); await f.owner.close();
+  await expect(run('python3', [...f.args.slice(0, -1), f.reportFile + '.missing'])).rejects.toMatchObject({ code: 1 });
+  const { operator: _omitted, ...incomplete } = f.decision;
+  await writeFile(f.decisionFile, JSON.stringify(incomplete));
+  await expect(run('python3', f.args)).rejects.toMatchObject({ code: 1 });
+  const ledger = await DurableLedger.open(f.options);
+  try { expect(await ledger.reconciliationReport()).toEqual(f.report); } finally { await ledger.close(); }
 });
