@@ -1,6 +1,7 @@
+import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { appendFile, mkdir, readFile, readdir, writeFile, lstat, open } from 'node:fs/promises';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 export const CXONE_ALLOWED_HOST = 'dev.libretexts.org';
 export const CXONE_ALLOWED_ROOT = 'Sandboxes/johnnyphung';
@@ -175,7 +176,7 @@ function snapshotRoot(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 export function snapshotDir(pageId: number, env: NodeJS.ProcessEnv = process.env): string {
-  return join(snapshotRoot(env), String(pageId));
+  return resolve(snapshotRoot(env), String(pageId));
 }
 
 /**
@@ -208,40 +209,103 @@ export async function saveSnapshot(
   return { htmlPath, metaPath, meta: full };
 }
 
-/** List snapshots for a page, newest first. */
+/** Invalid candidates are skipped in listings; an explicit selection fails closed. */
+export class InvalidSnapshotError extends Error {
+  constructor(message = 'Snapshot does not match this page or failed integrity validation') { super(message); }
+}
+
+function validateSnapshotMeta(value: unknown): SnapshotMeta {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidSnapshotError();
+  const m = value as SnapshotMeta;
+  if (typeof m.ts !== 'string' || !Number.isFinite(Date.parse(m.ts)) || new Date(m.ts).toISOString() !== m.ts ||
+      !Number.isSafeInteger(m.pageId) || m.pageId <= 0 || typeof m.pagePath !== 'string' ||
+      !m.pagePath || typeof m.hostname !== 'string' ||
+      m.hostname !== m.hostname.toLowerCase() || !/^[a-z0-9.-]+$/.test(m.hostname) ||
+      typeof m.operator !== 'string' || typeof m.hash !== 'string' || !/^[a-f0-9]{16}$/.test(m.hash) ||
+      !Number.isSafeInteger(m.bytes) || m.bytes < 0 || !Array.isArray(m.rules) ||
+      !m.rules.every(r => typeof r === 'string') ||
+      (m.source !== undefined && !['fix', 'pipeline', 'revert'].includes(m.source)) ||
+      (m.requestedBy !== undefined && typeof m.requestedBy !== 'string') ||
+      (m.revisionSummary !== undefined && typeof m.revisionSummary !== 'string') ||
+      (m.reviewer !== undefined && (!m.reviewer || typeof m.reviewer.issuer !== 'string' || typeof m.reviewer.subject !== 'string'))) {
+    throw new InvalidSnapshotError();
+  }
+  normalizeSandboxPath(m.pagePath); // Validate syntax while retaining the exact SDK target string.
+  return m;
+}
+
+/** Resolve only direct root/page/file pairs; never follow a root/page/file symlink. */
+export function snapshotPaths(path: string, env: NodeJS.ProcessEnv = process.env): { metaPath: string; htmlPath: string } {
+  if (path.split(/[\\/]/).includes('..') || !/\.(html|json)$/.test(path) || path.endsWith('.tags.json')) throw new InvalidSnapshotError();
+  const root = resolve(snapshotRoot(env));
+  const selected = resolve(path);
+  const parts = relative(root, selected).split(sep);
+  if (parts.length !== 2 || !/^[1-9][0-9]*$/.test(parts[0]) || parts[1] !== basename(selected)) throw new InvalidSnapshotError();
+  const base = selected.replace(/\.(html|json)$/, '');
+  return { metaPath: base + '.json', htmlPath: base + '.html' };
+}
+
+async function readRegularFile(path: string): Promise<Buffer> {
+  // O_NOFOLLOW makes the final-file check atomic with open (POSIX Node runtimes).
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    if (!(await handle.stat()).isFile()) throw new InvalidSnapshotError();
+    return await handle.readFile();
+  } finally { await handle.close(); }
+}
+
+/** Validate paired identity, metadata and bytes on every read, including explicit paths. */
+export async function readSnapshot(
+  entryOrPath: SnapshotEntry | string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<{ html: string; meta: SnapshotMeta }> {
+  try {
+    const paths = snapshotPaths(typeof entryOrPath === 'string' ? entryOrPath : entryOrPath.metaPath, env);
+    if (typeof entryOrPath !== 'string' && resolve(entryOrPath.htmlPath) !== paths.htmlPath) throw new InvalidSnapshotError();
+    for (const dir of [resolve(snapshotRoot(env)), dirname(paths.metaPath)]) {
+      if (!(await lstat(dir)).isDirectory()) throw new InvalidSnapshotError();
+    }
+    const [bytes, json] = await Promise.all([readRegularFile(paths.htmlPath), readRegularFile(paths.metaPath)]);
+    const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+    const html = decoder.decode(bytes);
+    const meta = validateSnapshotMeta(JSON.parse(decoder.decode(json)));
+    const name = `${meta.ts.replace(/[:.]/g, '-')}_${meta.hash}`;
+    if (basename(dirname(paths.metaPath)) !== String(meta.pageId) || basename(paths.metaPath) !== name + '.json' ||
+        meta.bytes !== bytes.length || hashContent(html) !== meta.hash) throw new InvalidSnapshotError();
+    return { html, meta };
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (error instanceof InvalidSnapshotError || error instanceof SyntaxError || error instanceof TypeError ||
+        error instanceof WriteNotAllowedError || ['ENOENT', 'ELOOP', 'ENOTDIR', 'ENXIO', 'EISDIR'].includes(code ?? '')) {
+      throw new InvalidSnapshotError();
+    }
+    throw error;
+  }
+}
+
+/** List complete valid HTML pairs for a page, newest first. Tag recovery is separate. */
 export async function listSnapshots(
   pageId: number,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<SnapshotEntry[]> {
   const dir = snapshotDir(pageId, env);
-  let entries: string[] = [];
-  try {
-    entries = await readdir(dir);
-  } catch {
-    return [];
+  let entries: string[];
+  try { entries = await readdir(dir); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
   }
-  const metas = entries.filter((f) => f.endsWith('.json')).sort().reverse();
   const out: SnapshotEntry[] = [];
-  for (const f of metas) {
-    const metaPath = join(dir, f);
+  for (const f of entries.filter(f => f.endsWith('.json') && !f.endsWith('.tags.json'))) {
     try {
-      const meta = JSON.parse(await readFile(metaPath, 'utf8')) as SnapshotMeta;
-      out.push({ metaPath, htmlPath: metaPath.replace(/\.json$/, '.html'), meta });
-    } catch {
-      // ignore malformed
+      const paths = snapshotPaths(join(dir, f), env);
+      const { meta } = await readSnapshot(paths.metaPath, env);
+      if (meta.pageId === pageId) out.push({ ...paths, meta });
+    } catch (error) {
+      if (!(error instanceof InvalidSnapshotError)) throw error;
     }
   }
-  return out;
-}
-
-/** Read a snapshot's HTML + metadata, resolved by timestamp or by explicit path. */
-export async function readSnapshot(
-  entryOrPath: SnapshotEntry | string,
-): Promise<{ html: string; meta: SnapshotMeta }> {
-  const metaPath = typeof entryOrPath === 'string' ? entryOrPath : entryOrPath.metaPath;
-  const htmlPath = metaPath.replace(/\.json$/, '.html');
-  const [html, metaJson] = await Promise.all([readFile(htmlPath, 'utf8'), readFile(metaPath, 'utf8')]);
-  return { html, meta: JSON.parse(metaJson) as SnapshotMeta };
+  return out.sort((a, b) => b.meta.ts.localeCompare(a.meta.ts) || b.metaPath.localeCompare(a.metaPath));
 }
 
 /**

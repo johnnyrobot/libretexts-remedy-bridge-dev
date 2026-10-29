@@ -71,6 +71,8 @@ it('recovers a lost caller response before any operation ID by read-only nonce l
 });
 it('restores only the signed, exact reviewed snapshot output',async()=>{
  const {saveSnapshot}=await import('../guardrails.js');const saved=await saveSnapshot('<p>Restore exact</p>',{pageId:1,pagePath:cxone.path,hostname:'dev.libretexts.org',operator:'synthetic',rules:[],source:'fix'},process.env);
+ await writeFile(join(process.env.REMEDY_SNAPSHOT_DIR!, '1', '9999_malformed.json'), '{}');
+ await writeFile(join(process.env.REMEDY_SNAPSHOT_DIR!, '1', '9999_history.tags.json'), JSON.stringify({meta:{ts:'2099-01-01T00:00:00.000Z'},tags:['fake']}));
  const p=await post('/v1/cxone/page/restore-preview',{page_id:1,snapshot_timestamp:saved.meta.ts});expect(p.status).toBe(200);expect(p.body.review_binding).toMatchObject({action:'cxone.restore',fix_mode:'restore',tier:null,snapshot:{timestamp:saved.meta.ts,sha256:p.body.review_binding.after_sha256}});
  const a=assertion(p.body),r=await post('/v1/cxone/page/restore',{page_id:1,preview_token:p.body.preview_token,preview_hash:p.body.preview_hash,reviewer_assertion:a.compact});expect(r.status).toBe(200);expect(r.body).toMatchObject({outcome:'known_success',restored:true,applied:false});expect(cxone.writes).toEqual(['<p>Restore exact</p>']);
  const audit=(await readFile(join(dir,'audit.log'),'utf8')).trim().split('\n').map(line=>JSON.parse(line)).filter(row=>row.mode==='revert').at(-1);expect(audit.revertedFrom).toBe(saved.metaPath);expect(audit.revisionSummary).toContain(saved.meta.ts);
