@@ -620,7 +620,10 @@ async function readResult(pathname:string,body:Record<string,unknown>,signal:Abo
 export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
 const workOwner = new WorkOwner();
 const readHealth = {scan:true,preview:true};
-const readCapability = (path:string) => ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' : ['/v1/cxone/page/preview-fix','/api/preview','/v1/cxone/page/revise-preview'].includes(path) ? 'preview' : null;
+const readCapability = (path:string,body:Record<string,unknown>) => {
+  if (body.describe_image !== undefined || body.rendered === true || body.fix_mode === 'pipeline' || body.fixMode === 'pipeline' || path === '/api/preview') return null;
+  return ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' : ['/v1/cxone/page/preview-fix','/v1/cxone/page/revise-preview'].includes(path) ? 'preview' : null;
+};
 owners.add(workOwner);
 const instance = createServer(async (req, res) => {
   setSecurityHeaders(res);
@@ -706,7 +709,7 @@ const instance = createServer(async (req, res) => {
     }
     const body = req.method === 'POST' ? await readJson(req) : {};
     let result: unknown;
-    const capability = readCapability(pathname);
+    const capability = readCapability(pathname,body);
     try {
       result = mutation ? await handler(body) : await readResult(pathname,body,signal,execute);
       if (capability) readHealth[capability] = true;
@@ -796,7 +799,7 @@ function signedError(res: ServerResponse, error: unknown,mutation=false) {
   if (error instanceof SignedRequestError) { json(res, error.status, error.body); return; }
   if (error instanceof ReviewAuthError) { json(res, error.status, { error: error.code, outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
   if (error instanceof LedgerError) { json(res, error.code === 'claim_conflict' ? 409 : 503,
-    { error: error.code === 'claim_conflict' ? 'claim_conflict' : 'claim_store_unavailable', outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
+    { error: error.code === 'claim_conflict' ? 'claim_conflict' : 'claim_store_unavailable', ...(mutation ? {outcome:'not_attempted',retryable:false,operation_id:null,evidence_effect:'preserve'} : {}) }); return; }
   if (error instanceof HttpError) { json(res, error.status, { error: error.body.error }); return; }
   json(res, 500, { error: 'internal_error' });
 }
@@ -911,8 +914,8 @@ function setSecurityHeaders(res: ServerResponse) {
   res.setHeader('cache-control', 'no-store');
 }
 
-function requireStr(v: unknown, name: string): string {
-  if (typeof v !== 'string' || !v) throw new Error(`missing field: ${name}`);
+function requireStr(v: unknown, _name: string): string {
+  if (typeof v !== 'string' || !v) throw new HttpError(400,{error:'invalid_request'});
   return v;
 }
 
@@ -922,23 +925,23 @@ function requirePageInput(body: Record<string, unknown>): string | number {
   const pageId = body.page_id ?? body.pageID;
   if (typeof pageId === 'number' && Number.isFinite(pageId)) return pageId;
   if (typeof pageId === 'string' && pageId.trim()) return pageId;
-  throw new Error('missing field: page_url or page_id');
+  throw new HttpError(400,{error:'invalid_request'});
 }
 
 function optionalStr(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v : undefined;
 }
 
-function optionalStringArray(v: unknown, name: string): string[] {
+function optionalStringArray(v: unknown, _name: string): string[] {
   if (v === undefined) return [];
-  if (!Array.isArray(v)) throw new Error(`${name} must be an array`);
+  if (!Array.isArray(v)) throw new HttpError(400,{error:'invalid_request'});
   return v.filter((item): item is string => typeof item === 'string' && item.length > 0);
 }
 
 function optionalFixMode(v: unknown): FixEngineMode {
   if (v === undefined || v === null || v === '') return 'deterministic';
   if (v === 'deterministic' || v === 'pipeline') return v;
-  throw new Error('fix_mode must be deterministic|pipeline');
+  throw new HttpError(400,{error:'invalid_request'});
 }
 
 function optionalDojExceptions(v: unknown): DojException[] {
@@ -951,7 +954,7 @@ function optionalWcagReview(v: unknown): WcagReview | undefined {
 
 function requireTier(v: unknown): 1 | 2 | 3 {
   const n = Number(v);
-  if (n !== 1 && n !== 2 && n !== 3) throw new Error(`tier must be 1|2|3`);
+  if (n !== 1 && n !== 2 && n !== 3) throw new HttpError(400,{error:'invalid_request'});
   return n;
 }
 

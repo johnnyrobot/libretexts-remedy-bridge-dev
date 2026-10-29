@@ -13,7 +13,7 @@ afterEach(async () => {
   })));
   await Promise.all(servers.splice(0).map(s => { s.closeAllConnections(); return new Promise<void>(r => s.close(() => r())); }));
 });
-async function fixture(extra: NodeJS.ProcessEnv = {}) {
+async function fixture(extra: NodeJS.ProcessEnv = {}, html = '<p><strong>Review title</strong></p>') {
   const dir = await mkdtemp(join(tmpdir(), 'review-only-')), key = 'a'.repeat(64);
   await writeFile(join(dir, 'service'), key);
   let mutations = 0, reads = 0, failReads = false;
@@ -21,7 +21,7 @@ async function fixture(extra: NodeJS.ProcessEnv = {}) {
     if (!['GET', 'HEAD'].includes(req.method!)) { mutations++; res.writeHead(500).end(); return; }
     reads++; res.setHeader('content-type', 'application/json');
     if (failReads) { res.writeHead(503).end('{"error":"synthetic read unavailable"}'); return; }
-    res.end(JSON.stringify(req.url?.includes('/contents') ? {body:'<p><strong>Review title</strong></p>'} : {'@id':1,path:'Sandboxes/johnnyphung/Page'}));
+    res.end(JSON.stringify(req.url?.includes('/contents') ? {body:html} : {'@id':1,path:'Sandboxes/johnnyphung/Page'}));
   });
   servers.push(external); await new Promise<void>(r => external.listen(0, '127.0.0.1', r));
   const env = { PATH: process.env.PATH!, NODE_ENV: 'production', REMEDY_BRIDGE_PROFILE: 'review-only',
@@ -88,7 +88,11 @@ it('serves historical pending operation status without opening a writer or chang
   expect(f.reads()).toBe(0); expect(f.mutations()).toBe(0);
   await writeFile(options.fencePath,JSON.stringify({trust_epoch:options.trustEpoch,durability_seq:-1}));
   const degraded=await f.request('/readyz');expect(degraded.status).toBe(200);expect(degraded.body.capabilities.operation_status).toBe(false);
-  expect((await f.request('/v1/cxone/page/operation-status',{issuer,jti})).status).toBe(503);
+  const unavailable=await f.request('/v1/cxone/page/operation-status',{issuer,jti});expect(unavailable.status).toBe(503);expect(unavailable.body).toEqual({error:'claim_store_unavailable'});
+  // The fully configured but unhealthy store stays distinguishable after restart.
+  const restarted=await fixture({REMEDY_CLAIM_DB:join(options.directory,'claims.sqlite3'),REMEDY_CLAIM_FENCE_DIR:dir,REMEDY_REVIEWER_TRUST_EPOCH:options.trustEpoch,REMEDY_OPERATION_STATUS_ISSUER:issuer});
+  expect((await restarted.request('/readyz')).status).toBe(200);
+  expect((await restarted.request('/v1/cxone/page/operation-status',{issuer,jti})).body).toEqual({error:'claim_store_unavailable'});
 },30000);
 
 it('keeps missing read credentials unavailable without requiring writer configuration', async () => {
@@ -132,4 +136,13 @@ it('reports exhausted preview capacity without disabling source scans', async ()
   expect((await f.request('/v1/cxone/page/preview-fix',{page_id:1})).status).toBe(200);
   const r=await f.request('/readyz');expect(r.status).toBe(503);expect(r.body.capabilities).toMatchObject({scan:true,preview:false,mutate:false});
   expect(f.mutations()).toBe(0);
+},30000);
+
+it('keeps caller validation and optional image-description failures out of required readiness', async () => {
+  const f=await fixture({},'<p><strong>Title</strong></p><img src="/diagram.png" alt="Diagram">');
+  expect((await f.request('/v1/cxone/page/scan',{})).status).toBe(400);
+  expect((await f.request('/readyz')).status).toBe(200);
+  const p=await f.request('/v1/cxone/page/preview-fix',{page_id:1,review_images:true});expect(p.status).toBe(200);
+  const optional=await f.request('/v1/cxone/page/preview-fix',{page_id:1,preview_token:p.body.preview_token,describe_image:p.body.review_images[0].data.src});
+  expect(optional.status).toBe(503);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);

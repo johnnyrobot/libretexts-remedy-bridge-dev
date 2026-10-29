@@ -1,3 +1,4 @@
+import { operationStatusQuery } from './status-query.js';
 import { PreviewCache, PreviewPool } from './preview-cache.js';
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
@@ -79,8 +80,9 @@ export class SignedWriter {
     try { await this.ledger.status({ issuer: '', jti: '' }); return true; } catch { return false; }
   }
   async status(body: Record<string, unknown>) {
-    if (Object.keys(body).length !== 2 || !this.verifier.matchesIssuer(body.issuer) || typeof body.issuer !== 'string' || typeof body.jti !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(body.jti) || Buffer.from(body.jti, 'base64url').toString('base64url') !== body.jti) rejected(400, 'invalid_request');
-    const status = await this.ledger.status({ issuer: body.issuer, jti: body.jti });
+    const query = operationStatusQuery(body);
+    if (!query || !this.verifier.matchesIssuer(query.issuer)) rejected(400, 'invalid_request');
+    const status = await this.ledger.status(query);
     if (!status) throw new SignedRequestError(404, { error: 'operation_not_found' });
     return status;
   }
