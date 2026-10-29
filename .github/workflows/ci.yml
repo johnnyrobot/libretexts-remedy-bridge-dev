@@ -17,3 +17,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: Check operator-only canary preparation without network
+        run: |
+          bash -n tools/cxone-canary-wizard.sh
+          shellcheck -e SC1087,SC2329 tools/cxone-canary-wizard.sh
+          node --test tools/canary-static.test.mjs

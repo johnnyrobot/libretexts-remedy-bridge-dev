@@ -209,3 +209,7 @@ The signed profile uses authenticated `GET /readyz` capability checks; see
 Guarded apply now requires the single-use token returned with the reviewed
 preview. See [the local write integration and recovery contract](docs/release/lt-116-reviewed-writes.md)
 for caller migration, success/unknown outcomes and remaining release limits.
+
+The operator-only [vendor questionnaire](docs/release/lt-154-vendor-questions.md)
+and [bounded canary preparation](docs/release/lt-154-canary-plan.md) preserve this
+hold. `bash tools/cxone-canary-wizard.sh --dry-run` performs no network or writes.
