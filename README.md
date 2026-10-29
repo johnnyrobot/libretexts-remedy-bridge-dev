@@ -113,7 +113,7 @@ Values are supplied by the authorized deploying team; no real secret is included
 | `REMEDY_REVIEWER_KEYRING_FILE` | Not required for page review; cannot enable writes here. | Required pinned public reviewer keyring. No private signing key belongs on Bridge. |
 | `REMEDY_REVIEWER_TRUST_EPOCH` | Needed only with optional historical status. | Required; matches keyring and existing ledger/fence. |
 | `REMEDY_CLAIM_DB`, `REMEDY_CLAIM_FENCE_DIR` | Optional historical lookup; database basename must be `claims.sqlite3`. | Required pre-existing store and independent fence. Startup never initializes/repairs them. |
-| `REMEDY_OPERATION_STATUS_ISSUER` | Required with the optional historical store; exact existing issuer. | Issuer is validated against the signed-mode keyring. |
+| `REMEDY_OPERATION_STATUS_ISSUER` | Required with the optional historical store; exact existing issuer. | Unused in signed mode; the request issuer must match the keyring. |
 | `REMEDY_SNAPSHOT_DIR`, `REMEDY_AUDIT_LOG` | No mutation snapshots/audit are created by this mode. Preserve historical storage. | Protected persistent snapshot/audit storage; preserve through upgrades/rollback. |
 
 In signed mode the keyring issuer, audience, environment and trust epoch must
@@ -162,8 +162,8 @@ It does not write a page. In review-only, apply/restore aliases return HTTP 503
 calls. Core and CLI mutation entries are closed too.
 
 With authorized read configuration, existing CLI `scan`, `fix` and `pipeline`
-without `--apply` can save findings, diffs and candidate HTML. `scan --json` or
-`--out` saves findings; `scan --html` saves source. `fix` saves `.diff`,
+without `--apply` can save findings, diffs and candidate HTML. `scan --json` prints findings to stdout;
+`scan --out <file>` saves findings and `scan --html <file>` saves source. `fix` saves `.diff`,
 `.fixed.html`, `.findings.json`; `pipeline` saves `.pipeline.diff`,
 `.pipeline.fixed.html`, `.pipeline.json`. There is no new report-download API,
 export button or book-editor product. Use the normal authorized editor for manual
