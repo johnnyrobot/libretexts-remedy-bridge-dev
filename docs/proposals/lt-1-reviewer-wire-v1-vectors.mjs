@@ -84,7 +84,10 @@ const first = positive[0], segments = first.compact.split('.');
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const finalIndex = alphabet.indexOf(segments[2].at(-1));
 negative.push({ ...first, name: 'noncanonical-signature-base64url', compact: `${segments[0]}.${segments[1]}.${segments[2].slice(0, -1)}${alphabet[finalIndex + 1]}`, expected: 'encoding' });
-negative.push({ ...first, name: 'tampered-payload', compact: `${segments[0]}.${encode(JSON.stringify({ ...claims, sub: 'forged-reviewer' }))}.${segments[2]}`, raw_signature_valid: false, expected: 'signature' });
+const forgedPayload = Buffer.from(JSON.stringify({ ...claims, sub: 'forged-reviewer' }));
+const forgedInput = `${segments[0]}.${encode(forgedPayload)}`;
+negative.push({ ...first, name: 'tampered-payload', signing_input: forgedInput, payload_bytes_base64url: encode(forgedPayload),
+  compact: `${forgedInput}.${segments[2]}`, raw_signature_valid: false, expected: 'signature' });
 const changed = Buffer.from(segments[2], 'base64url'); changed[0] ^= 1;
 negative.push({ ...first, name: 'tampered-signature', compact: `${segments[0]}.${segments[1]}.${encode(changed)}`, raw_signature_valid: false, expected: 'signature' });
 const result = { fixture_version: 'lt1-wire-v1-r2', status: 'PROPOSED; PUBLIC TEST MATERIAL; no product verification',

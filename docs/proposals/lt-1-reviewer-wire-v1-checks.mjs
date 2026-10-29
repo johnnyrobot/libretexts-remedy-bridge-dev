@@ -126,6 +126,9 @@ function check(vector) {
 // its exact segments. Rejection is not explained away as a tampered signature.
 for (const vector of [...fixture.positive, ...fixture.negative]) {
   const [h, p, s] = vector.compact.split('.');
+  assert.ok(vector.signing_input === `${h}.${p}`, `${vector.name}: exact signing input`);
+  assert.ok(Buffer.from(h, 'base64url').toString('base64url') === vector.header_bytes_base64url, `${vector.name}: exact header bytes`);
+  assert.ok(Buffer.from(p, 'base64url').toString('base64url') === vector.payload_bytes_base64url, `${vector.name}: exact payload bytes`);
   assert.equal(verify(null, Buffer.from(`${h}.${p}`, 'ascii'), key, Buffer.from(s, 'base64url')), vector.raw_signature_valid, `${vector.name}: raw signature`);
   let actual = 'accept';
   try { check(vector); } catch (error) { actual = error.message; }
