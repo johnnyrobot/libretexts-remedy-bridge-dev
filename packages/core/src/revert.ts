@@ -16,6 +16,8 @@ import {
   hashContent,
   listSnapshots,
   readSnapshot,
+  snapshotPaths,
+  InvalidSnapshotError,
   type SnapshotEntry,
 } from './guardrails.js';
 import { fetchPageHtml } from './scan.js';
@@ -72,7 +74,7 @@ export async function listPageSnapshots(
   const env = opts.env ?? process.env;
   const expert = opts.expert ?? createExpertClient(env);
   const page = await resolvePageRef(expert, pageInput, env);
-  return listSnapshots(page.id, env);
+  return (await listSnapshots(page.id, env)).filter(s => s.meta.hostname === page.hostname && s.meta.pagePath === page.path);
 }
 
 export async function revertPage(
@@ -88,21 +90,20 @@ export async function revertPage(
   let chosen: { metaPath: string; htmlPath: string; ts: string; hash: string; html: string };
 
   if (opts.snapshotPath) {
-    const { html, meta } = await readSnapshot(opts.snapshotPath);
+    const { html, meta } = await readSnapshot(opts.snapshotPath, env);
     if (meta.pageId !== page.id || meta.hostname !== page.hostname || meta.pagePath !== page.path || hashContent(html) !== meta.hash) {
-      throw new Error('Snapshot does not match this page or failed integrity validation');
+      throw new InvalidSnapshotError();
     }
     chosen = {
-      metaPath: opts.snapshotPath.replace(/\.html$/, '.json'),
-      htmlPath: opts.snapshotPath.replace(/\.json$/, '.html'),
+      ...snapshotPaths(opts.snapshotPath, env),
       ts: meta.ts,
       hash: meta.hash,
       html,
     };
   } else {
-    const snapshots = await listSnapshots(page.id, env);
+    const snapshots = (await listSnapshots(page.id, env)).filter(s => s.meta.hostname === page.hostname && s.meta.pagePath === page.path);
     if (snapshots.length === 0) {
-      throw new Error(
+      throw new InvalidSnapshotError(
         `No snapshots on disk for page ${page.id} (${page.path}). Nothing to revert to.`,
       );
     }
@@ -110,14 +111,14 @@ export async function revertPage(
       ? snapshots.find((s) => s.meta.ts === opts.snapshotTs)
       : snapshots[0];
     if (!pick) {
-      throw new Error(
-        `Snapshot with ts="${opts.snapshotTs}" not found for page ${page.id}. ` +
+      throw new InvalidSnapshotError(
+        `Snapshot with ts="${opts.snapshotTs}" not found or failed integrity validation for page ${page.id}. ` +
         `Available: ${snapshots.map((s) => s.meta.ts).join(', ')}`,
       );
     }
-    const { html, meta } = await readSnapshot(pick);
+    const { html, meta } = await readSnapshot(pick, env);
     if (meta.pageId !== page.id || meta.hostname !== page.hostname || meta.pagePath !== page.path || hashContent(html) !== meta.hash) {
-      throw new Error('Snapshot does not match this page or failed integrity validation');
+      throw new InvalidSnapshotError();
     }
     chosen = { ...pick, ts: pick.meta.ts, hash: pick.meta.hash, html };
   }
