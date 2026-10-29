@@ -39,7 +39,7 @@ import { runLocalPipeline } from '../local-pipeline.js';
 let server: Server, base: string;
 beforeAll(async () => {
   for (const [k, v] of Object.entries({ REMEDY_REVIEWER_REQUIRED: 'false', NODE_ENV: 'test', CXONE_INTEGRATION_ENABLED: 'true', SERVER_DOMAIN: 'dev.libretexts.org', SERVER_KEY: 'fake', SERVER_SECRET: 'fake', SERVER_USER: 'fake' })) vi.stubEnv(k, v);
-  server = (await import('../../../conductor-panel/server/server.js')).server;
+  { const bridge = await import('../../../conductor-panel/server/server.js'); server = bridge.createBridgeServer(bridge.executeReadInline); }
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
 });

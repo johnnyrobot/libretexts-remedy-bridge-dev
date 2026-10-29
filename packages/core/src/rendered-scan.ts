@@ -1,3 +1,4 @@
+import { boundedFetch } from '../../../tools/request-policy.cjs';
 import type { Finding } from './types.js';
 export interface RenderedScan {
   state: 'complete' | 'incomplete' | 'error' | 'not_configured';
@@ -10,7 +11,7 @@ export async function scanRenderedPage(url: string): Promise<RenderedScan> {
   const base = process.env.RENDER_SCANNER_URL, token = process.env.RENDER_SCANNER_TOKEN;
   if (!base || !token) return {state:'not_configured', error:'Rendered-page scanner is not configured.'};
   try {
-    const response = await fetch(`${base.replace(/\/$/,'')}/scan`, {method:'POST',
+    const response = await boundedFetch(`${base.replace(/\/$/,'')}/scan`, {method:'POST',
       headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`}, body:JSON.stringify({url}), signal:AbortSignal.timeout(120000)});
     const data = await response.json() as RenderedScan;
     if (data.state === 'error') return data;

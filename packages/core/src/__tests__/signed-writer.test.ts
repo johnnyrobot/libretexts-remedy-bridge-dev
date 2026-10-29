@@ -17,7 +17,7 @@ beforeAll(async()=>{
  await (await DurableLedger.open({...store,initialize:true})).close();
  await writeFile(join(dir,'service'),service);await writeFile(join(dir,'keys.json'),JSON.stringify({issuer,audience:'urn:libretexts:remedy-bridge:test',environment:'test',trust_epoch:'test-epoch',keys:[{kid:'synthetic1',kty:'OKP',crv:'Ed25519',x:keys.publicKey.export({format:'jwk'}).x,issuer,audience:'urn:libretexts:remedy-bridge:test',environment:'test',trust_epoch:'test-epoch',not_before:0,not_after:4102444800,enabled:true,revoked_at:null}]}));
  for(const [k,v]of Object.entries({NODE_ENV:'test',REMEDY_REVIEWER_REQUIRED:'true',REMEDY_REVIEWER_TRUST_EPOCH:'test-epoch',REMEDY_REVIEWER_KEYRING_FILE:join(dir,'keys.json'),REMEDY_BRIDGE_SERVICE_KEY_FILE:join(dir,'service'),REMEDY_CLAIM_DB:join(dir,'ledger','claims.sqlite3'),REMEDY_CLAIM_FENCE_DIR:dir,CXONE_INTEGRATION_ENABLED:'true',SERVER_DOMAIN:'dev.libretexts.org',SERVER_KEY:'fake',SERVER_SECRET:'fake',SERVER_USER:'fake',REMEDY_SNAPSHOT_DIR:join(dir,'snapshots'),REMEDY_AUDIT_LOG:join(dir,'audit.log')}))vi.stubEnv(k,v);
- server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+ {const bridge=await import('../../../conductor-panel/server/server.js');server=bridge.createBridgeServer(bridge.executeReadInline);}await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
 });
 afterAll(async()=>{if(server)await new Promise<void>(r=>server.close(()=>r()));vi.unstubAllEnvs();});
 beforeEach(()=>{cxone.html='<p><strong>Chapter</strong></p>';cxone.path='Sandboxes/johnnyphung/Page';cxone.writes=[];cxone.lose=false;cxone.gate=undefined;cxone.onWrite=undefined;cxone.onRead=undefined;});
@@ -113,7 +113,7 @@ it('persists a scheduled revocation observed after a storage await across restar
  cxone.onRead=()=>{let reads=0;clock=vi.spyOn(Date,'now').mockImplementation(()=>++reads===1?before:before+11000);cxone.onRead=undefined;};
  try{
   expect((await apply(p,a)).status).toBe(401);clock?.mockRestore();
-  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();{const bridge=await import('../../../conductor-panel/server/server.js');server=bridge.createBridgeServer(bridge.executeReadInline);}await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
   expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
  }finally{clock?.mockRestore();cxone.onRead=undefined;signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
 });
@@ -122,7 +122,7 @@ it('persists other-key revocation observed on a wrong-action rejection before a 
  const p=(await preview()).body,a=assertion(p),clock=vi.spyOn(Date,'now').mockReturnValue(before+11000);
  try{
   expect((await post('/v1/cxone/page/restore',{page_id:1,preview_token:p.preview_token,preview_hash:p.preview_hash,reviewer_assertion:a.compact})).status).toBe(403);clock.mockRestore();
-  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;signerKid='route-a';expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
+  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();{const bridge=await import('../../../conductor-panel/server/server.js');server=bridge.createBridgeServer(bridge.executeReadInline);}await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;signerKid='route-a';expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
  }finally{clock.mockRestore();signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
 });
 it('invalidates evidence for a late target move outside the owner sandbox',async()=>{
@@ -141,7 +141,7 @@ it('returns fixed unknown metadata and retains quarantine after transport loss a
  expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject({operation_id:r.body.operation_id,outcome:'unknown_write'});
  cxone.html='<p><strong>New source</strong></p>';expect((await apply((await preview()).body)).status).toBe(409);expect(cxone.writes).toHaveLength(1);
  await new Promise<void>(r=>server.close(()=>r()));await (await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();
- server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+ {const bridge=await import('../../../conductor-panel/server/server.js');server=bridge.createBridgeServer(bridge.executeReadInline);}await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
  expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject({operation_id:r.body.operation_id,outcome:'unknown_write'});expect((await apply((await preview()).body)).status).toBe(409);expect(cxone.writes).toHaveLength(1);
 });
 
@@ -156,7 +156,7 @@ it('holds evidence and retains the operation ID when unknown finalization runs o
  await writeFile(join(fresh,'bin','python3'),'#!/bin/sh\nexec '+quoted+' "$@" --test-fault disk_full_before_commit --test-fault-on finish\n',{mode:0o700});
  const previous=process.env.PATH!;vi.stubEnv('PATH',join(fresh,'bin')+':'+previous);vi.stubEnv('REMEDY_CLAIM_DB',join(fresh,'ledger','claims.sqlite3'));vi.stubEnv('REMEDY_CLAIM_FENCE_DIR',fresh);vi.resetModules();
  try{
-  server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
+  {const bridge=await import('../../../conductor-panel/server/server.js');server=bridge.createBridgeServer(bridge.executeReadInline);}await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;
   const p=(await preview()).body;cxone.lose=true;const r=await apply(p);expect(r.status).toBe(503);expect(r.body).toMatchObject({error:'claim_store_unavailable',outcome:'pending',evidence_effect:'hold',retryable:false});expect(r.body.operation_id).toMatch(/^[a-f0-9-]{36}$/);expect(cxone.writes).toHaveLength(1);
  }finally{vi.stubEnv('PATH',previous);}
 });

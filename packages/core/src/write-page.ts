@@ -1,3 +1,4 @@
+import { requestBudget } from '../../../tools/request-policy.cjs';
 import type Expert from '@libretexts/cxone-expert-node';
 import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain, WriteEligibilityError } from './write-safety.js';
 import { fetchPageHtml } from './scan.js';
@@ -31,6 +32,7 @@ export interface WritePageRevisionOptions {
   /** Verified HTTP reviewer, distinct from the process operator. */
   reviewer?: { issuer: string; subject: string };
   /** Required-mode durable dispatch marker; must complete before the single remote call. */
+  noiseOnlyChange?: boolean;
   beforeDispatch?: (snapshot: import('./guardrails.js').SnapshotEntry) => Promise<void>;
 }
 
@@ -62,8 +64,9 @@ export async function writePageRevision({
   revertedFrom,
   reviewer,
   beforeDispatch,
+  noiseOnlyChange,
 }: WritePageRevisionOptions): Promise<WritePageRevisionResult> {
-  if (beforeHtml === afterHtml || (mode !== 'revert' && isNoiseOnlyChange(beforeHtml, afterHtml))) {
+  if (beforeHtml === afterHtml || (mode !== 'revert' && (noiseOnlyChange ?? isNoiseOnlyChange(beforeHtml, afterHtml)))) {
     return { written: false, revisionSummary };
   }
 
@@ -84,7 +87,11 @@ export async function writePageRevision({
       source,
     }, env);
 
+    requestBudget.getStore()?.signal.throwIfAborted();
     await beforeDispatch?.(snapshot);
+    requestBudget.getStore()?.signal.throwIfAborted();
+    const budget = requestBudget.getStore();
+    if(budget) budget.dispatched = true;
 
     let postResponse: unknown;
     try {

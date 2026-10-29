@@ -19,7 +19,7 @@ beforeAll(async () => {
   vi.stubEnv('REMEDY_REVIEWER_REQUIRED', 'true'); vi.stubEnv('NODE_ENV', 'test');
   vi.stubEnv('REMEDY_BRIDGE_SERVICE_KEY_FILE', join(dir,'service')); vi.stubEnv('REMEDY_REVIEWER_KEYRING_FILE', join(dir,'keys.json')); vi.stubEnv('REMEDY_REVIEWER_TRUST_EPOCH', 'test-epoch');
   vi.stubEnv('CXONE_INTEGRATION_ENABLED','false');
-  server = (await import('../../../conductor-panel/server/server.js')).server;
+  { const bridge = await import('../../../conductor-panel/server/server.js'); server = bridge.createBridgeServer(bridge.executeReadInline); }
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as {port:number}).port}`;
 });

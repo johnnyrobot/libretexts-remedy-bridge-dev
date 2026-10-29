@@ -10,6 +10,7 @@ const require = createRequire(import.meta.url);
 const dist = dirname(require.resolve('@libretexts/cxone-expert-node'));
 const axiosMetadata = JSON.parse(await readFile(require.resolve('axios/package.json'), 'utf8'));
 if (axiosMetadata.version !== '1.21.0') throw new Error('Review the pinned CXone Axios transport before changing versions.');
+const policyEntry = './' + relative(dist, new URL('./request-policy.cjs', import.meta.url).pathname).replaceAll('\\', '/');
 const axiosEntry = './' + relative(dist, require.resolve('axios')).replaceAll('\\', '/');
 const metadata = JSON.parse(await readFile(join(dist, '..', 'package.json'), 'utf8'));
 if (metadata.version !== '1.7.0') throw new Error('Review the CXone UTF-8 compatibility patch before changing SDK versions.');
@@ -19,8 +20,9 @@ for (const file of ['index.mjs', 'index.cjs']) {
   // SDK1.7 bundles Axios1.18 even when npm's external dependency is overridden.
   // Route BOTH request-instance creation sites to the supported external build.
   // Preserve its original fetch-adapter behavior and all SDK error translation.
+  const policyImport = file.endsWith('.mjs') ? `import { boundedFetch as remedyBoundedFetch } from ${JSON.stringify(policyEntry)};\n` : `var {boundedFetch:remedyBoundedFetch}=require(${JSON.stringify(policyEntry)});\n`;
   const transportImport = file.endsWith('.mjs') ? `import remedyPatchedAxios from ${JSON.stringify(axiosEntry)};\n` : `var remedyPatchedAxios=require(${JSON.stringify(axiosEntry)});\n`;
-  if (source.includes('remedyPatchedAxios') && !source.startsWith(transportImport)) {
+  if (source.includes('remedyPatchedAxios') && !source.includes(transportImport)) {
     const old = /^(?:import remedyPatchedAxios from [^;]+;|var remedyPatchedAxios=require\([^;]+\);)\n/;
     if (!old.test(source)) throw new Error('Unexpected patched Axios import layout.');
     source = source.replace(old, transportImport);
@@ -32,7 +34,12 @@ for (const file of ['index.mjs', 'index.cjs']) {
     source = source.replace(/axiosInstance\s*=\s*[A-Za-z_$]\w*\.create\(\)/g, 'axiosInstance=remedyPatchedAxios.create({adapter:"fetch"})');
     source = source.replace(/axiosInstance\s*=\s*[A-Za-z_$]\w*\.create\(\{/g, 'axiosInstance=remedyPatchedAxios.create({adapter:"fetch",');
     source = transportImport + source;
-    if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2) throw new Error('Failed to replace CXone Axios request sites.');
+    if (!source.includes('remedyBoundedFetch')) {
+    source = policyImport + source;
+    source = source.replaceAll('remedyPatchedAxios.create({adapter:"fetch",', 'remedyPatchedAxios.create({timeout:30000,env:{fetch:remedyBoundedFetch},adapter:"fetch",');
+    await writeFile(path, source);
+  }
+  if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2) throw new Error('Failed to replace CXone Axios request sites.');
     await writeFile(path, source);
   }
   if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2 || /axiosInstance\s*=\s*Q\.create/.test(source)) throw new Error('Unexpected patched Axios request sites.');

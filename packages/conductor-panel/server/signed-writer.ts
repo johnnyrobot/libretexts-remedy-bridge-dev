@@ -1,3 +1,4 @@
+import { PreviewCache } from './preview-cache.js';
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -8,7 +9,7 @@ import { ReviewerVerifier, ReviewAuthError, type ReviewBinding } from './reviewe
 export type ReviewedPreview = {
   token: string; expiresAt: number; pageId: number; pagePath: string; hostname: string;
   beforeHtml: string; afterHtml: string; mode: 'deterministic' | 'pipeline' | 'restore';
-  tier: 1 | 2 | 3 | null; snapshotTs?: string; rules: string[];
+  tier: 1 | 2 | 3 | null; noiseOnlyChange?:boolean; snapshotTs?: string; rules: string[];
 };
 type StoredPreview = ReviewedPreview & { binding: ReviewBinding };
 export class SignedRequestError extends Error {
@@ -25,7 +26,7 @@ export class SignedWriter {
   private admitting = true;
   private reloadGeneration = 0;
   private readonly observedRevocations = new Set<string>();
-  private readonly previews = new Map<string, StoredPreview>();
+  private readonly previews = new PreviewCache<StoredPreview>();
   private readonly productionWriteBlocked: boolean;
   private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {
     this.productionWriteBlocked = !['development', 'test'].includes(env.NODE_ENV ?? '');
@@ -149,7 +150,7 @@ export class SignedWriter {
       }
       await this.authorize(body.reviewer_assertion, preview);
       const result = await writePageRevision({ expert, pageInput: canonical.id, page: canonical,
-        beforeHtml: preview.beforeHtml, afterHtml: preview.afterHtml, rules: preview.rules, env: this.env,
+        beforeHtml: preview.beforeHtml, noiseOnlyChange:preview.noiseOnlyChange, afterHtml: preview.afterHtml, rules: preview.rules, env: this.env,
         revisionSummary: preview.mode === 'restore' ? `Remedy: restore reviewed snapshot ${preview.snapshotTs}` : 'Remedy: apply signed reviewed output',
         source: preview.mode === 'restore' ? 'revert' : preview.mode === 'pipeline' ? 'pipeline' : 'fix',
         mode: preview.mode === 'restore' ? 'revert' : 'apply', requestedBy: claims.sub, revertedFrom,

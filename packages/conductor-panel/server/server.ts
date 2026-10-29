@@ -1,3 +1,6 @@
+import { PreviewCache, PreviewPool, finiteLimit, CapacityError } from './preview-cache.js';
+import { WorkOwner, ownedRead, WorkCancelled } from './work-owner.js';
+import { requestBudget } from '../../../tools/request-policy.cjs';
 /**
  * Minimal Node API server for the Conductor panel.
  *
@@ -60,16 +63,17 @@ const REPO_ROOT = resolve(HERE, '../../..');
 
 loadDotenv({ path: resolve(REPO_ROOT, '.env') });
 
+const isReadWorker = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(new URL('./read-worker.ts', import.meta.url));
 const security = loadSecurity();
-const signedWriter = security.required ? await SignedWriter.open(security.verifier!) : null;
+const signedWriter = security.required && !isReadWorker ? await SignedWriter.open(security.verifier!) : null;
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
 // This unauthenticated staff tool must remain on loopback (ADR-0001).
 const HOST = requireLoopbackHost(process.env.CONDUCTOR_API_HOST ?? '127.0.0.1');
-const MAX_REQUEST_BYTES = Number(process.env.REMEDY_MAX_REQUEST_BYTES ?? 5_000_000);
+const MAX_REQUEST_BYTES = finiteLimit(process.env.REMEDY_MAX_REQUEST_BYTES,5_000_000,5_000_000);
 const FIXTURE_ROOT = resolve(REPO_ROOT, 'fixtures/local-lab');
 const STATIC_ROOT = resolve(HERE, '../dist');
-const PIPELINE_PREVIEW_TTL_MS = Number(process.env.REMEDY_PIPELINE_PREVIEW_TTL_MS ?? 30 * 60 * 1000);
+const PIPELINE_PREVIEW_TTL_MS = finiteLimit(process.env.REMEDY_PIPELINE_PREVIEW_TTL_MS,30*60*1000,30*60*1000);
 
 type FixEngineMode = 'deterministic' | 'pipeline';
 
@@ -88,10 +92,11 @@ interface PipelinePreviewSession {
   appliedRuleIds: string[];
 }
 
-const restoreSessions = new Map<string, { pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; beforeHtml: string; afterHtml: string; expiresAt: number }>();
+const previewPool = new PreviewPool();
+const restoreSessions = new PreviewCache<{ pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; beforeHtml: string; afterHtml: string; expiresAt: number }>(previewPool);
 
-const pipelinePreviewSessions = new Map<string, PipelinePreviewSession>();
-const targetedPreviewSessions = new Map<string, {
+const pipelinePreviewSessions = new PreviewCache<PipelinePreviewSession>(previewPool);
+const targetedPreviewSessions = new PreviewCache<{
   token: string;
   expiresAt: number;
   pageId: number;
@@ -111,7 +116,7 @@ const targetedPreviewSessions = new Map<string, {
   fallbackReason?: string;
   splicesApplied?: number;
   editableImages?: Array<{ src: string; findingId: string }>;
-}>();
+}>(previewPool);
 
 type Handler = (body: Record<string, unknown>) => Promise<unknown>;
 
@@ -383,6 +388,7 @@ const routes: Record<string, Handler> = {
         page: pageRef,
         beforeHtml: currentHtml,
         afterHtml: session.afterHtml,
+        noiseOnlyChange: (session as any).noiseOnlyChange,
         rules: session.appliedRuleIds,
         revisionSummary,
         source: 'pipeline',
@@ -450,6 +456,7 @@ const routes: Record<string, Handler> = {
         page: pageRef,
         beforeHtml: currentHtml,
         afterHtml: session.afterHtml,
+        noiseOnlyChange: (session as any).noiseOnlyChange,
         rules: session.appliedRuleIds,
         revisionSummary,
         source: 'fix',
@@ -545,6 +552,7 @@ const routes: Record<string, Handler> = {
       if (resolved !== FIXTURE_ROOT && !resolved.startsWith(FIXTURE_ROOT + sep)) {
         throw new Error('fixture path escapes fixture root');
       }
+      if((await stat(resolved)).size > 8*1024*1024) throw new CapacityError();
       html = await readFile(resolved, 'utf8');
       fixtureName = relPath;
     } else if (source === 'inline') {
@@ -579,7 +587,33 @@ function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): Pipeline
   return session;
 }
 
-export const server = createServer(async (req, res) => {
+const mutationRoutes = new Set(['/v1/cxone/page/apply-fix','/v1/cxone/page/restore','/api/apply']);
+const caches = {targeted:targetedPreviewSessions,pipeline:pipelinePreviewSessions,restore:restoreSessions};
+type ReadPayload = {pathname:string;body:Record<string,unknown>;seed?:{kind:keyof typeof caches;token:string;session:any}};
+/** Private process interface: only registered read/preview routes may run here. */
+export async function executeReadRoute({pathname,body,seed}:ReadPayload) {
+  if(mutationRoutes.has(pathname) || !routes[pathname]) throw new Error('read_route_required');
+  if(seed) (caches[seed.kind] as Map<string,any>).set(seed.token,seed.session);
+  const result = await routes[pathname](body);
+  return {result, sessions:Object.entries(caches).flatMap(([kind,cache])=>[...cache].map(([token,session])=>({kind,token,session:{...session,noiseOnlyChange:kind==='restore'?false:canonicalizeHtml(session.beforeHtml)===canonicalizeHtml(session.afterHtml)}})))};
+}
+export async function executeReadInline(payload: ReadPayload, _signal:AbortSignal) { return executeReadRoute(payload); }
+async function readResult(pathname:string,body:Record<string,unknown>,signal:AbortSignal,execute:typeof ownedRead) {
+  const oldToken = body.preview_token;
+  const kind = typeof oldToken === 'string' ? (Object.keys(caches) as Array<keyof typeof caches>).find(k=>caches[k].has(oldToken)) : undefined;
+  const seed = kind ? {kind,token:oldToken as string,session:caches[kind].get(oldToken as string)} : undefined;
+  if(pathname === '/v1/cxone/page/revise-preview' && seed) { caches[seed.kind].delete(seed.token); signedWriter?.invalidate(seed.token); }
+  const value = await execute({pathname,body,seed},signal);
+  signal.throwIfAborted();
+  // Import only a newly returned token, atomically after actual worker termination.
+  const token = value.result?.preview_token ?? value.result?.previewToken;
+  const fresh = value.sessions.find((s:any)=>s.token===token);
+  if(fresh) (caches[fresh.kind as keyof typeof caches] as Map<string,any>).set(fresh.token,fresh.session);
+  return value.result;
+}
+export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
+const workOwner = new WorkOwner();
+const instance = createServer(async (req, res) => {
   setSecurityHeaders(res);
   if (req.url === '/healthz' && req.method === 'GET') { json(res, 200, { ok: true }); return; }
   // Authenticate even unknown paths and OPTIONS, before parsing or upstream work.
@@ -606,6 +640,14 @@ export const server = createServer(async (req, res) => {
   if (req.method !== 'POST' && req.method !== 'GET') {
     json(res, 405, { error: 'method_not_allowed' }); return;
   }
+  const owned = workOwner.controller();
+  const signal = owned.controller.signal;
+  const mutation = mutationRoutes.has(pathname);
+  const budget = {signal,mutation,dispatched:false};
+  const disconnected = () => { if(!res.writableEnded && !budget.dispatched) owned.controller.abort(new WorkCancelled()); };
+  res.once('close',disconnected);
+  try {
+  await workOwner.run(signal,mutation,()=>requestBudget.run(budget,async()=>{
   if (signedWriter && ['/v1/cxone/page/apply-fix', '/v1/cxone/page/restore', '/v1/cxone/page/operation-status', '/api/apply'].includes(pathname)) {
     try {
       if (req.method !== 'POST') throw new HttpError(405, { error: 'method_not_allowed' });
@@ -639,10 +681,12 @@ export const server = createServer(async (req, res) => {
       return;
     }
     const body = req.method === 'POST' ? await readJson(req) : {};
-    const result = await handler(body);
+    const result = mutation ? await handler(body) : await readResult(pathname,body,signal,execute);
     json(res, 200, decoratePreview(pathname, result));
   } catch (err) {
     if (err instanceof ScanEngineError) { json(res, 503, { error: 'scan_engine_failed', evidence_usable: false }); return; }
+    if (err instanceof WorkCancelled || signal.aborted) { json(res,503,{error:'work_cancelled',evidence_usable:false}); return; }
+    if (err && typeof err === 'object' && 'status' in err && 'body' in err) { if((err as any).status===503) res.setHeader('retry-after','5'); json(res,(err as any).status,(err as any).body); return; }
     if (security.required) { signedError(res, err); return; }
     if (err instanceof WriteOutcomeError) {
       json(res, 409, { error: 'write_outcome_unknown', write_outcome: 'unknown', retry_safe: false, snapshot_path: err.snapshotPath,
@@ -663,7 +707,18 @@ export const server = createServer(async (req, res) => {
     console.error('[conductor-api] request failed:', err instanceof Error ? err.name : 'UnknownError');
     json(res, 500, { error: 'internal server error' });
   }
+  }));
+  } catch(error) {
+    res.setHeader('retry-after','5');
+    json(res,503,{error:error instanceof CapacityError ? 'capacity_unavailable' : 'work_cancelled',evidence_usable:false});
+  } finally { res.off('close',disconnected); owned.done(); }
 });
+const close = instance.close.bind(instance);
+instance.close = ((...args:Parameters<typeof close>)=>{workOwner.shutdown();return close(...args);}) as typeof instance.close;
+instance.once('close',()=>{void closeSignedWriter();});
+return instance;
+}
+export const server = createBridgeServer();
 
 let writerClosed: Promise<void> | undefined;
 export function closeSignedWriter() { return writerClosed ??= signedWriter?.close() ?? Promise.resolve(); }
@@ -693,6 +748,7 @@ function decoratePreview(pathname: string, result: unknown): unknown {
   const session = targeted ?? pipeline ?? restore;
   if (!session) throw new Error('preview_unavailable');
   return { ...out, ...signedWriter.preview({ token, expiresAt: session.expiresAt,
+    noiseOnlyChange: (session as any).noiseOnlyChange,
     pageId: session.pageId, pagePath: session.pagePath, hostname: session.hostname,
     beforeHtml: session.beforeHtml, afterHtml: session.afterHtml,
     mode: restore ? 'restore' : pipeline ? 'pipeline' : 'deterministic',
@@ -717,17 +773,16 @@ function isCxoneRoute(pathname: string): boolean {
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   let total = 0;
-  for await (const c of req) {
-    const chunk = Buffer.isBuffer(c) ? c : Buffer.from(c);
-    total += chunk.length;
-    if (total > MAX_REQUEST_BYTES) {
-      throw new HttpError(413, {
-        error: 'payload_too_large',
-        message: `Request body exceeds ${MAX_REQUEST_BYTES} bytes.`,
-      });
-    }
-    chunks.push(chunk);
-  }
+  const signal = requestBudget.getStore()?.signal;
+  await new Promise<void>((resolve,reject)=>{
+    const cleanup = () => {req.off('data',data);req.off('end',end);req.off('error',error);req.off('aborted',aborted);signal?.removeEventListener('abort',aborted);};
+    const error = (e:Error) => {cleanup();req.pause();reject(e);};
+    const aborted = () => error(new WorkCancelled());
+    const end = () => {cleanup();resolve();};
+    const data = (chunk:Buffer) => {total+=chunk.length;if(total>MAX_REQUEST_BYTES)error(new HttpError(413,{error:'payload_too_large'}));else chunks.push(chunk);};
+    req.on('data',data);req.once('end',end);req.once('error',error);req.once('aborted',aborted);signal?.addEventListener('abort',aborted,{once:true});
+    if(signal?.aborted) aborted();
+  });
   const text = Buffer.concat(chunks).toString('utf8');
   if (!text) return {};
   if (!security.required) return JSON.parse(text);
@@ -739,6 +794,8 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
 }
 
 function json(res: ServerResponse, status: number, body: unknown) {
+  if(res.destroyed || res.writableEnded) return;
+  if(!res.req.complete) {res.setHeader('connection','close');res.once('finish',()=>res.req.destroy());}
   res.writeHead(status, { 'content-type': 'application/json' });
   res.end(JSON.stringify(body));
 }

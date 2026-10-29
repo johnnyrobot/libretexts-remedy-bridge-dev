@@ -1,3 +1,4 @@
+import { requestBudget } from '../../../tools/request-policy.cjs';
 import type Expert from '@libretexts/cxone-expert-node';
 import { normalizePageInput, resolvePageRef } from './client.js';
 import { assertWriteAllowed } from './guardrails.js';
@@ -28,6 +29,9 @@ const keyFor = (page: PageRef) => `${page.hostname.toLowerCase()}/${page.id}`;
 /** One process owns writes; outside editors still require CXone conditional edits. */
 export async function withPageWriteLock<T>(page: PageRef, operation: () => Promise<T>): Promise<T> {
   const key = keyFor(page);
+  if(pending.has(key) && requestBudget.getStore()?.mutation) {
+    const error=Object.assign(new Error('capacity_unavailable'),{status:503,body:{error:'capacity_unavailable'}});throw error;
+  }
   const previous = pending.get(key) ?? Promise.resolve();
   let release!: () => void;
   const current = new Promise<void>(resolve => { release = resolve; });
