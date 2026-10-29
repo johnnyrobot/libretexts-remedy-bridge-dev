@@ -14,12 +14,12 @@ test('disconnect and shutdown reap actual sandboxed Chromium groups while health
   const health=async()=>fetch(base+'/healthz').then(r=>r.json());
   for(const shutdown of [false,true]){
    const controller=new AbortController();const request=fetch(base+'/scan',{method:'POST',headers:{Authorization:'Bearer synthetic-only'},body:JSON.stringify({url:'https://dev.libretexts.org/Sandboxes/johnnyphung/owned-test'}),signal:controller.signal}).catch(()=>null);
-   let group;
-   await until(()=>{const worker=processRows().find(r=>Number(r[1])===child.pid&&r.slice(4).join(' ').includes('scan-worker.mjs'));group=worker?.[2];return group&&processRows().some(r=>r[2]===group&&/chrome|chromium/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
+   let owned;
+   await until(()=>{const rows=processRows(),worker=rows.find(r=>Number(r[1])===child.pid&&r.slice(4).join(' ').includes('scan-worker.mjs'));if(!worker)return false;owned=new Set([worker[0]]);for(let changed=true;changed;){changed=false;for(const row of rows)if(owned.has(row[1])&&!owned.has(row[0])){owned.add(row[0]);changed=true;}}return rows.some(r=>owned.has(r[0])&&/chrome|chromium/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
    const start=performance.now();assert.equal((await health()).busy,true);assert.ok(performance.now()-start<1000);
    if(shutdown)child.kill('SIGTERM');else controller.abort();
    await request;
-   await until(()=>!processRows().some(r=>r[2]===group&&!r[3].startsWith('Z')));
+   await until(()=>!processRows().some(r=>owned.has(r[0])&&!r[3].startsWith('Z')));
    if(!shutdown)await until(async()=>!(await health()).busy);
   }
  }finally{child.kill('SIGKILL');}
