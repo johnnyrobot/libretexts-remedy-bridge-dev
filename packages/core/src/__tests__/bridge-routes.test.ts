@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Server } from 'node:http';
 
-const cxone = vi.hoisted(() => ({ html: '<p><strong>Chapter</strong></p>', writes: [] as string[], gate: undefined as Promise<void> | undefined, loseResponse: false, onResolve: undefined as (() => void) | undefined }));
+const cxone = vi.hoisted(() => ({ html: '<p><strong>Chapter</strong></p>', writes: [] as string[], writtenIds: [] as number[], aliasId: 1, gate: undefined as Promise<void> | undefined, loseResponse: false, onResolve: undefined as (() => void) | undefined }));
 vi.mock('dotenv/config', () => ({}));
 vi.mock('dotenv', () => ({ config: () => ({}) }));
 // Only the external CXone SDK is fake. HTTP handlers, preview generation,
@@ -14,12 +14,12 @@ vi.mock('@libretexts/cxone-expert-node', () => ({ default: class {
     getPageInfo: async (input: string | number) => {
       cxone.onResolve?.();
       await cxone.gate;
-      const id = input === 2 || String(input).endsWith('/Other') ? 2 : 1;
+      const id = input === 'review-alias' ? cxone.aliasId : input === 2 || String(input).endsWith('/Other') ? 2 : 1;
       return { '@id': id, path: `Sandboxes/johnnyphung/${id === 2 ? 'Other' : 'Page'}` };
     },
     getPageContents: async () => ({ body: cxone.html }),
     postPageContents: async (_id: number, html: string) => {
-      cxone.writes.push(html); cxone.html = html;
+      cxone.writtenIds.push(_id); cxone.writes.push(html); cxone.html = html;
       if (cxone.loseResponse) throw new Error('synthetic response lost');
       return { page: { '@revision': '7' } };
     },
@@ -39,7 +39,7 @@ beforeAll(async () => {
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
 });
 afterAll(async () => { if (server) await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve())); vi.unstubAllEnvs(); });
-beforeEach(() => { cxone.html = '<p><strong>Chapter</strong></p>'; cxone.writes.length = 0; cxone.gate = undefined; cxone.loseResponse = false; cxone.onResolve = undefined; });
+beforeEach(() => { cxone.html = '<p><strong>Chapter</strong></p>'; cxone.writes.length = 0; cxone.writtenIds.length = 0; cxone.aliasId = 1; cxone.gate = undefined; cxone.loseResponse = false; cxone.onResolve = undefined; });
 async function post(path: string, body: unknown, signal?: AbortSignal) {
   const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal });
   return { status: r.status, body: await r.json() };
@@ -172,6 +172,22 @@ it('invalidates panel confirmation when page or tier changes and sends the revie
     expect(doc.body.textContent).toContain('CXone revision: 7');
     expect(button('Apply (write revision)')).toBeUndefined();
   } finally { await act(async () => root.unmount()); dom.window.close(); vi.unstubAllGlobals(); vi.stubEnv('REMEDY_AUDIT_LOG', auditPath); }
+});
+
+it('CLI restore pins the reviewed ID and snapshot even if its locator is retargeted', async () => {
+  const { program } = await import('../../../cli/src/index.js');
+  const { saveSnapshot } = await import('../guardrails.js');
+  for (const id of [1, 2]) {
+    await saveSnapshot('<p>Identical restore content</p>', { pageId: id, pagePath: `Sandboxes/johnnyphung/${id === 1 ? 'Page' : 'Other'}`, hostname: 'dev.libretexts.org', operator: 'fake', rules: [], source: 'fix' }, process.env);
+  }
+  const log = vi.spyOn(console, 'log').mockImplementation((...args) => {
+    if (args.join(' ').includes('byte delta:')) cxone.aliasId = 2;
+  });
+  try {
+    await program.parseAsync(['node', 'remedy', 'revert', 'review-alias', '--i-have-confirmed']);
+    expect(cxone.writtenIds).toEqual([1]);
+    expect(cxone.writes).toEqual(['<p>Identical restore content</p>']);
+  } finally { log.mockRestore(); }
 });
 
 it('CLI fix rejects a source change after showing the reviewed output', async () => {

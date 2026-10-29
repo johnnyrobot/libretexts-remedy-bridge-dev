@@ -294,9 +294,8 @@ program
             return;
           }
         }
-        const result = await revertPage(page, {
-          snapshotTs: opts.snapshot,
-          snapshotPath: opts.snapshotPath,
+        const result = await revertPage(preview.pageId, {
+          snapshotPath: preview.snapshotUsed.metaPath,
           revisionSummary: opts.message,
           expectedCurrentHash: hashContent(preview.currentHtml),
           expectedRestoredHash: hashContent(preview.revertedToHtml),
