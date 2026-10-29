@@ -115,8 +115,10 @@ export class SignedWriter {
       await this.persistRevocations();
       throw error;
     }
-    if (preview.binding.action !== action) rejected(403, 'reviewer_binding_mismatch');
     this.previews.delete(body.preview_token);
+    // Persist observations before action or claim rejection can exit this path.
+    await this.persistRevocations();
+    if (preview.binding.action !== action) rejected(403, 'reviewer_binding_mismatch');
     const operation = await this.ledger.claim({ issuer: claims.iss, jti: claims.jti, preview_token: preview.token,
       subject: claims.sub, expires_at: claims.exp, target: preview.binding.target, binding: preview.binding });
     let started = false;

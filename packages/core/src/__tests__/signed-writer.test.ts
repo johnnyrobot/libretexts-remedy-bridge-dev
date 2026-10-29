@@ -114,6 +114,14 @@ it('persists a scheduled revocation observed after a storage await across restar
   expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
  }finally{clock?.mockRestore();cxone.onRead=undefined;signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
 });
+it('persists other-key revocation observed on a wrong-action rejection before a claim exists',async()=>{
+ const previous=await readFile(join(dir,'keys.json'),'utf8'),previousKid=signerKid,config=JSON.parse(previous),before=Date.now();const aKey={...config.keys[0],kid:'route-a',revoked_at:Math.floor(before/1000)+10},bKey={...config.keys[0],kid:'route-b',revoked_at:null};config.keys=[aKey,bKey];await writeFile(join(dir,'keys.json'),JSON.stringify(config));await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();signerKid='route-b';
+ const p=(await preview()).body,a=assertion(p),clock=vi.spyOn(Date,'now').mockReturnValue(before+11000);
+ try{
+  expect((await post('/v1/cxone/page/restore',{page_id:1,preview_token:p.preview_token,preview_hash:p.preview_hash,reviewer_assertion:a.compact})).status).toBe(403);clock.mockRestore();
+  await new Promise<void>(r=>server.close(()=>r()));await(await import('../../../conductor-panel/server/server.js')).closeSignedWriter();vi.resetModules();server=(await import('../../../conductor-panel/server/server.js')).server;await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${(server.address()as{port:number}).port}`;signerKid='route-a';expect((await apply((await preview()).body)).status).toBe(401);expect(cxone.writes).toEqual([]);
+ }finally{clock.mockRestore();signerKid=previousKid;await writeFile(join(dir,'keys.json'),previous);await(await import('../../../conductor-panel/server/server.js')).reloadReviewerKeys();}
+});
 it('returns fixed unknown metadata and retains quarantine after transport loss and restart',async()=>{
  const p=(await preview()).body,a=assertion(p);cxone.lose=true;const r=await apply(p,a);expect(r.status).toBe(502);expect(r.body).toMatchObject({outcome:'unknown_write',applied:null,restored:false,evidence_effect:'invalidate',requires_reconciliation:true,reconciliation:'required',error:'write_outcome_unknown'});expect(JSON.stringify(r.body)).not.toMatch(/private upstream|\.json|snapshot|reviewer_assertion/);
  expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject({operation_id:r.body.operation_id,outcome:'unknown_write'});
