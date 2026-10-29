@@ -93,3 +93,12 @@ it('refuses missing evidence and missing decision fields without changing claims
   const ledger = await DurableLedger.open(f.options);
   try { expect(await ledger.reconciliationReport()).toEqual(f.report); } finally { await ledger.close(); }
 });
+it('rejects an explicitly empty offline path without recovering pending claims', async () => {
+  const f = await fixture();
+  await f.owner.claim(claim('pending'));
+  const before = await f.owner.reconciliationReport(); await f.owner.close();
+  const args = [...f.args]; args[args.indexOf('--offline-resolve')+1] = '';
+  await expect(run('python3',args,{timeout:1000})).rejects.toMatchObject({code:1,stdout:'{"error":"offline_resolution_refused"}\n'});
+  const report = JSON.parse((await run('python3',[helper,'--directory',f.options.directory,'--fence',f.options.fencePath,'--epoch',f.options.trustEpoch,'--readonly-report'])).stdout);
+  expect(report).toEqual(before);
+});

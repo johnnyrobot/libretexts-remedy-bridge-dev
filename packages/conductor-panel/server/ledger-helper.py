@@ -93,7 +93,7 @@ class Ledger:
             raise ValueError()
         self.check()
         recovery = self.db.execute("SELECT 1 FROM claims WHERE outcome='pending' LIMIT 1").fetchone()
-        if recovery and not args.offline_resolve:
+        if recovery and args.offline_resolve is None:
             def recover():
                 self.db.execute("UPDATE claims SET outcome=CASE state WHEN 'write_started' THEN 'unknown_write' ELSE 'not_attempted' END, reason=CASE state WHEN 'write_started' THEN 'write_outcome_unknown' ELSE 'pre_dispatch_failure' END, target_active=CASE state WHEN 'write_started' THEN 1 ELSE 0 END, state='terminal', updated_at=? WHERE outcome='pending'", (now(),))
             self.mutate(recover)
@@ -377,9 +377,9 @@ def main():
     try:
         ledger = Ledger(args)
     except Exception:
-        emit({'error': 'offline_resolution_refused'} if args.offline_resolve else {'ready': False})
-        return 1 if args.offline_resolve else None
-    if args.offline_resolve:
+        emit({'error': 'offline_resolution_refused'} if args.offline_resolve is not None else {'ready': False})
+        return 1 if args.offline_resolve is not None else None
+    if args.offline_resolve is not None:
         try:
             # Bounded regular, no-follow files; never load credentials or network content.
             def evidence_file(path):
