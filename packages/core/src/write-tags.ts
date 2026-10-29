@@ -20,6 +20,7 @@ import {
   snapshotDir,
 } from './guardrails.js';
 import type { PageRef } from './types.js';
+import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain } from './write-safety.js';
 
 const RESTORE_PREFIXES = ['license:', 'licenseversion:'];
 
@@ -52,6 +53,9 @@ export interface WritePageTagsOptions {
 
 export interface WritePageTagsResult {
   written: boolean;
+  writeOutcome?: 'succeeded';
+  auditRecorded?: boolean;
+  auditError?: 'audit_append_failed';
   before: string[];
   after: string[];
   added: string[];
@@ -115,17 +119,20 @@ export async function writePageTags({
   env = process.env,
 }: WritePageTagsOptions): Promise<WritePageTagsResult> {
   assertWriteAllowed(page, env);
+  return withPageWriteLock(page, async () => {
+    page = await canonicalWriteTarget(expert, page.id, page, env);
 
-  const before = tagValues(await expert.pages.getPageTags(page.id));
-  const after = [...new Set(merge ? [...before, ...tags] : tags)];
-  const added = after.filter((t) => !before.includes(t));
-  const removed = before.filter((t) => !after.includes(t));
-  const plan = { written: false, before, after, added, removed };
+    const before = tagValues(await expert.pages.getPageTags(page.id));
+    const after = [...new Set(merge ? [...before, ...tags] : tags)];
+    const added = after.filter((t) => !before.includes(t));
+    const removed = before.filter((t) => !after.includes(t));
+    const plan = { written: false, before, after, added, removed };
 
-  if (dryRun || (added.length === 0 && removed.length === 0)) return plan;
+    if (dryRun || (added.length === 0 && removed.length === 0)) return plan;
 
-  const snapshotPath = await putTagsWithSnapshot(expert, page, before, after, { mode: 'apply', revisionSummary, env });
-  return { ...plan, written: true, snapshotPath };
+    const write = await putTagsWithSnapshot(expert, page, before, after, { mode: 'apply', revisionSummary, env });
+    return { ...plan, written: true, ...write };
+  });
 }
 
 async function putTagsWithSnapshot(
@@ -134,30 +141,35 @@ async function putTagsWithSnapshot(
   before: string[],
   after: string[],
   opts: { mode: 'apply' | 'revert'; revisionSummary?: string; revertedFrom?: string; env: NodeJS.ProcessEnv },
-): Promise<string> {
+): Promise<{ snapshotPath: string; writeOutcome: 'succeeded'; auditRecorded: boolean; auditError?: 'audit_append_failed' }> {
   const operator = operatorFromEnv(opts.env);
   const snapshotPath = await saveTagSnapshot(before, page, operator, opts.revisionSummary, opts.env);
 
-  await expert.pages.putPageTags(page.id, tagsToXml(after), undefined, {
-    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
-  });
+  try {
+    await expert.pages.putPageTags(page.id, tagsToXml(after), undefined, {
+      headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    });
+  } catch { throw markWriteUncertain(page, snapshotPath); }
 
-  await appendAudit(
-    {
-      ts: new Date().toISOString(),
-      page: { id: page.id, path: page.path, hostname: page.hostname },
-      rules: ['page-tags'],
-      mode: opts.mode,
-      beforeHash: hashContent(JSON.stringify(before)),
-      afterHash: hashContent(JSON.stringify(after)),
-      operator,
-      revisionSummary: opts.revisionSummary,
-      snapshotPath,
-      revertedFrom: opts.revertedFrom,
-    },
-    opts.env.REMEDY_AUDIT_LOG,
-  );
-  return snapshotPath;
+  let auditRecorded = true;
+  try {
+    await appendAudit(
+      {
+        ts: new Date().toISOString(),
+        page: { id: page.id, path: page.path, hostname: page.hostname },
+        rules: ['page-tags'],
+        mode: opts.mode,
+        beforeHash: hashContent(JSON.stringify(before)),
+        afterHash: hashContent(JSON.stringify(after)),
+        operator,
+        revisionSummary: opts.revisionSummary,
+        snapshotPath,
+        revertedFrom: opts.revertedFrom,
+      },
+      opts.env.REMEDY_AUDIT_LOG,
+    );
+  } catch { auditRecorded = false; }
+  return { snapshotPath, writeOutcome: 'succeeded', auditRecorded, ...(auditRecorded ? {} : { auditError: 'audit_append_failed' as const }) };
 }
 
 export interface RevertPageTagsOptions {
@@ -173,22 +185,25 @@ export async function revertPageTags({ expert, snapshotPath, env = process.env }
     meta: { pageId: number; pagePath: string; hostname: string };
     tags: string[];
   };
-  const page: PageRef = { id: snapshot.meta.pageId, path: snapshot.meta.pagePath, hostname: snapshot.meta.hostname };
+  let page: PageRef = { id: snapshot.meta.pageId, path: snapshot.meta.pagePath, hostname: snapshot.meta.hostname };
   assertWriteAllowed(page, env);
+  return withPageWriteLock(page, async () => {
+    page = await canonicalWriteTarget(expert, page.id, page, env);
 
-  const before = tagValues(await expert.pages.getPageTags(page.id));
-  const after = [...new Set(snapshot.tags)];
-  const added = after.filter((t) => !before.includes(t));
-  const removed = before.filter((t) => !after.includes(t));
-  if (added.length === 0 && removed.length === 0) return { written: false, before, after, added, removed };
+    const before = tagValues(await expert.pages.getPageTags(page.id));
+    const after = [...new Set(snapshot.tags)];
+    const added = after.filter((t) => !before.includes(t));
+    const removed = before.filter((t) => !after.includes(t));
+    if (added.length === 0 && removed.length === 0) return { written: false, before, after, added, removed };
 
-  const safety = await putTagsWithSnapshot(expert, page, before, after, {
-    mode: 'revert',
-    revisionSummary: `Revert page tags to snapshot ${snapshotPath}`,
-    revertedFrom: snapshotPath,
-    env,
+    const safety = await putTagsWithSnapshot(expert, page, before, after, {
+      mode: 'revert',
+      revisionSummary: `Revert page tags to snapshot ${snapshotPath}`,
+      revertedFrom: snapshotPath,
+      env,
+    });
+    return { written: true, before, after, added, removed, ...safety };
   });
-  return { written: true, before, after, added, removed, snapshotPath: safety };
 }
 
 /* -------------------------------------------------------------------------- *

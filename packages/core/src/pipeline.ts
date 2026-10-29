@@ -27,7 +27,8 @@ import { scanHtmlFull, scanPage } from './scan.js';
 import { isNoiseOnlyChange } from './serialize.js';
 import { buildTierClient, shouldEscalate } from './tiers.js';
 import type { Finding, FixMode, PageRef, Rule } from './types.js';
-import { writePageRevision } from './write-page.js';
+import { writePageRevision, type WritePageRevisionResult } from './write-page.js';
+import { WriteOutcomeError } from './write-safety.js';
 
 export interface PipelineOptions {
   /** Max tier to run. Default 1. */
@@ -78,6 +79,9 @@ export interface PipelineResult {
   diff: string;
   appliedRuleIds: string[];
   applied: boolean;
+  writeOutcome?: 'succeeded';
+  auditRecorded?: boolean;
+  auditError?: 'audit_append_failed';
   applyError?: string;
   revisionSummary?: string;
   snapshotPath?: string;
@@ -226,6 +230,7 @@ export async function runPipeline(
   // mode because it would re-derive the "after" HTML from scratch).
   const appliedRuleIds = collectAppliedRules(tiersRun);
   let applied = false;
+  let writeOutcome: WritePageRevisionResult | undefined;
   let applyError: string | undefined;
   let revisionSummary: string | undefined;
   let snapshotPath: string | undefined;
@@ -245,9 +250,11 @@ export async function runPipeline(
         source: 'pipeline',
         env,
       });
+      writeOutcome = write;
       applied = write.written;
       snapshotPath = write.snapshotPath;
     } catch (err) {
+      if (err instanceof WriteOutcomeError) throw err;
       applyError = errorMessage(err);
     }
   }
@@ -263,6 +270,9 @@ export async function runPipeline(
     diff,
     appliedRuleIds,
     applied,
+    writeOutcome: writeOutcome?.writeOutcome,
+    auditRecorded: writeOutcome?.auditRecorded,
+    auditError: writeOutcome?.auditError,
     applyError,
     revisionSummary,
     snapshotPath,

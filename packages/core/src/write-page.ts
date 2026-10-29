@@ -1,5 +1,6 @@
 import type Expert from '@libretexts/cxone-expert-node';
-import { normalizePageInput } from './client.js';
+import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain } from './write-safety.js';
+import { fetchPageHtml } from './scan.js';
 import {
   appendAudit,
   assertWriteAllowed,
@@ -9,7 +10,6 @@ import {
   saveSnapshot,
   type SnapshotMeta,
 } from './guardrails.js';
-import { bytePreservePatch } from './patch/index.js';
 import { isNoiseOnlyChange } from './serialize.js';
 import type { FixMode, PageRef } from './types.js';
 
@@ -26,10 +26,15 @@ export interface WritePageRevisionOptions {
   mode?: FixMode | 'revert';
   /** Application reviewer: caller-asserted, unverified, never used for authorization; separate from operator. */
   requestedBy?: string;
+  /** Snapshot being restored, for the append-only audit trail. */
+  revertedFrom?: string;
 }
 
 export interface WritePageRevisionResult {
   written: boolean;
+  writeOutcome?: 'succeeded';
+  auditRecorded?: boolean;
+  auditError?: 'audit_append_failed';
   revisionSummary: string;
   snapshotPath?: string;
   cxoneRevisionId?: string | number;
@@ -50,60 +55,66 @@ export async function writePageRevision({
   source,
   mode = 'apply',
   requestedBy,
+  revertedFrom,
 }: WritePageRevisionOptions): Promise<WritePageRevisionResult> {
-  if (beforeHtml === afterHtml || isNoiseOnlyChange(beforeHtml, afterHtml)) {
+  if (beforeHtml === afterHtml || (mode !== 'revert' && isNoiseOnlyChange(beforeHtml, afterHtml))) {
     return { written: false, revisionSummary };
   }
 
   assertWriteAllowed(page, env);
+  return withPageWriteLock(page, async () => {
+    page = await canonicalWriteTarget(expert, pageInput, page, env);
+    if (await fetchPageHtml(expert, page.id) !== beforeHtml) throw new Error('Page changed since preview; preview again');
 
-  const snapshot = await saveSnapshot(beforeHtml, {
-    pageId: page.id,
-    pagePath: page.path,
-    hostname: page.hostname,
-    operator: operatorFromEnv(env),
-    requestedBy,
-    rules,
-    revisionSummary,
-    source,
-  }, env);
+    const snapshot = await saveSnapshot(beforeHtml, {
+      pageId: page.id,
+      pagePath: page.path,
+      hostname: page.hostname,
+      operator: operatorFromEnv(env),
+      requestedBy,
+      rules,
+      revisionSummary,
+      source,
+    }, env);
 
-  const patch = bytePreservePatch(beforeHtml, afterHtml);
-  const bytesToWrite = patch.bytes ?? afterHtml;
-  const postResponse = await expert.pages.postPageContents(
-    normalizePageInput(pageInput) as number,
-    bytesToWrite,
-    {
-      edittime: 'now',
-      comment: revisionSummary,
-    } as unknown as Parameters<typeof expert.pages.postPageContents>[2],
-  );
+    let postResponse: unknown;
+    try {
+      postResponse = await expert.pages.postPageContents(
+        page.id,
+        afterHtml,
+        { edittime: 'now', comment: revisionSummary } as unknown as Parameters<typeof expert.pages.postPageContents>[2],
+      );
+    } catch {
+      throw markWriteUncertain(page, snapshot.metaPath);
+    }
 
-  const cxoneRevisionId = extractRevisionId(postResponse);
-  await appendAudit({
-    ts: new Date().toISOString(),
-    page: { id: page.id, path: page.path, hostname: page.hostname },
-    rules,
-    mode,
-    beforeHash: hashContent(beforeHtml),
-    afterHash: hashContent(afterHtml),
-    operator: operatorFromEnv(env),
-    requestedBy,
-    revisionSummary,
-    snapshotPath: snapshot.metaPath,
-    cxoneRevisionId,
-    bytePreserved: patch.ok,
-    fallbackReason: patch.ok ? undefined : patch.reason,
-    splicesApplied: patch.ok ? patch.splices.length : undefined,
-  }, env.REMEDY_AUDIT_LOG);
+    const cxoneRevisionId = extractRevisionId(postResponse);
+    let auditRecorded = true;
+    try {
+      await appendAudit({
+        ts: new Date().toISOString(),
+        page: { id: page.id, path: page.path, hostname: page.hostname },
+        rules,
+        mode,
+        beforeHash: hashContent(beforeHtml),
+        afterHash: hashContent(afterHtml),
+        operator: operatorFromEnv(env),
+        requestedBy,
+        revertedFrom,
+        revisionSummary,
+        snapshotPath: snapshot.metaPath,
+        cxoneRevisionId,
+      }, env.REMEDY_AUDIT_LOG);
+    } catch { auditRecorded = false; }
 
-  return {
-    written: true,
-    revisionSummary,
-    snapshotPath: snapshot.metaPath,
-    cxoneRevisionId,
-    bytePreserved: patch.ok,
-    fallbackReason: patch.ok ? undefined : patch.reason,
-    splicesApplied: patch.ok ? patch.splices.length : undefined,
-  };
+    return {
+      written: true,
+      writeOutcome: 'succeeded',
+      auditRecorded,
+      ...(auditRecorded ? {} : { auditError: 'audit_append_failed' as const }),
+      revisionSummary,
+      snapshotPath: snapshot.metaPath,
+      cxoneRevisionId,
+    };
+  });
 }

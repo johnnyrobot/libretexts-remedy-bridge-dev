@@ -10,6 +10,8 @@ export interface ScanResponse {
 }
 
 export interface PreviewResponse {
+  previewToken: string;
+  previewHash: string;
   pageId: number;
   pagePath: string;
   hostname: string;
@@ -23,6 +25,8 @@ export interface PreviewResponse {
 
 export interface ApplyResponse {
   applied: boolean;
+  audit_recorded?: boolean;
+  write_outcome?: 'succeeded';
   applyError?: string;
   snapshotPath?: string;
   revisionSummary?: string;
@@ -35,8 +39,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const msg = await res.text().catch(() => res.statusText);
-    throw new Error(`${res.status} ${msg}`);
+    const problem = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(problem.message ?? `Request failed (${res.status}).`);
   }
   return res.json();
 }
@@ -44,7 +48,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export const api = {
   scan:    (page: string): Promise<ScanResponse>    => post('/api/scan',    { page }),
   preview: (page: string, tier: 1 | 2 | 3): Promise<PreviewResponse> => post('/api/preview', { page, tier }),
-  apply:   (page: string, tier: 1 | 2 | 3): Promise<ApplyResponse>   => post('/api/apply',   { page, tier }),
+  apply:   (page: string, tier: 1 | 2 | 3, preview: PreviewResponse): Promise<ApplyResponse> => post('/api/apply', { page, tier, preview_token: preview.previewToken, preview_hash: preview.previewHash }),
 };
 
 // --- Local Lab API ---

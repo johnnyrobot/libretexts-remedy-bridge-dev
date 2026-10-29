@@ -1,0 +1,79 @@
+{
+  "status": "PROPOSED CONTRACT; PUBLIC TEST KEY ONLY; not an application verifier",
+  "algorithm": "Ed25519",
+  "kid": "lt1-public-test-only-v1",
+  "public_test_seed_phrase": "LibreTexts LT-1 PUBLIC TEST KEY - never use in production",
+  "public_jwk": {
+    "crv": "Ed25519",
+    "x": "W5zBuQB8Sgsyq_zEyl3ayl2idoWdGYhPXw6irKVur3Q",
+    "kty": "OKP",
+    "alg": "Ed25519",
+    "use": "sig",
+    "kid": "lt1-public-test-only-v1"
+  },
+  "test_now_seconds": 1793255370,
+  "before_html": "<p>Example</p>\n<img src=\"/test.png\">",
+  "after_html": "<p>Example</p>\n<img src=\"/test.png\" alt=\"Test diagram\">",
+  "vectors": [
+    {
+      "name": "valid-apply",
+      "header_json": "{\"alg\":\"Ed25519\",\"kid\":\"lt1-public-test-only-v1\",\"typ\":\"remedy-review+jwt\"}",
+      "payload_json": "{\"v\":1,\"iss\":\"urn:libretexts:conductor:test\",\"aud\":\"urn:libretexts:remedy-bridge:test\",\"sub\":\"synthetic-reviewer-42\",\"iat\":1793255340,\"nbf\":1793255340,\"exp\":1793255400,\"jti\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE\",\"binding\":{\"action\":\"cxone.apply\",\"target\":{\"hostname\":\"dev.libretexts.org\",\"page_id\":\"42\",\"page_path\":\"Sandboxes/johnnyphung/LT-1-fixture\"},\"preview_token\":\"00000000-0000-4000-8000-000000000001\",\"before_sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\",\"after_sha256\":\"2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b\",\"fix_mode\":\"deterministic\",\"tier\":null,\"snapshot\":null}}",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signature_base64url": "k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA"
+    },
+    {
+      "name": "valid-restore",
+      "header_json": "{\"alg\":\"Ed25519\",\"kid\":\"lt1-public-test-only-v1\",\"typ\":\"remedy-review+jwt\"}",
+      "payload_json": "{\"v\":1,\"iss\":\"urn:libretexts:conductor:test\",\"aud\":\"urn:libretexts:remedy-bridge:test\",\"sub\":\"synthetic-reviewer-42\",\"iat\":1793255340,\"nbf\":1793255340,\"exp\":1793255400,\"jti\":\"AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI\",\"binding\":{\"action\":\"cxone.restore\",\"target\":{\"hostname\":\"dev.libretexts.org\",\"page_id\":\"42\",\"page_path\":\"Sandboxes/johnnyphung/LT-1-fixture\"},\"preview_token\":\"00000000-0000-4000-8000-000000000002\",\"before_sha256\":\"2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b\",\"after_sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\",\"fix_mode\":\"restore\",\"tier\":null,\"snapshot\":{\"timestamp\":\"2026-10-29T06:00:00.000Z\",\"sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\"}}}",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ",
+      "signature_base64url": "5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ.5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA"
+    }
+  ],
+  "invalid_cases": [
+    {
+      "name": "tampered-payload",
+      "source": "valid-apply",
+      "mutation": "append x to encoded signing input",
+      "expected_crypto_valid": false
+    },
+    {
+      "name": "tampered-signature",
+      "source": "valid-apply",
+      "mutation": "xor first signature byte with 1",
+      "expected_crypto_valid": false
+    },
+    {
+      "name": "expired",
+      "source": "valid-apply",
+      "verification_now": 1793255400,
+      "expected_error": "invalid_reviewer_assertion"
+    },
+    {
+      "name": "action-swap",
+      "source": "valid-apply",
+      "route": "/v1/cxone/page/restore",
+      "expected_error": "reviewer_binding_mismatch"
+    },
+    {
+      "name": "changed-output",
+      "source": "valid-apply",
+      "expected_after_sha256": "94397e43b36a368db0efe4247d696f5c9a624559d75804f700ecafbae49f7171",
+      "expected_error": "reviewer_binding_mismatch"
+    },
+    {
+      "name": "wrong-target",
+      "source": "valid-apply",
+      "expected_page_id": "43",
+      "expected_error": "reviewer_binding_mismatch"
+    },
+    {
+      "name": "replay",
+      "source": "valid-apply",
+      "consumed": true,
+      "expected_error": "preview_already_claimed"
+    }
+  ]
+}
