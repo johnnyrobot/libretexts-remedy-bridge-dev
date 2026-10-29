@@ -1,5 +1,6 @@
 {
-  "status": "PROPOSED CONTRACT; PUBLIC TEST KEY ONLY; not an application verifier",
+  "fixture_version": "lt1-wire-v1-r2",
+  "status": "PROPOSED; PUBLIC TEST MATERIAL; no product verification",
   "algorithm": "Ed25519",
   "kid": "lt1-public-test-only-v1",
   "public_test_seed_phrase": "LibreTexts LT-1 PUBLIC TEST KEY - never use in production",
@@ -11,69 +12,1432 @@
     "use": "sig",
     "kid": "lt1-public-test-only-v1"
   },
-  "test_now_seconds": 1793255370,
   "before_html": "<p>Example</p>\n<img src=\"/test.png\">",
   "after_html": "<p>Example</p>\n<img src=\"/test.png\" alt=\"Test diagram\">",
-  "vectors": [
+  "positive": [
     {
       "name": "valid-apply",
-      "header_json": "{\"alg\":\"Ed25519\",\"kid\":\"lt1-public-test-only-v1\",\"typ\":\"remedy-review+jwt\"}",
-      "payload_json": "{\"v\":1,\"iss\":\"urn:libretexts:conductor:test\",\"aud\":\"urn:libretexts:remedy-bridge:test\",\"sub\":\"synthetic-reviewer-42\",\"iat\":1793255340,\"nbf\":1793255340,\"exp\":1793255400,\"jti\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE\",\"binding\":{\"action\":\"cxone.apply\",\"target\":{\"hostname\":\"dev.libretexts.org\",\"page_id\":\"42\",\"page_path\":\"Sandboxes/johnnyphung/LT-1-fixture\"},\"preview_token\":\"00000000-0000-4000-8000-000000000001\",\"before_sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\",\"after_sha256\":\"2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b\",\"fix_mode\":\"deterministic\",\"tier\":null,\"snapshot\":null}}",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
       "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
-      "signature_base64url": "k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
-      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA"
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "accept",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
       "name": "valid-restore",
-      "header_json": "{\"alg\":\"Ed25519\",\"kid\":\"lt1-public-test-only-v1\",\"typ\":\"remedy-review+jwt\"}",
-      "payload_json": "{\"v\":1,\"iss\":\"urn:libretexts:conductor:test\",\"aud\":\"urn:libretexts:remedy-bridge:test\",\"sub\":\"synthetic-reviewer-42\",\"iat\":1793255340,\"nbf\":1793255340,\"exp\":1793255400,\"jti\":\"AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI\",\"binding\":{\"action\":\"cxone.restore\",\"target\":{\"hostname\":\"dev.libretexts.org\",\"page_id\":\"42\",\"page_path\":\"Sandboxes/johnnyphung/LT-1-fixture\"},\"preview_token\":\"00000000-0000-4000-8000-000000000002\",\"before_sha256\":\"2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b\",\"after_sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\",\"fix_mode\":\"restore\",\"tier\":null,\"snapshot\":{\"timestamp\":\"2026-10-29T06:00:00.000Z\",\"sha256\":\"717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713\"}}}",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ",
       "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ",
-      "signature_base64url": "5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA",
-      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ.5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA"
-    }
-  ],
-  "invalid_cases": [
-    {
-      "name": "tampered-payload",
-      "source": "valid-apply",
-      "mutation": "append x to encoded signing input",
-      "expected_crypto_valid": false
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ.5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA",
+      "raw_signature_valid": true,
+      "expected": "accept",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.restore",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000002",
+          "before_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "after_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "fix_mode": "restore",
+          "tier": null,
+          "snapshot": {
+            "timestamp": "2026-10-29T06:00:00.000Z",
+            "sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713"
+          }
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
-      "name": "tampered-signature",
-      "source": "valid-apply",
-      "mutation": "xor first signature byte with 1",
-      "expected_crypto_valid": false
+      "name": "valid-pipeline",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjEsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjEsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjEsInNuYXBzaG90IjpudWxsfX0.UeR_bT73ADgKfBKDvFYpLRAN9x12iD_eK-sR6ttbJsvhSVgjByNKeJXXMQBfY-zBWFZUhhhtO37Joh3fVFDtDA",
+      "raw_signature_valid": true,
+      "expected": "accept",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "pipeline",
+          "tier": 1,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    }
+  ],
+  "negative": [
+    {
+      "name": "missing-version",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.BSZXlsmEgyM3eFx7x7yI0jSzNoG5PKgH_Y6EF6suq_5c7y6U5qItBvfifZWFVLBEmhXvasL9Xen3g8A-H0N_CQ",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "unknown-top-member",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9LCJleHRyYSI6dHJ1ZX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9LCJleHRyYSI6dHJ1ZX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9LCJleHRyYSI6dHJ1ZX0.-kodX8hzIf-p-zScqr-xWrra6vMJoc5QKMCUsjnQf_mX8w_xxI7M6MxcdxpjYAWLbprXRqBWJwxmlWlNXMidCw",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "version-string",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoiMSIsImlzcyI6InVybjpsaWJyZXRleHRzOmNvbmR1Y3Rvcjp0ZXN0IiwiYXVkIjoidXJuOmxpYnJldGV4dHM6cmVtZWR5LWJyaWRnZTp0ZXN0Iiwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoiMSIsImlzcyI6InVybjpsaWJyZXRleHRzOmNvbmR1Y3Rvcjp0ZXN0IiwiYXVkIjoidXJuOmxpYnJldGV4dHM6cmVtZWR5LWJyaWRnZTp0ZXN0Iiwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoiMSIsImlzcyI6InVybjpsaWJyZXRleHRzOmNvbmR1Y3Rvcjp0ZXN0IiwiYXVkIjoidXJuOmxpYnJldGV4dHM6cmVtZWR5LWJyaWRnZTp0ZXN0Iiwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19.d-OzUmJeRwpgzwnTUXqwoZJ4Hb-uGCXDySUIOCdQKxs7TVS42Bm_f41o-J71x5btYz6fJFAzBV665JgNOMDwBw",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "nested-extra-member",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSIsImV4dHJhIjp0cnVlfSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSIsImV4dHJhIjp0cnVlfSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSIsImV4dHJhIjp0cnVlfSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0.c7_q9fhgrZ3Xi1gOchxtTjQPG-suy3VMoFSgkjII7nnx6SJuVTW6aos1_KfFf0FMmY8KBg1wJvvUSTG6fmU1Bw",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "unsafe-integer-time",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6OTAwNzE5OTI1NDc0MDk5MiwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6OTAwNzE5OTI1NDc0MDk5MiwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6OTAwNzE5OTI1NDc0MDk5MiwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.m7WLlwzI-sPrk8joAIjPg-Y37u0tkfjJXZ1cXaQ_s4OvN5ECgC0v7MJc4GVDrAzG0wJqkezdeX1vmgIGXI7YBA",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "fractional-time",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MC41LCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MC41LCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MC41LCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19.Bdz6T8o7iCru9uwhuzmFPkLkOsbEMsFy6XGUh0vWGMXtOkp4XoISnBn6_dmDY77BYYL8cCNgoi7L_8VG0jqECQ",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "audience-array",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6WyJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiXSwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6WyJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiXSwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6WyJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiXSwic3ViIjoic3ludGhldGljLXJldmlld2VyLTQyIiwiaWF0IjoxNzkzMjU1MzQwLCJuYmYiOjE3OTMyNTUzNDAsImV4cCI6MTc5MzI1NTQwMCwianRpIjoiQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRSIsImJpbmRpbmciOnsiYWN0aW9uIjoiY3hvbmUuYXBwbHkiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19._uP41mVxGeo3cMX18IIclk-6GxVG40LkVRWf_LxGoVI_6WURcB-D0J_4yomZYgXlKp1p84QiBeIdoyxztI87DQ",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "wrong-audience",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6b3RoZXIiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6b3RoZXIiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6b3RoZXIiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0.i3M_Pl3gYr_AVTJW31WOAIh7K74tSMx4aUjRjqSoaZYN7GBzRKXsXXozMGMvjB7l_tzzRBWHuAhXkhg0BYayCw",
+      "raw_signature_valid": true,
+      "expected": "claims",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "wrong-issuer",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6b3RoZXIiLCJhdWQiOiJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6b3RoZXIiLCJhdWQiOiJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6b3RoZXIiLCJhdWQiOiJ1cm46bGlicmV0ZXh0czpyZW1lZHktYnJpZGdlOnRlc3QiLCJzdWIiOiJzeW50aGV0aWMtcmV2aWV3ZXItNDIiLCJpYXQiOjE3OTMyNTUzNDAsIm5iZiI6MTc5MzI1NTM0MCwiZXhwIjoxNzkzMjU1NDAwLCJqdGkiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFIiwiYmluZGluZyI6eyJhY3Rpb24iOiJjeG9uZS5hcHBseSIsInRhcmdldCI6eyJob3N0bmFtZSI6ImRldi5saWJyZXRleHRzLm9yZyIsInBhZ2VfaWQiOiI0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0.loSiqoUnwv2X58Sk4sHEm0B4Rrq-hxJ7L3wp_XM2AooFR1bd0BbAdcb4VGoqjjtHvr9Ji9QfgiFZDPFldH_9BA",
+      "raw_signature_valid": true,
+      "expected": "claims",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
       "name": "expired",
-      "source": "valid-apply",
-      "verification_now": 1793255400,
-      "expected_error": "invalid_reviewer_assertion"
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255400,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "future-issued",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255334,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "lifetime-61-seconds",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDEsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDEsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDEsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.rWbWunV3UIGwz_-2X7xJHBLZ9z4pouBcJxE_ipZG_fVSSnNFAK2I6EQsnoc67NJjSjkUjvfyrSol5OkBuvQgCg",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "zero-lifetime",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTUzNDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTUzNDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTUzNDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.DaGRBo2iM49ZSeoevFuDxwoi91IL_kePOtd2NefWZDr6baZrMScxtMhpckQ95-qV66egBM3-Z1p6Q-PNO_-KCQ",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "nbf-differs-from-iat",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQxLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQxLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQxLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.tueLym_v_YK_VWJFq5uplUEmLxnEgN3ttUnGmtdzYVpz9llPBnWOHDe3NYH3GISwqTqAJXHST8FVMo9mo208Dg",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "exceeds-preview-expiry",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "time",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255399,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
       "name": "action-swap",
-      "source": "valid-apply",
-      "route": "/v1/cxone/page/restore",
-      "expected_error": "reviewer_binding_mismatch"
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0kiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLnJlc3RvcmUiLCJ0YXJnZXQiOnsiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJiZWZvcmVfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImFmdGVyX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJmaXhfbW9kZSI6InJlc3RvcmUiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6eyJ0aW1lc3RhbXAiOiIyMDI2LTEwLTI5VDA2OjAwOjAwLjAwMFoiLCJzaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIn19fQ.5ufOGTjxOcZoTOu3nGBH3dq5bvVQyCmVvgxhhED6Bfqay11rw1eq2UUbu927D0dD7fUWsWavV9kPRm8jW74uDA",
+      "raw_signature_valid": true,
+      "expected": "binding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "changed-target",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQzIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQzIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQzIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.v7nWlsbjub_3jUtg9C6ZKv1xNHf-L6jwfdamjNnN2FYh0jRO7V3jiWFO3Lha8KJPnePxclD-R1KUOmd7k6xnDg",
+      "raw_signature_valid": true,
+      "expected": "binding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
       "name": "changed-output",
-      "source": "valid-apply",
-      "expected_after_sha256": "94397e43b36a368db0efe4247d696f5c9a624559d75804f700ecafbae49f7171",
-      "expected_error": "reviewer_binding_mismatch"
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiI5NDM5N2U0M2IzNmEzNjhkYjBlZmU0MjQ3ZDY5NmY1YzlhNjI0NTU5ZDc1ODA0ZjcwMGVjYWZiYWU0OWY3MTcxIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiI5NDM5N2U0M2IzNmEzNjhkYjBlZmU0MjQ3ZDY5NmY1YzlhNjI0NTU5ZDc1ODA0ZjcwMGVjYWZiYWU0OWY3MTcxIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiI5NDM5N2U0M2IzNmEzNjhkYjBlZmU0MjQ3ZDY5NmY1YzlhNjI0NTU5ZDc1ODA0ZjcwMGVjYWZiYWU0OWY3MTcxIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.UDRDj72EClrofyOX0dSeu8Q1skY5_phVR9xC5fMolB8yFTt2EF02eTfiRt-LGLNSmuU4ST0Y3OXcL5_yHvJsDg",
+      "raw_signature_valid": true,
+      "expected": "binding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
-      "name": "wrong-target",
-      "source": "valid-apply",
-      "expected_page_id": "43",
-      "expected_error": "reviewer_binding_mismatch"
+      "name": "changed-tier",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjIsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjIsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd01EQXdNREF3TURBd00iLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJwaXBlbGluZSIsInRpZXIiOjIsInNuYXBzaG90IjpudWxsfX0.j7l3LSL5MholB9IzA9Tc26Cg96nr6RKo5MDGUPuFUpbMmaM0rtrxFR3eLTiCmwUQAnyGySahVmr_ouosAb77Ag",
+      "raw_signature_valid": true,
+      "expected": "binding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "pipeline",
+          "tier": 1,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     },
     {
-      "name": "replay",
-      "source": "valid-apply",
-      "consumed": true,
-      "expected_error": "preview_already_claimed"
+      "name": "leading-zero-page-id",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjA0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjA0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjA0MiIsInBhZ2VfcGF0aCI6IlNhbmRib3hlcy9qb2hubnlwaHVuZy9MVC0xLWZpeHR1cmUifSwicHJldmlld190b2tlbiI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsImJlZm9yZV9zaGEyNTYiOiI3MTdiYTQ0MzdjMzE2MmI3MWQ4ZTE2NDk3ZTA5MmQwMTc4ZWZlMTg5YzkyYmVhZGM1NjliMzY3NWY5YTU3NzEzIiwiYWZ0ZXJfc2hhMjU2IjoiMmVkY2Y2YjI4N2EwZTg1ZTFjM2MxNmJlNGI0NmM0NDE4YjNjYTZhZTZjOGE5MjA5YWMyNjAzYjIwMGNlZjM5YiIsImZpeF9tb2RlIjoiZGV0ZXJtaW5pc3RpYyIsInRpZXIiOm51bGwsInNuYXBzaG90IjpudWxsfX0.bUUaEs3QkmVQTbkDCoEVMtQN4GbSNyfJPHyqm49Uo_I9mJUFVGPxcROTCetkpcspljKpLAhI4mpJ2m291v1mCg",
+      "raw_signature_valid": true,
+      "expected": "schema",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "duplicate-protected-header",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5IiwiXHUwMDYxbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5IiwiXHUwMDYxbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5IiwiXHUwMDYxbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.brT20t2xS7MRLSYuKJGhRj3iXIo-xs7QZcpFCsqfwJbxpijo2XsCmcxgqcsNVgXVlW21bfBm3ZBigQe-8DTXAQ",
+      "raw_signature_valid": true,
+      "expected": "json",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "duplicate-payload",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.kU52FOcAC7zfExLZlxPhZlDeUP3bqtBStD_8ct42mm9oB5A4iouAv8BC8Jij5pptXOYApmOLsov41S7yd7Y2BQ",
+      "raw_signature_valid": true,
+      "expected": "json",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "duplicate-nested-payload",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwiaG9zdG5hbWUiOiJkZXYubGlicmV0ZXh0cy5vcmciLCJwYWdlX2lkIjoiNDIiLCJwYWdlX3BhdGgiOiJTYW5kYm94ZXMvam9obm55cGh1bmcvTFQtMS1maXh0dXJlIn0sInByZXZpZXdfdG9rZW4iOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJiZWZvcmVfc2hhMjU2IjoiNzE3YmE0NDM3YzMxNjJiNzFkOGUxNjQ5N2UwOTJkMDE3OGVmZTE4OWM5MmJlYWRjNTY5YjM2NzVmOWE1NzcxMyIsImFmdGVyX3NoYTI1NiI6IjJlZGNmNmIyODdhMGU4NWUxYzNjMTZiZTRiNDZjNDQxOGIzY2E2YWU2YzhhOTIwOWFjMjYwM2IyMDBjZWYzOWIiLCJmaXhfbW9kZSI6ImRldGVybWluaXN0aWMiLCJ0aWVyIjpudWxsLCJzbmFwc2hvdCI6bnVsbH19.FSWF0dvF8Yjbni0oUOstX8syazIJ_RAl1MJG980ozGGBH1VdjPam1slhk23v2xU-xKR3A4qPfceusdd5oOZ3DQ",
+      "raw_signature_valid": true,
+      "expected": "json",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "escaped-unpaired-surrogate",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6Ilx1ZDgwMCIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6Ilx1ZDgwMCIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6Ilx1ZDgwMCIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.wYevatTucaojdkTt-Z7P7n5A_rJunEjReS5_InajAUUcC5SPeMKcQi8zWmcS0xc_oNf5zNzsgfhIMlWwwbbjBw",
+      "raw_signature_valid": true,
+      "expected": "json",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "invalid-header-json",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iix9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iix9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iix9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.TtvhCkVvkx_GDacrs_MO92RweWtWuZLkVbbP3E1Ur8KjURqoxkAOIRpwwfheFghm06a0KSkHDXylUbPKKEHTAA",
+      "raw_signature_valid": true,
+      "expected": "json",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "payload-byte-order-mark",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "77u_eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.77u_eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.77u_eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.VEXGRaFQzp2If_hYeYwEc11cuz20X4ACEJERugv2YAJX16VsDD8fZojJQfHaTQmWdUbIwqPeOiUhqsahd8fEDw",
+      "raw_signature_valid": true,
+      "expected": "encoding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "header-byte-order-mark",
+      "header_bytes_base64url": "77u_eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "77u_eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "77u_eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.QK3bxQ3nnT3fEud1yZjTyLzENvwihzbQPG8sCGgWL6d3mvVqFAxwPZHTEPHHXLvDI9V-HDBTxuC-lHAu-i6HDA",
+      "raw_signature_valid": true,
+      "expected": "encoding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "invalid-payload-utf8",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "wyg",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.wyg",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.wyg.s5eS9QumUfDcB4x5pa-0pueWddoxeuTDMFQ1LNeGbD-kog9sjWLB8cCqX8CwPUTGet8B4Zh_54hh9-hiQqbXBg",
+      "raw_signature_valid": true,
+      "expected": "encoding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "wrong-algorithm-EdDSA",
+      "header_bytes_base64url": "eyJhbGciOiJFZERTQSIsImtpZCI6Imx0MS1wdWJsaWMtdGVzdC1vbmx5LXYxIiwidHlwIjoicmVtZWR5LXJldmlldytqd3QifQ",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZERTQSIsImtpZCI6Imx0MS1wdWJsaWMtdGVzdC1vbmx5LXYxIiwidHlwIjoicmVtZWR5LXJldmlldytqd3QifQ.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZERTQSIsImtpZCI6Imx0MS1wdWJsaWMtdGVzdC1vbmx5LXYxIiwidHlwIjoicmVtZWR5LXJldmlldytqd3QifQ.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.oObMe7P55qXXKeEq_4sYSPmJayZGkGxckNcG9gP--Z1qxENFZrS1EXLQ_FBwgsRm3EAMQFlWlYaLx0wm62BkCQ",
+      "raw_signature_valid": true,
+      "expected": "header",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "embedded-key-url",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCIsImprdSI6Imh0dHBzOi8vZXhhbXBsZS5pbnZhbGlkL2tleSJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCIsImprdSI6Imh0dHBzOi8vZXhhbXBsZS5pbnZhbGlkL2tleSJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCIsImprdSI6Imh0dHBzOi8vZXhhbXBsZS5pbnZhbGlkL2tleSJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.7DbijfbaQm3zGTyMOFiulegvNLPE5DoknVYSEdZJohOFrCgYLuvMIupWf1Waw5uyeLtQnGCu8vZKPATooI9lBw",
+      "raw_signature_valid": true,
+      "expected": "header",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "unknown-key-id",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoidW5rbm93bi10ZXN0LWtleSIsInR5cCI6InJlbWVkeS1yZXZpZXcrand0In0",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoidW5rbm93bi10ZXN0LWtleSIsInR5cCI6InJlbWVkeS1yZXZpZXcrand0In0.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoidW5rbm93bi10ZXN0LWtleSIsInR5cCI6InJlbWVkeS1yZXZpZXcrand0In0.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.JY0FJ5Env2dfkjhCX8gXW9H2kCCUUP0u0XLXgQTW5gCtdy5K4mtD0TUPjkeUsFNc-ZKCn8j4WwXho3mO3tUzCQ",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "disabled-key",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": false,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "revoked-key",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": 1793255370
+        }
+      }
+    },
+    {
+      "name": "key-not-valid-at-iat",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255341,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "key-not-valid-through-exp",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255399,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "key-not-valid-now",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": true,
+      "expected": "key",
+      "context": {
+        "now": 1793255337,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255340,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "padded-header-segment",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9=.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9=.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.QrmPUcUZ8KZBq6fJcFu1iSoQlz-7Yg5_7frGPLYdb2EKpPyvde9GoPOicwWQZ3t5l3J9GGEdoM0NLK8YalGiDg",
+      "raw_signature_valid": true,
+      "expected": "encoding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "noncanonical-signature-base64url",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDB",
+      "raw_signature_valid": true,
+      "expected": "encoding",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "tampered-payload",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6ImZvcmdlZC1yZXZpZXdlciIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.k7nLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": false,
+      "expected": "signature",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
+    },
+    {
+      "name": "tampered-signature",
+      "header_bytes_base64url": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9",
+      "payload_bytes_base64url": "eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "signing_input": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ",
+      "compact": "eyJhbGciOiJFZDI1NTE5Iiwia2lkIjoibHQxLXB1YmxpYy10ZXN0LW9ubHktdjEiLCJ0eXAiOiJyZW1lZHktcmV2aWV3K2p3dCJ9.eyJ2IjoxLCJpc3MiOiJ1cm46bGlicmV0ZXh0czpjb25kdWN0b3I6dGVzdCIsImF1ZCI6InVybjpsaWJyZXRleHRzOnJlbWVkeS1icmlkZ2U6dGVzdCIsInN1YiI6InN5bnRoZXRpYy1yZXZpZXdlci00MiIsImlhdCI6MTc5MzI1NTM0MCwibmJmIjoxNzkzMjU1MzQwLCJleHAiOjE3OTMyNTU0MDAsImp0aSI6IkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRRUJBUUUiLCJiaW5kaW5nIjp7ImFjdGlvbiI6ImN4b25lLmFwcGx5IiwidGFyZ2V0Ijp7Imhvc3RuYW1lIjoiZGV2LmxpYnJldGV4dHMub3JnIiwicGFnZV9pZCI6IjQyIiwicGFnZV9wYXRoIjoiU2FuZGJveGVzL2pvaG5ueXBodW5nL0xULTEtZml4dHVyZSJ9LCJwcmV2aWV3X3Rva2VuIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAxIiwiYmVmb3JlX3NoYTI1NiI6IjcxN2JhNDQzN2MzMTYyYjcxZDhlMTY0OTdlMDkyZDAxNzhlZmUxODljOTJiZWFkYzU2OWIzNjc1ZjlhNTc3MTMiLCJhZnRlcl9zaGEyNTYiOiIyZWRjZjZiMjg3YTBlODVlMWMzYzE2YmU0YjQ2YzQ0MThiM2NhNmFlNmM4YTkyMDlhYzI2MDNiMjAwY2VmMzliIiwiZml4X21vZGUiOiJkZXRlcm1pbmlzdGljIiwidGllciI6bnVsbCwic25hcHNob3QiOm51bGx9fQ.krnLYxBV1V8BiaSSOwakzQMVt4jQ6K0kIhO4DSPCaJtV1a7JzifPbtic5Hc43t4tHkf3EKYaFGTGOR7t4T8oDA",
+      "raw_signature_valid": false,
+      "expected": "signature",
+      "context": {
+        "now": 1793255370,
+        "expected_binding": {
+          "action": "cxone.apply",
+          "target": {
+            "hostname": "dev.libretexts.org",
+            "page_id": "42",
+            "page_path": "Sandboxes/johnnyphung/LT-1-fixture"
+          },
+          "preview_token": "00000000-0000-4000-8000-000000000001",
+          "before_sha256": "717ba4437c3162b71d8e16497e092d0178efe189c92beadc569b3675f9a57713",
+          "after_sha256": "2edcf6b287a0e85e1c3c16be4b46c4418b3ca6ae6c8a9209ac2603b200cef39b",
+          "fix_mode": "deterministic",
+          "tier": null,
+          "snapshot": null
+        },
+        "preview_expires_at": 1793255500,
+        "key_policy": {
+          "enabled": true,
+          "not_before": 1793255240,
+          "not_after": 1793255500,
+          "revoked_at": null
+        }
+      }
     }
   ]
 }
