@@ -72,6 +72,10 @@ export interface AxeScanOptions {
   tags?: string[];
 }
 
+export class ScanEngineError extends Error {
+  constructor() { super('Accessibility scan engine failed; evidence is unusable.'); this.name = 'ScanEngineError'; }
+}
+
 export async function scanHtmlWithAxe(opts: AxeScanOptions): Promise<Finding[]> {
   const virtualConsole = new VirtualConsole();
   // jsdom routes unimplemented-feature messages here (canvas.getContext, etc.).
@@ -87,56 +91,48 @@ export async function scanHtmlWithAxe(opts: AxeScanOptions): Promise<Finding[]> 
   });
   const { window } = dom;
 
-  // axe needs window + document globals. Install the ones it probes on start.
-  // This mimics how @axe-core/puppeteer bootstraps into a page.
-  const w = window as unknown as Window & typeof globalThis;
-  patchMissingDom(w);
+  try {
+    // Each window owns its axe instance, setup, execution and teardown. No host
+    // globals or module-singleton axe state are shared with concurrent callers.
+    window.eval(axe.source);
+    const axeRunner = (window as unknown as { axe: typeof axe }).axe;
 
-  // axe-core's default export is a module object we hang methods off of via
-  // its internal `configure`/`run`. Its types assume a browser env, so we
-  // interact through minimal any-typed surface here.
-  const axeRunner = axe as unknown as {
-    configure: (opts: Record<string, unknown>) => void;
-    run: (
-      context: unknown,
-      options: Record<string, unknown>,
-    ) => Promise<{ violations: AxeViolation[]; incomplete: AxeViolation[] }>;
-  };
-
-  // Explicit rule allowlist. An empty array from the caller means "run every
-  // axe rule" (noisy but useful for debugging); otherwise we constrain axe to
-  // exactly the rules we've vetted for authored content. Without runOnly, axe
-  // silently enables its full default rule set — including chrome-scope rules
-  // like `region` and MathJax-incompatible rules like `svg-img-alt`.
-  const runOptions: Record<string, unknown> = {
-    resultTypes: ['violations', 'incomplete'],
-  };
-  if (opts.tags?.length) {
-    runOptions.runOnly = { type: 'tag', values: opts.tags };
-  } else if (opts.rules === undefined || opts.rules.length > 0) {
-    runOptions.runOnly = {
-      type: 'rule',
-      values: opts.rules ?? DEFAULT_RULES,
+    // Explicit rule allowlist. An empty array from the caller means "run every
+    // axe rule" (noisy but useful for debugging); otherwise we constrain axe to
+    // exactly the rules we've vetted for authored content. Without runOnly, axe
+    // silently enables its full default rule set — including chrome-scope rules
+    // like `region` and MathJax-incompatible rules like `svg-img-alt`.
+    const runOptions: Record<string, unknown> = {
+      resultTypes: ['violations', 'incomplete'],
     };
-  }
-
-  // Pass the body element as context so axe scans the content we fetched.
-  const results = await axeRunner.run(w.document.body, runOptions);
-
-  const findings: Finding[] = [];
-  for (const v of results.violations) {
-    for (const node of v.nodes) {
-      findings.push(mapAxeFinding(v, node, 'error'));
+    if (opts.tags?.length) {
+      runOptions.runOnly = { type: 'tag', values: opts.tags };
+    } else if (opts.rules === undefined || opts.rules.length > 0) {
+      runOptions.runOnly = {
+        type: 'rule',
+        values: opts.rules ?? DEFAULT_RULES,
+      };
     }
-  }
-  for (const v of results.incomplete) {
-    // Skip incomplete results that are purely jsdom-limitation noise.
-    if (JSDOM_LIMITED_RULES.has(v.id)) continue;
-    for (const node of v.nodes) {
-      findings.push(mapAxeFinding(v, node, 'info'));
+
+    // Pass the body element as context so axe scans the content we fetched.
+    const results = await axeRunner.run(window.document.body, runOptions) as unknown as { violations: AxeViolation[]; incomplete: AxeViolation[] };
+
+    const findings: Finding[] = [];
+    for (const v of results.violations) {
+      for (const node of v.nodes) {
+        findings.push(mapAxeFinding(v, node, 'error'));
+      }
     }
-  }
-  return findings;
+    for (const v of results.incomplete) {
+      // Skip incomplete results that are purely jsdom-limitation noise.
+      if (JSDOM_LIMITED_RULES.has(v.id)) continue;
+      for (const node of v.nodes) {
+        findings.push(mapAxeFinding(v, node, 'info'));
+      }
+    }
+    return findings;
+  } catch { throw new ScanEngineError(); }
+  finally { window.close(); }
 }
 
 export function mapAxeFinding(v: AxeViolation, node: AxeNode, defaultSeverity: Severity): Finding {
@@ -185,23 +181,4 @@ interface AxeNode {
   html?: string;
   target?: string[];
   failureSummary?: string;
-}
-
-/**
- * jsdom is close but not identical to a browser. axe probes for a handful of
- * globals and APIs; fill in the gaps when they're missing to avoid runtime
- * errors. Extend as new gaps surface in practice.
- */
-function patchMissingDom(w: Window & typeof globalThis): void {
-  const g = globalThis as unknown as Record<string, unknown>;
-  if (!g.window) g.window = w;
-  if (!g.document) g.document = w.document;
-  if (!g.Node) g.Node = w.Node;
-  if (!g.Element) g.Element = w.Element;
-  if (!g.HTMLElement) g.HTMLElement = w.HTMLElement;
-  if (!g.getComputedStyle) g.getComputedStyle = w.getComputedStyle.bind(w);
-  if (!g.requestAnimationFrame) {
-    g.requestAnimationFrame = ((cb: FrameRequestCallback) => setTimeout(() => cb(Date.now()), 0) as unknown as number) as unknown as typeof requestAnimationFrame;
-    g.cancelAnimationFrame = clearTimeout as unknown as typeof cancelAnimationFrame;
-  }
 }

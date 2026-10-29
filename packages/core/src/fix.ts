@@ -3,7 +3,7 @@ import { createPatch } from 'diff';
 import type Expert from '@libretexts/cxone-expert-node';
 import { createExpertClient, resolvePageRef } from './client.js';
 import { defaultRules } from './rules/index.js';
-import { fetchPageHtml, scanHtml } from './scan.js';
+import { fetchPageHtml, scanHtmlFull } from './scan.js';
 import { isNoiseOnlyChange } from './serialize.js';
 import { bytePreservePatch } from './patch/index.js';
 import { LLMClient } from './ai/llm-client.js';
@@ -46,7 +46,7 @@ export async function fixPage(
 
   const page: PageRef = await resolvePageRef(expert, pageInput, env);
   const before = await fetchPageHtml(expert, pageInput);
-  let findings = scanHtml(before, rules);
+  let findings = await scanHtmlFull(before, { rules });
   findings = await markUnavailableImageFixes(findings, page, { env });
 
   const dom = new JSDOM(`<!doctype html><html><body>${before}</body></html>`);

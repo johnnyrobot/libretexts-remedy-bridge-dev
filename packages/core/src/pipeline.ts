@@ -23,7 +23,7 @@ import { LLMClient } from './ai/llm-client.js';
 import { runAgentLoop } from './agent-loop.js';
 import { createExpertClient } from './client.js';
 import { defaultRules } from './rules/index.js';
-import { scanHtmlFull, scanPage } from './scan.js';
+import { scanHtmlFull, scanPage, ScanEngineError } from './scan.js';
 import { isNoiseOnlyChange } from './serialize.js';
 import { buildTierClient, shouldEscalate } from './tiers.js';
 import type { Finding, FixMode, PageRef, Rule } from './types.js';
@@ -143,6 +143,7 @@ export async function runPipeline(
         currentHtml = loop.finalHtml;
         reports = [{ kind: 'agent-loop', iterations: loop.iterations }];
       } catch (err) {
+        if (err instanceof ScanEngineError) throw err;
         reports = [{ kind: 'agent-loop', error: errorMessage(err) }];
       }
     } else {
@@ -178,6 +179,7 @@ export async function runPipeline(
           currentHtml = out.html;
           reports = out.reports;
         } catch (err) {
+          if (err instanceof ScanEngineError) throw err;
           reports = [{ kind: 'strategy-error', error: errorMessage(err) }];
         }
       } else {
