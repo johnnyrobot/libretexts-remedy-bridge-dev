@@ -1,4 +1,4 @@
-import { PreviewCache } from './preview-cache.js';
+import { PreviewCache, PreviewPool } from './preview-cache.js';
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -26,24 +26,25 @@ export class SignedWriter {
   private admitting = true;
   private reloadGeneration = 0;
   private readonly observedRevocations = new Set<string>();
-  private readonly previews = new PreviewCache<StoredPreview>();
+  private readonly previews: PreviewCache<StoredPreview>;
   private readonly productionWriteBlocked: boolean;
-  private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {
+  private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv, pool:PreviewPool) {
+    this.previews=new PreviewCache<StoredPreview>(pool);
     this.productionWriteBlocked = !['development', 'test'].includes(env.NODE_ENV ?? '');
   }
-  static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env) {
+  static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env, pool = new PreviewPool()) {
     const db = env.REMEDY_CLAIM_DB, fence = env.REMEDY_CLAIM_FENCE_DIR, epoch = env.REMEDY_REVIEWER_TRUST_EPOCH;
     if (!db || basename(db) !== 'claims.sqlite3' || !fence || !epoch) throw new Error('claim_store_unavailable');
     const ledger = await DurableLedger.open({ directory: dirname(db), fencePath: join(fence, 'fence.json'), trustEpoch: epoch });
     try {
       await ledger.recordRevocations(verifier.effectiveRevocations());
       verifier.rememberRevocations(await ledger.getRevocations());
-      const writer = new SignedWriter(ledger, verifier, env);
+      const writer = new SignedWriter(ledger, verifier, env, pool);
       return writer;
     } catch { await ledger.close(); throw new Error('claim_store_unavailable'); }
   }
   preview(input: ReviewedPreview) {
-    for (const [token, p] of this.previews) if (p.expiresAt <= Date.now()) this.previews.delete(token);
+    for (const [token, p] of this.previews) if (p.expiresAt <= Date.now()) this.previews.consume(token);
     const after = digest(input.afterHtml);
     const binding: ReviewBinding = { action: input.mode === 'restore' ? 'cxone.restore' : 'cxone.apply',
       target: { hostname: input.hostname, page_id: String(input.pageId), page_path: input.pagePath }, preview_token: input.token,
@@ -53,7 +54,7 @@ export class SignedWriter {
     return { review_binding: binding, review_expires_at: Math.floor(input.expiresAt / 1000),
       page_id: input.pageId, page_path: input.pagePath, hostname: input.hostname };
   }
-  invalidate(token: string) { this.previews.delete(token); }
+  invalidate(token: string) { this.previews.consume(token); }
   async ready() {
     if (this.productionWriteBlocked || !this.admitting || !this.ledger.ready) return false;
     try {
@@ -120,7 +121,7 @@ export class SignedWriter {
       await this.persistRevocations();
       throw error;
     }
-    this.previews.delete(body.preview_token);
+    this.previews.consume(body.preview_token);
     // Persist observations before action or claim rejection can exit this path.
     await this.persistRevocations();
     if (preview.binding.action !== action) rejected(403, 'reviewer_binding_mismatch');

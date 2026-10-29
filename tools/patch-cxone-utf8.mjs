@@ -34,15 +34,15 @@ for (const file of ['index.mjs', 'index.cjs']) {
     source = source.replace(/axiosInstance\s*=\s*[A-Za-z_$]\w*\.create\(\)/g, 'axiosInstance=remedyPatchedAxios.create({adapter:"fetch"})');
     source = source.replace(/axiosInstance\s*=\s*[A-Za-z_$]\w*\.create\(\{/g, 'axiosInstance=remedyPatchedAxios.create({adapter:"fetch",');
     source = transportImport + source;
-    if (!source.includes('remedyBoundedFetch')) {
+    if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2) throw new Error('Failed to replace CXone Axios request sites.');
+    await writeFile(path, source);
+  }
+  if (!source.includes('remedyBoundedFetch')) {
     source = policyImport + source;
     source = source.replaceAll('remedyPatchedAxios.create({adapter:"fetch",', 'remedyPatchedAxios.create({timeout:30000,env:{fetch:remedyBoundedFetch},adapter:"fetch",');
     await writeFile(path, source);
   }
-  if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2) throw new Error('Failed to replace CXone Axios request sites.');
-    await writeFile(path, source);
-  }
-  if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2 || /axiosInstance\s*=\s*Q\.create/.test(source)) throw new Error('Unexpected patched Axios request sites.');
+  if ([...source.matchAll(/axiosInstance=remedyPatchedAxios\.create/g)].length !== 2 || [...source.matchAll(/env:\{fetch:remedyBoundedFetch\}/g)].length !== 2 || !source.includes(policyImport)) throw new Error('Unexpected patched request policy layout.');
   const start = source.indexOf('async postPageContents('), end = source.indexOf('async putPageUnorder(', start);
   if (start < 0 || end < start) throw new Error('Unexpected CXone page writer layout.');
   const method = source.slice(start, end);

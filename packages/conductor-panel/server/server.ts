@@ -64,8 +64,9 @@ const REPO_ROOT = resolve(HERE, '../../..');
 loadDotenv({ path: resolve(REPO_ROOT, '.env') });
 
 const isReadWorker = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(new URL('./read-worker.ts', import.meta.url));
+const previewPool = new PreviewPool();
 const security = loadSecurity();
-const signedWriter = security.required && !isReadWorker ? await SignedWriter.open(security.verifier!) : null;
+const signedWriter = security.required && !isReadWorker ? await SignedWriter.open(security.verifier!,process.env,previewPool) : null;
 
 const PORT = Number(process.env.CONDUCTOR_API_PORT ?? 5175);
 // This unauthenticated staff tool must remain on loopback (ADR-0001).
@@ -92,7 +93,6 @@ interface PipelinePreviewSession {
   appliedRuleIds: string[];
 }
 
-const previewPool = new PreviewPool();
 const restoreSessions = new PreviewCache<{ pageId: number; pagePath: string; hostname: string; snapshotTs: string; hash: string; afterHash: string; beforeHtml: string; afterHtml: string; expiresAt: number }>(previewPool);
 
 const pipelinePreviewSessions = new PreviewCache<PipelinePreviewSession>(previewPool);
@@ -587,6 +587,7 @@ function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): Pipeline
   return session;
 }
 
+const owners=new Set<WorkOwner>();
 const mutationRoutes = new Set(['/v1/cxone/page/apply-fix','/v1/cxone/page/restore','/api/apply']);
 const caches = {targeted:targetedPreviewSessions,pipeline:pipelinePreviewSessions,restore:restoreSessions};
 type ReadPayload = {pathname:string;body:Record<string,unknown>;seed?:{kind:keyof typeof caches;token:string;session:any}};
@@ -613,6 +614,7 @@ async function readResult(pathname:string,body:Record<string,unknown>,signal:Abo
 }
 export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
 const workOwner = new WorkOwner();
+owners.add(workOwner);
 const instance = createServer(async (req, res) => {
   setSecurityHeaders(res);
   if (req.url === '/healthz' && req.method === 'GET') { json(res, 200, { ok: true }); return; }
@@ -721,7 +723,9 @@ return instance;
 export const server = createBridgeServer();
 
 let writerClosed: Promise<void> | undefined;
-export function closeSignedWriter() { return writerClosed ??= signedWriter?.close() ?? Promise.resolve(); }
+export function closeSignedWriter() {
+  return writerClosed ??= (async()=>{await Promise.all([...owners].map(owner=>owner.drain()));await signedWriter?.close();})();
+}
 server.once('close', () => { void closeSignedWriter(); });
 /** Explicit local key reload; any validation/storage failure keeps admission disabled. */
 export async function reloadReviewerKeys() {
@@ -747,16 +751,17 @@ function decoratePreview(pathname: string, result: unknown): unknown {
   const targeted = targetedPreviewSessions.get(token), pipeline = pipelinePreviewSessions.get(token), restore = restoreSessions.get(token);
   const session = targeted ?? pipeline ?? restore;
   if (!session) throw new Error('preview_unavailable');
-  return { ...out, ...signedWriter.preview({ token, expiresAt: session.expiresAt,
+  try {return { ...out, ...signedWriter.preview({ token, expiresAt: session.expiresAt,
     noiseOnlyChange: (session as any).noiseOnlyChange,
     pageId: session.pageId, pagePath: session.pagePath, hostname: session.hostname,
     beforeHtml: session.beforeHtml, afterHtml: session.afterHtml,
     mode: restore ? 'restore' : pipeline ? 'pipeline' : 'deterministic',
     tier: pipeline?.tier ?? null, snapshotTs: restore?.snapshotTs,
     rules: targeted?.appliedRuleIds ?? pipeline?.appliedRuleIds ?? ['__revert__'],
-  }) };
+  }) };} catch(error){signedWriter.invalidate(token);throw error;}
 }
 function signedError(res: ServerResponse, error: unknown) {
+  if(error instanceof CapacityError || error instanceof WorkCancelled || (error instanceof Error && error.name==='TimeoutError')) {res.setHeader('retry-after','5');json(res,503,{error:error instanceof CapacityError?'capacity_unavailable':'work_cancelled'});return;}
   if (error instanceof SignedRequestError) { json(res, error.status, error.body); return; }
   if (error instanceof ReviewAuthError) { json(res, error.status, { error: error.code, outcome: 'not_attempted', retryable: false, operation_id: null, evidence_effect: 'preserve' }); return; }
   if (error instanceof LedgerError) { json(res, error.code === 'claim_conflict' ? 409 : 503,

@@ -7,6 +7,7 @@ export class WorkOwner {
   private queue: Array<()=>void> = [];
   private controllers = new Set<AbortController>();
   private stopped = false;
+  private drained:Array<()=>void>=[];
   readonly limit = finiteLimit(process.env.REMEDY_WORK_ACTIVE,2,2);
   readonly queued = finiteLimit(process.env.REMEDY_WORK_QUEUED,8,8,0);
   readonly timeoutMs = finiteLimit(process.env.REMEDY_WORK_TIMEOUT_MS,300000,300000);
@@ -21,13 +22,15 @@ export class WorkOwner {
       });
     } else this.active++;
     try { signal.throwIfAborted(); return await work(); }
-    finally { const next = this.queue.shift(); if(next) next(); else this.active--; }
+    finally { const next = this.queue.shift(); if(next) next(); else this.active--;
+      if(this.active===0)for(const resolve of this.drained.splice(0))resolve(); }
   }
   controller() {
     const controller = new AbortController(); this.controllers.add(controller);
     const timer = setTimeout(()=>controller.abort(new WorkCancelled()),this.timeoutMs);
     return {controller,done:()=>{clearTimeout(timer);this.controllers.delete(controller);}};
   }
+  drain():Promise<void> {return this.active===0?Promise.resolve():new Promise(resolve=>this.drained.push(resolve));}
   shutdown() { this.stopped=true; for(const controller of this.controllers) controller.abort(new WorkCancelled()); }
 }
 /** Reap actual native/CPU/socket work before settling; no abandoned promise releases a slot. */
