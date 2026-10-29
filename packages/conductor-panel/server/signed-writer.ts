@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
-import { createExpertClient, resolvePageRef, fetchPageHtml, writePageRevision, revertPage, WriteOutcomeError, type PageRef, type SnapshotEntry } from '@libretexts/remedy-core';
+import { basename, dirname, join, resolve } from 'node:path';
+import { createExpertClient, resolvePageRef, fetchPageHtml, writePageRevision, revertPage, WriteOutcomeError, type PageRef, type SnapshotEntry, WriteEligibilityError } from '@libretexts/remedy-core';
 import { DurableLedger, LedgerError, type Reason } from './durable-ledger.js';
 import { ReviewerVerifier, ReviewAuthError, type ReviewBinding } from './reviewer-auth.js';
 
@@ -23,6 +23,7 @@ function rejected(status: number, error: string, invalidate = false): never { th
 /** Owns the signed HTTP lifecycle. Legacy HTTP handlers cannot invoke this writer. */
 export class SignedWriter {
   private admitting = true;
+  private reloadGeneration = 0;
   private readonly previews = new Map<string, StoredPreview>();
   private constructor(readonly ledger: DurableLedger, private verifier: ReviewerVerifier, private readonly env: NodeJS.ProcessEnv) {}
   static async open(verifier: ReviewerVerifier, env: NodeJS.ProcessEnv = process.env) {
@@ -59,11 +60,11 @@ export class SignedWriter {
     if (!status) throw new SignedRequestError(404, { error: 'operation_not_found' });
     return status;
   }
-  pause() { this.admitting = false; }
-  async reload(verifier: ReviewerVerifier) {
-    this.pause();
+  pause() { this.admitting = false; return ++this.reloadGeneration; }
+  async reload(verifier: ReviewerVerifier, generation = this.pause()) {
     await this.ledger.recordRevocations(verifier.effectiveRevocations());
     verifier.rememberRevocations(await this.ledger.getRevocations());
+    if (generation !== this.reloadGeneration) throw new Error('reviewer_reload_superseded');
     this.verifier = verifier;
     this.admitting = true;
   }
@@ -134,7 +135,7 @@ export class SignedWriter {
         const result = await this.ledger.finish(operation.operation_id, { outcome: 'unknown_write' });
         throw new SignedRequestError(502, { ...result, error: 'write_outcome_unknown' });
       }
-      const reason: Reason = error instanceof Error && error.message.startsWith('Page changed') ? 'stale_preview' : error instanceof Error && error.message.includes('target mismatch') ? 'target_mismatch' : 'pre_dispatch_failure';
+      const reason: Reason = error instanceof WriteEligibilityError ? error.reason : 'pre_dispatch_failure';
       return await terminal(reason, error instanceof ReviewAuthError ? error.status : 409, error instanceof ReviewAuthError ? error.code : reason);
     }
   }
@@ -143,7 +144,16 @@ export class SignedWriter {
 }
 
 async function syncSnapshot(snapshot: SnapshotEntry) {
-  for (const path of [snapshot.htmlPath, snapshot.metaPath, dirname(snapshot.metaPath), dirname(dirname(snapshot.metaPath)), dirname(dirname(dirname(snapshot.metaPath)))]) {
+  for (const path of [snapshot.htmlPath, snapshot.metaPath]) {
     const handle = await open(path, 'r'); try { await handle.sync(); } finally { await handle.close(); }
+  }
+  // saveSnapshot creates directories recursively: flush each containing entry,
+  // including the parent of a newly created root, before marking dispatch durable.
+  let directory = dirname(resolve(snapshot.metaPath));
+  while (true) {
+    const handle = await open(directory, 'r'); try { await handle.sync(); } finally { await handle.close(); }
+    const parent = dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
   }
 }

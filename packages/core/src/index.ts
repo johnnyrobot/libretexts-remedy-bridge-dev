@@ -23,4 +23,4 @@ export { reviseAltText, reviewableImages, describeComplexImage } from './review-
 export { scanRenderedPage, mergeRenderedFindings } from './rendered-scan.js';
 export { deduplicateMathJaxInitializer } from './mathjax-initializer.js';
 
-export { WriteOutcomeError } from './write-safety.js';
+export { WriteOutcomeError, WriteEligibilityError } from './write-safety.js';

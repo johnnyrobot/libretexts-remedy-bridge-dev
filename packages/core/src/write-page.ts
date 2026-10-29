@@ -1,5 +1,5 @@
 import type Expert from '@libretexts/cxone-expert-node';
-import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain } from './write-safety.js';
+import { canonicalWriteTarget, withPageWriteLock, markWriteUncertain, WriteEligibilityError } from './write-safety.js';
 import { fetchPageHtml } from './scan.js';
 import {
   appendAudit,
@@ -70,7 +70,7 @@ export async function writePageRevision({
   assertWriteAllowed(page, env);
   return withPageWriteLock(page, async () => {
     page = await canonicalWriteTarget(expert, pageInput, page, env);
-    if (await fetchPageHtml(expert, page.id) !== beforeHtml) throw new Error('Page changed since preview; preview again');
+    if (await fetchPageHtml(expert, page.id) !== beforeHtml) throw new WriteEligibilityError('stale_preview');
 
     const snapshot = await saveSnapshot(beforeHtml, {
       pageId: page.id,

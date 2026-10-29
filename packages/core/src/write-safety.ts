@@ -3,6 +3,14 @@ import { normalizePageInput, resolvePageRef } from './client.js';
 import { assertWriteAllowed } from './guardrails.js';
 import type { PageRef } from './types.js';
 
+/** Eligibility failures carry stable evidence semantics across HTTP and local writers. */
+export class WriteEligibilityError extends Error {
+  constructor(readonly reason: 'stale_preview' | 'target_mismatch') {
+    super(reason === 'stale_preview' ? 'Page changed since preview; preview again' : 'Write target mismatch');
+    this.name = 'WriteEligibilityError';
+  }
+}
+
 /** The mutation may have reached CXone. Reconcile before attempting another write. */
 export class WriteOutcomeError extends Error {
   readonly outcome = 'unknown';
@@ -46,14 +54,14 @@ export async function canonicalWriteTarget(expert: Expert, input: string | numbe
   assertWriteAllowed(asserted, env);
   if (!Number.isSafeInteger(asserted.id) || asserted.id <= 0) throw new Error('Write target has invalid page ID');
   const normalized = normalizePageInput(input, env);
-  if (typeof normalized === 'number' && normalized !== asserted.id) throw new Error('Write target mismatch');
+  if (typeof normalized === 'number' && normalized !== asserted.id) throw new WriteEligibilityError('target_mismatch');
   const resolved = await resolvePageRef(expert, normalized, env);
   if (!Number.isSafeInteger(resolved.id) || resolved.id <= 0) throw new Error('Write target has invalid canonical page ID');
   assertWriteAllowed(resolved, env);
   const canonical = await resolvePageRef(expert, resolved.id, env);
   for (const candidate of [resolved, canonical]) {
     assertWriteAllowed(candidate, env);
-    if (candidate.id !== asserted.id || candidate.path !== asserted.path || candidate.hostname !== asserted.hostname) throw new Error('Write target mismatch');
+    if (candidate.id !== asserted.id || candidate.path !== asserted.path || candidate.hostname !== asserted.hostname) throw new WriteEligibilityError('target_mismatch');
   }
   return canonical;
 }

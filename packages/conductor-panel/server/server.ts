@@ -666,10 +666,10 @@ server.once('close', () => { void closeSignedWriter(); });
 /** Explicit local key reload; any validation/storage failure keeps admission disabled. */
 export async function reloadReviewerKeys() {
   if (!signedWriter) throw new Error('signed_writer_unavailable');
-  signedWriter.pause();
+  const generation = signedWriter.pause();
   const next = loadSecurity();
   if (!next.required) throw new Error('reviewer_configuration_invalid');
-  await signedWriter.reload(next.verifier!);
+  await signedWriter.reload(next.verifier!, generation);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

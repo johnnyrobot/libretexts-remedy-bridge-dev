@@ -98,6 +98,11 @@ it('blocks dispatch when pre-write snapshot storage fails',async()=>{
  const previous=process.env.REMEDY_SNAPSHOT_DIR;vi.stubEnv('REMEDY_SNAPSHOT_DIR',join(dir,'service'));
  try{const p=(await preview()).body;const r=await apply(p);expect(r.status).toBe(409);expect(r.body).toMatchObject({outcome:'not_attempted',reason:'pre_dispatch_failure',applied:false,evidence_effect:'preserve'});expect(cxone.writes).toEqual([]);}finally{vi.stubEnv('REMEDY_SNAPSHOT_DIR',previous!);}
 });
+it('a later invalid reload cannot be undone by an earlier in-flight valid reload',async()=>{
+ const module=await import('../../../conductor-panel/server/server.js');const {writeFileSync}=await import('node:fs');const previous=await readFile(join(dir,'keys.json'),'utf8');
+ const earlier=module.reloadReviewerKeys().catch(()=>{});writeFileSync(join(dir,'keys.json'),'{}');
+ try{await expect(module.reloadReviewerKeys()).rejects.toThrow('reviewer_configuration_invalid');await earlier;const ready=await fetch(base+'/readyz',{headers:{'X-Remedy-Service-Key':service}});expect(ready.status).toBe(503);expect(await ready.json()).toMatchObject({capabilities:{mutate:false,operation_status:true}});}finally{await earlier;await writeFile(join(dir,'keys.json'),previous);await module.reloadReviewerKeys();}
+});
 it('returns fixed unknown metadata and retains quarantine after transport loss and restart',async()=>{
  const p=(await preview()).body,a=assertion(p);cxone.lose=true;const r=await apply(p,a);expect(r.status).toBe(502);expect(r.body).toMatchObject({outcome:'unknown_write',applied:null,restored:false,evidence_effect:'invalidate',requires_reconciliation:true,reconciliation:'required',error:'write_outcome_unknown'});expect(JSON.stringify(r.body)).not.toMatch(/private upstream|\.json|snapshot|reviewer_assertion/);
  expect((await post('/v1/cxone/page/operation-status',{issuer,jti:a.jti})).body).toMatchObject({operation_id:r.body.operation_id,outcome:'unknown_write'});
