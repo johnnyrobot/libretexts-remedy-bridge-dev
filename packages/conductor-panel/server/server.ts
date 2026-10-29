@@ -29,6 +29,8 @@ import {
   createExpertClient,
   resolvePageRef,
   scanPage,
+  scanHtmlFull,
+  ScanEngineError,
   scanRenderedPage,
   mergeRenderedFindings,
   fetchPageHtml,
@@ -206,6 +208,7 @@ const routes: Record<string, Handler> = {
       const expert = createExpertClient();
       const ref = await resolvePageRef(expert, page, process.env);
       const html = await fetchPageHtml(expert, page);
+      await scanHtmlFull(html);
       const images = reviewableImages(html);
       prunePreviewSessions();
       const token = randomUUID(), hash = hashContent(html);
@@ -639,6 +642,7 @@ export const server = createServer(async (req, res) => {
     const result = await handler(body);
     json(res, 200, decoratePreview(pathname, result));
   } catch (err) {
+    if (err instanceof ScanEngineError) { json(res, 503, { error: 'scan_engine_failed', evidence_usable: false }); return; }
     if (security.required) { signedError(res, err); return; }
     if (err instanceof WriteOutcomeError) {
       json(res, 409, { error: 'write_outcome_unknown', write_outcome: 'unknown', retry_safe: false, snapshot_path: err.snapshotPath,
