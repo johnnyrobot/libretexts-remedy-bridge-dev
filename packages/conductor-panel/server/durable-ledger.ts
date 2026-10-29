@@ -10,7 +10,7 @@ export type Reason = 'no_change' | 'stale_preview' | 'target_mismatch' | 'pre_di
 export interface OperationStatus {
   operation_id: string; action: 'cxone.apply' | 'cxone.restore'; outcome: Outcome;
   reason: Reason | null; applied: boolean | null; restored: boolean | null; audit_recorded: boolean | null;
-  requires_reconciliation: boolean; reconciliation: 'none' | 'required';
+  requires_reconciliation: boolean; reconciliation: 'none' | 'required' | 'resolved';
   evidence_effect: 'hold' | 'preserve' | 'invalidate'; updated_at: string;
 }
 export interface ClaimInput {
