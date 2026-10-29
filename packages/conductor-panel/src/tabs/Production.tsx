@@ -42,10 +42,10 @@ export function ProductionTab() {
   async function onApply() {
     if (!preview) return;
     if (!confirm(`Apply to ${preview.pagePath} on ${preview.hostname}? This writes a CXone revision.`)) return;
-    setBusy('apply'); setError(null); setPreview(null);
+    setBusy('apply'); setError(null); setPreview(null); setScan(null);
     try {
       const r = await api.apply(pageInput, tier, preview);
-      setApplyResult(r.applied ? `Written. ${r.audit_recorded === false ? 'Audit recording failed; preserve the snapshot and reconcile the audit before further work. ' : ''}${r.revisionSummary ?? ''}` : r.applyError ?? 'No write (noise-only or empty delta).');
+      setApplyResult(r.applied ? `Written. ${r.audit_recorded === false ? 'Audit recording failed; preserve the snapshot and reconcile the audit before further work. ' : ''}${r.revisionSummary ?? ''}${r.snapshotPath ? ` Snapshot: ${r.snapshotPath}` : ''}${r.cxone_revision_id !== undefined ? ` CXone revision: ${r.cxone_revision_id}` : ''}` : r.applyError ?? 'No write (noise-only or empty delta).');
     } catch (e) {
       setError((e as Error).message);
     } finally {

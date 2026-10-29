@@ -41,6 +41,7 @@ import {
   CXONE_ALLOWED_ROOT,
   isCxoneIntegrationEnabled,
   validateCxoneConfiguration,
+  type PageRef,
   type PipelineResult,
   type DojException,
   type WcagReview,
@@ -182,7 +183,7 @@ const routes: Record<string, Handler> = {
     restoreSessions.delete(token);
     const page = requirePageInput(body);
     const pageRef = await resolvePageRef(createExpertClient(), page, process.env);
-    if (pageRef.id !== session.pageId || pageRef.path !== session.pagePath || pageRef.hostname !== session.hostname || body.preview_hash !== session.hash) throw new HttpError(409, { error: 'stale_preview', message: 'Restore preview does not match this page.' });
+    if (!matchesPreviewTarget(pageRef, session) || body.preview_hash !== session.hash) throw new HttpError(409, { error: 'stale_preview', message: 'Restore preview does not match this page.' });
     try {
       const result = await revertPage(pageRef.id, { snapshotTs: session.snapshotTs, expectedCurrentHash: session.hash, expectedRestoredHash: session.afterHash, requestedBy: optionalStr(body.requested_by ?? body.requestedBy) });
       return { restored: result.written, write_outcome: result.writeOutcome, audit_recorded: result.auditRecorded, snapshot_timestamp: session.snapshotTs,
@@ -311,7 +312,7 @@ const routes: Record<string, Handler> = {
     if (!session || session.expiresAt <= Date.now()) throw new HttpError(409, { error: 'expired_preview', message: 'Fix preview expired; generate it again.' });
     targetedPreviewSessions.delete(oldToken);
     const page = await resolvePageRef(createExpertClient(), requirePageInput(body), process.env);
-    if (page.id !== session.pageId || page.path !== session.pagePath || page.hostname !== session.hostname) throw new HttpError(409, { error: 'preview_page_mismatch', message: 'Preview belongs to a different page.' });
+    if (!matchesPreviewTarget(page, session)) throw new HttpError(409, { error: 'preview_page_mismatch', message: 'Preview belongs to a different page.' });
     const edits = body.alt_edits as Array<{ src: string; text: string }>;
     let after: string;
     try { after = reviseAltText(session.afterHtml, edits, (session.editableImages || []).map(i => i.src)); }
@@ -331,6 +332,9 @@ const routes: Record<string, Handler> = {
   '/v1/cxone/page/apply-fix': async (body) => {
     const page = requirePageInput(body);
     const fixMode = optionalFixMode(body.fix_mode ?? body.fixMode);
+    if (!optionalStr(body.preview_token ?? body.previewToken)) {
+      throw new HttpError(409, { error: 'preview_required', message: 'Apply requires the single-use token returned with the reviewed output. Preview again.' });
+    }
     if (fixMode === 'pipeline') {
       prunePipelinePreviewSessions();
       const previewHash = requireStr(body.preview_hash ?? body.previewHash, 'preview_hash');
@@ -357,7 +361,7 @@ const routes: Record<string, Handler> = {
       const env = process.env;
       const expert = createExpertClient(env);
       const pageRef = await resolvePageRef(expert, page, env);
-      if (pageRef.id !== session.pageId || pageRef.path !== session.pagePath || pageRef.hostname !== session.hostname) {
+      if (!matchesPreviewTarget(pageRef, session)) {
         throw new HttpError(409, {
           error: 'preview_page_mismatch',
           message: 'Pipeline preview was created for a different page; refresh and preview again.',
@@ -424,7 +428,7 @@ const routes: Record<string, Handler> = {
       const env = process.env;
       const expert = createExpertClient(env);
       const pageRef = await resolvePageRef(expert, page, env);
-      if (pageRef.id !== session.pageId || pageRef.path !== session.pagePath || pageRef.hostname !== session.hostname) {
+      if (!matchesPreviewTarget(pageRef, session)) {
         throw new HttpError(409, {
           error: 'preview_page_mismatch',
           message: 'Preview was created for a different page; refresh and preview again.',
@@ -557,6 +561,10 @@ const routes: Record<string, Handler> = {
     return { fixtureName, ...result };
   },
 };
+
+function matchesPreviewTarget(page: PageRef, session: { pageId: number; pagePath: string; hostname: string }): boolean {
+  return page.id === session.pageId && page.path === session.pagePath && page.hostname === session.hostname;
+}
 
 function cachePipelinePreview(result: PipelineResult, tier: 1 | 2 | 3): PipelinePreviewSession {
   prunePipelinePreviewSessions();

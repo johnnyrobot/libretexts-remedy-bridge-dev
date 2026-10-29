@@ -27,6 +27,7 @@ export interface ApplyResponse {
   applied: boolean;
   audit_recorded?: boolean;
   write_outcome?: 'succeeded';
+  cxone_revision_id?: string | number;
   applyError?: string;
   snapshotPath?: string;
   revisionSummary?: string;
@@ -39,8 +40,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const problem = await res.json().catch(() => ({})) as { message?: string };
-    throw new Error(problem.message ?? `Request failed (${res.status}).`);
+    const problem = await res.json().catch(() => ({})) as { message?: string; snapshot_path?: string };
+    throw new Error(`${problem.message ?? `Request failed (${res.status}).`}${problem.snapshot_path ? ` Recovery snapshot: ${problem.snapshot_path}` : ''}`);
   }
   return res.json();
 }

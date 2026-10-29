@@ -2,6 +2,8 @@
 import 'dotenv/config';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 import { Command } from 'commander';
 import kleur from 'kleur';
 import {
@@ -16,6 +18,9 @@ import {
   revertPageTags,
   MissingEnvError,
   WriteNotAllowedError,
+  WriteOutcomeError,
+  writePageRevision,
+  hashContent,
 } from '@libretexts/remedy-core';
 import type { TagRestoreManifest } from '@libretexts/remedy-core';
 import { readFile } from 'node:fs/promises';
@@ -24,7 +29,7 @@ import { scanFile } from './scan-file.js';
 import { pipelineFile } from './pipeline-file.js';
 import { confirm } from './confirm.js';
 
-const program = new Command();
+export const program = new Command();
 
 program
   .name('remedy')
@@ -199,11 +204,12 @@ program
           }
         }
 
-        const appliedResult = await fixPage(page, {
-          mode: 'apply',
-          onlyRuleIds,
-          revisionSummary: opts.message,
+        const appliedResult = await writePageRevision({
+          expert: createExpertClient(), pageInput: page, page: result.page,
+          beforeHtml: result.before, afterHtml: result.after, rules: result.applied,
+          source: 'fix', revisionSummary: opts.message ?? `remedy-v0: fix ${result.applied.join(',')}`,
         });
+        reportAuditFailure(appliedResult);
         if (appliedResult.written) {
           console.log(
             kleur.green(`✓ Revision written.`) + kleur.dim(` ${appliedResult.revisionSummary ?? ''}`),
@@ -292,7 +298,10 @@ program
           snapshotTs: opts.snapshot,
           snapshotPath: opts.snapshotPath,
           revisionSummary: opts.message,
+          expectedCurrentHash: hashContent(preview.currentHtml),
+          expectedRestoredHash: hashContent(preview.revertedToHtml),
         });
+        reportAuditFailure({ ...result, snapshotPath: result.preRevertSnapshotPath });
         if (result.written) {
           console.log(kleur.green('✓ Page restored.'));
           console.log(kleur.dim(`  pre-revert safety snapshot: ${result.preRevertSnapshotPath}`));
@@ -392,19 +401,17 @@ program
             return;
           }
         }
-        const applyResult = await runPipeline(page, {
-          tier,
-          mode: 'apply',
-          maxLlmCalls: opts.maxLlmCalls,
-          onlyRuleIds: opts.only ? opts.only.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
-          revisionSummary: opts.message,
+        const applyResult = await writePageRevision({
+          expert: createExpertClient(), pageInput: page,
+          page: { id: previewResult.pageId, path: previewResult.pagePath, hostname: previewResult.hostname },
+          beforeHtml: previewResult.beforeHtml, afterHtml: previewResult.finalHtml,
+          rules: previewResult.appliedRuleIds, source: 'pipeline',
+          revisionSummary: opts.message ?? `remedy-pipeline: reviewed Tier ${tier} result`,
         });
-        if (applyResult.applied) {
+        reportAuditFailure(applyResult);
+        if (applyResult.written) {
           console.log(kleur.green('✓ Revision written. Pre-write snapshot saved under .remedy/snapshots/.'));
           console.log(kleur.dim('  Run  remedy revert <page>  to restore.'));
-        } else if (applyResult.applyError) {
-          console.log(kleur.red(`✖ Apply failed: ${applyResult.applyError}`));
-          process.exitCode = 5;
         } else {
           console.log(kleur.yellow('Apply produced no write (empty delta).'));
         }
@@ -463,6 +470,7 @@ program
         const counts: Record<string, number> = {};
         for (const r of results) counts[r.status] = (counts[r.status] ?? 0) + 1;
         for (const r of results) {
+          if (r.result) reportAuditFailure(r.result);
           if (r.status === 'error') console.log(kleur.red(`  ✖ ${r.sandboxPageId}  ${r.error}`));
         }
         console.log(kleur.green(`✓ done: ${JSON.stringify(counts)}`));
@@ -495,6 +503,7 @@ program
         console.log(kleur.green('✓ Live tags already match the snapshot — nothing to do.'));
         return;
       }
+      reportAuditFailure(r);
       console.log(kleur.green(`✓ reverted: -${r.removed.length} +${r.added.length}; safety snapshot ${r.snapshotPath}`));
     } catch (err) {
       handleError(err);
@@ -503,6 +512,12 @@ program
 
 function slugify(s: string): string {
   return s.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'page';
+}
+
+function reportAuditFailure(result: { auditRecorded?: boolean; snapshotPath?: string }): void {
+  if (result.auditRecorded === false) {
+    console.error(kleur.yellow(`Write succeeded, but audit recording failed. Preserve snapshot ${result.snapshotPath ?? '(see snapshot storage)'} and reconcile the audit; do not repeat the write.`));
+  }
 }
 
 function handleError(err: unknown): never {
@@ -517,9 +532,16 @@ function handleError(err: unknown): never {
     console.error(kleur.dim(err.message));
     process.exit(3);
   }
+  if (err instanceof WriteOutcomeError) {
+    console.error(kleur.red('Write outcome unknown. Do not retry; reconcile CXone revision history first.'));
+    console.error(kleur.dim(`Recovery snapshot: ${err.snapshotPath ?? '(see snapshot storage)'}`));
+    process.exit(5);
+  }
   console.error(kleur.red('✖ Unexpected error:'), err instanceof Error ? err.message : err);
   if (process.env.DEBUG) console.error(err);
   process.exit(10);
 }
 
-program.parseAsync(process.argv).catch(handleError);
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  program.parseAsync(process.argv).catch(handleError);
+}

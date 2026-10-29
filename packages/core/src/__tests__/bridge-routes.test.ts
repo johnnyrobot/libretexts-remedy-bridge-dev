@@ -132,6 +132,8 @@ it('invalidates panel confirmation when page or tier changes and sends the revie
   const { JSDOM } = await import('jsdom');
   const dom = new JSDOM('<div id="root"></div>', { url: base });
   const originalFetch = globalThis.fetch;
+  const auditPath = process.env.REMEDY_AUDIT_LOG!;
+  vi.stubEnv('REMEDY_AUDIT_LOG', process.env.REMEDY_SNAPSHOT_DIR!);
   vi.stubGlobal('window', dom.window); vi.stubGlobal('document', dom.window.document);
   vi.stubGlobal('navigator', dom.window.navigator); vi.stubGlobal('HTMLElement', dom.window.HTMLElement);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); vi.stubGlobal('confirm', () => true);
@@ -165,8 +167,42 @@ it('invalidates panel confirmation when page or tier changes and sends the revie
     await act(async () => { button('Apply (write revision)')!.click(); });
     await vi.waitFor(() => expect(doc.body.textContent).toContain('Written.'));
     expect(cxone.writes).toHaveLength(1);
+    expect(doc.body.textContent).toContain('Audit recording failed');
+    expect(doc.body.textContent).toContain('Snapshot:');
+    expect(doc.body.textContent).toContain('CXone revision: 7');
     expect(button('Apply (write revision)')).toBeUndefined();
-  } finally { await act(async () => root.unmount()); dom.window.close(); vi.unstubAllGlobals(); }
+  } finally { await act(async () => root.unmount()); dom.window.close(); vi.unstubAllGlobals(); vi.stubEnv('REMEDY_AUDIT_LOG', auditPath); }
+});
+
+it('CLI fix rejects a source change after showing the reviewed output', async () => {
+  const { program } = await import('../../../cli/src/index.js');
+  const dir = await mkdtemp(join(tmpdir(), 'bridge-cli-'));
+  const log = vi.spyOn(console, 'log').mockImplementation((...args) => {
+    if (args.join(' ').includes('wrote findings')) cxone.html = '<p><strong>Unreviewed replacement</strong></p>';
+  });
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const exit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('synthetic CLI exit'); });
+  try {
+    await expect(program.parseAsync(['node', 'remedy', 'fix', '1', '--apply', '--i-have-confirmed', '--out-dir', dir])).rejects.toThrow('synthetic CLI exit');
+    expect(cxone.writes).toEqual([]);
+    expect(error.mock.calls.flat().join(' ')).toContain('Page changed since preview');
+  } finally { log.mockRestore(); error.mockRestore(); exit.mockRestore(); }
+});
+
+it('CLI pipeline writes the saved reviewed output and warns on audit failure', async () => {
+  const { program } = await import('../../../cli/src/index.js');
+  const { readFile, readdir } = await import('node:fs/promises');
+  const dir = await mkdtemp(join(tmpdir(), 'bridge-cli-'));
+  const previous = process.env.REMEDY_AUDIT_LOG!;
+  vi.stubEnv('REMEDY_AUDIT_LOG', process.env.REMEDY_SNAPSHOT_DIR!);
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await program.parseAsync(['node', 'remedy', 'pipeline', '1', '--apply', '--i-have-confirmed', '--tier', '1', '--out-dir', dir]);
+    const htmlFile = (await readdir(dir)).find(name => name.endsWith('.fixed.html'))!;
+    expect(cxone.writes).toEqual([await readFile(join(dir, htmlFile), 'utf8')]);
+    expect(error.mock.calls.flat().join(' ')).toContain('Write succeeded, but audit recording failed');
+  } finally { log.mockRestore(); error.mockRestore(); vi.stubEnv('REMEDY_AUDIT_LOG', previous); }
 });
 
 it('quarantines an unknown write and rejects replay and new previews without another mutation', async () => {

@@ -19,7 +19,7 @@ owner sandbox allowlist still apply. No live library verification was performed.
 Tokenless apply is now rejected with HTTP 409 `preview_required`. It cannot
 regenerate reviewed AI output from a source hash. Existing callers must preserve
 and forward the returned token; there is no compatibility bypass. The panel
-clears its review on page/tier changes and consumes it when apply begins.
+clears its review on page/tier changes and consumes it when apply begins, clearing stale scan evidence as well. CLI fix/pipeline apply the output just shown and saved, without a second generation; CLI restore binds the reviewed source and snapshot hashes. CLI commands report audit failure and unknown outcomes with a recovery snapshot reference.
 
 Canonical numeric page identity is re-resolved inside the writer. Supplied
 ID/path/host disagreement fails before snapshot or mutation. HTML/tag writes and
