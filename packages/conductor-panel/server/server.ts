@@ -189,7 +189,7 @@ const routes: Record<string, Handler> = {
       return { restored: result.written, write_outcome: result.writeOutcome, audit_recorded: result.auditRecorded, snapshot_timestamp: session.snapshotTs,
         snapshot_path: result.preRevertSnapshotPath, restored_hash: hashContent(result.revertedToHtml) };
     } catch (err) {
-      if (err instanceof Error && err.message.includes('Page changed')) throw new HttpError(409, { error: 'stale_preview', message: err.message });
+      if (err instanceof Error && (err.message.includes('Page changed') || err.message.startsWith('Restored output changed'))) throw new HttpError(409, { error: 'stale_preview', message: err.message });
       throw err;
     }
   },

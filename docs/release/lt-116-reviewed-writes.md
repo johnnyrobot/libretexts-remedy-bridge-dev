@@ -36,8 +36,8 @@ snapshot output still matches its reviewed output hash.
   local audit. Do not repeat the mutation to repair an audit failure.
 - HTTP 409 `write_outcome_unknown`, `write_outcome:"unknown"`, `retry_safe:false`
   means the remote mutation may have succeeded. The token is consumed and that
-  canonical page is quarantined for this process, including new previews and
-  other mutation kinds. Preserve its saved snapshot and inspect CXone revision
+  canonical page is quarantined for this process. New previews can still be
+  created, but writes from them and all other mutation kinds are rejected. Preserve its saved snapshot and inspect CXone revision
   history before deciding any further action. No automatic mutation retry.
 - A lost HTTP response is also ambiguous to the caller. Never infer that a
   network error means no write. Reconcile before a new attempt. Expired/consumed

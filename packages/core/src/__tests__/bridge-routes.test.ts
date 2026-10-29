@@ -115,6 +115,22 @@ it('claims restore previews before awaiting resolution and restores exact review
   expect(cxone.writes).toEqual([p.body.after_html]);
 });
 
+it('returns a stale-preview conflict when a valid snapshot output changes after review', async () => {
+  const { saveSnapshot, hashContent } = await import('../guardrails.js');
+  const { writeFile } = await import('node:fs/promises');
+  const snapshot = await saveSnapshot('<p>Reviewed restore</p>', { pageId: 1, pagePath: 'Sandboxes/johnnyphung/Page', hostname: 'dev.libretexts.org', operator: 'fake', rules: [], source: 'fix' }, process.env);
+  const p = await post('/v1/cxone/page/restore-preview', { page_id: 1, snapshot_timestamp: snapshot.meta.ts });
+  expect(p.status).toBe(200);
+  const replacement = '<p>Changed restore</p>';
+  await writeFile(snapshot.htmlPath, replacement);
+  await writeFile(snapshot.metaPath, JSON.stringify({ ...snapshot.meta, hash: hashContent(replacement) }));
+  const request = { page_id: 1, preview_token: p.body.preview_token, preview_hash: p.body.preview_hash };
+  const r = await post('/v1/cxone/page/restore', request);
+  expect(r.status).toBe(409); expect(r.body.error).toBe('stale_preview');
+  expect(cxone.writes).toEqual([]);
+  expect((await post('/v1/cxone/page/restore', request)).status).toBe(409);
+});
+
 it('consumes preview after a known write even when audit recording fails', async () => {
   const previous = process.env.REMEDY_AUDIT_LOG!;
   vi.stubEnv('REMEDY_AUDIT_LOG', process.env.REMEDY_SNAPSHOT_DIR!);
