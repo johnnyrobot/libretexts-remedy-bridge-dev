@@ -246,7 +246,7 @@ export function snapshotPaths(path: string, env: NodeJS.ProcessEnv = process.env
 
 async function readRegularFile(path: string): Promise<Buffer> {
   // O_NOFOLLOW makes the final-file check atomic with open (POSIX Node runtimes).
-  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     if (!(await handle.stat()).isFile()) throw new InvalidSnapshotError();
     return await handle.readFile();
@@ -289,8 +289,8 @@ export async function listSnapshots(
   }
   const out: SnapshotEntry[] = [];
   for (const f of entries.filter(f => f.endsWith('.json') && !f.endsWith('.tags.json'))) {
-    const paths = snapshotPaths(join(dir, f), env);
     try {
+      const paths = snapshotPaths(join(dir, f), env);
       const { meta } = await readSnapshot(paths.metaPath, env);
       if (meta.pageId === pageId) out.push({ ...paths, meta });
     } catch (error) {

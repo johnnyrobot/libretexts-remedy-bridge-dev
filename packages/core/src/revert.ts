@@ -19,6 +19,7 @@ import {
   snapshotPaths,
   InvalidSnapshotError,
   type SnapshotEntry,
+  type SnapshotMeta,
 } from './guardrails.js';
 import { fetchPageHtml } from './scan.js';
 import { writePageRevision } from './write-page.js';
@@ -67,6 +68,10 @@ export interface RevertResult {
   cxoneRevisionId?: string | number;
 }
 
+function matchesSnapshotTarget(meta: SnapshotMeta, page: PageRef): boolean {
+  return meta.pageId === page.id && meta.hostname === page.hostname && meta.pagePath === page.path;
+}
+
 export async function listPageSnapshots(
   pageInput: string | number,
   opts: { expert?: Expert; env?: NodeJS.ProcessEnv } = {},
@@ -74,7 +79,7 @@ export async function listPageSnapshots(
   const env = opts.env ?? process.env;
   const expert = opts.expert ?? createExpertClient(env);
   const page = await resolvePageRef(expert, pageInput, env);
-  return (await listSnapshots(page.id, env)).filter(s => s.meta.hostname === page.hostname && s.meta.pagePath === page.path);
+  return (await listSnapshots(page.id, env)).filter(s => matchesSnapshotTarget(s.meta, page));
 }
 
 export async function revertPage(
@@ -91,7 +96,7 @@ export async function revertPage(
 
   if (opts.snapshotPath) {
     const { html, meta } = await readSnapshot(opts.snapshotPath, env);
-    if (meta.pageId !== page.id || meta.hostname !== page.hostname || meta.pagePath !== page.path || hashContent(html) !== meta.hash) {
+    if (!matchesSnapshotTarget(meta, page) || hashContent(html) !== meta.hash) {
       throw new InvalidSnapshotError();
     }
     chosen = {
@@ -101,7 +106,7 @@ export async function revertPage(
       html,
     };
   } else {
-    const snapshots = (await listSnapshots(page.id, env)).filter(s => s.meta.hostname === page.hostname && s.meta.pagePath === page.path);
+    const snapshots = (await listSnapshots(page.id, env)).filter(s => matchesSnapshotTarget(s.meta, page));
     if (snapshots.length === 0) {
       throw new InvalidSnapshotError(
         `No snapshots on disk for page ${page.id} (${page.path}). Nothing to revert to.`,
@@ -117,7 +122,7 @@ export async function revertPage(
       );
     }
     const { html, meta } = await readSnapshot(pick, env);
-    if (meta.pageId !== page.id || meta.hostname !== page.hostname || meta.pagePath !== page.path || hashContent(html) !== meta.hash) {
+    if (!matchesSnapshotTarget(meta, page) || hashContent(html) !== meta.hash) {
       throw new InvalidSnapshotError();
     }
     chosen = { ...pick, ts: pick.meta.ts, hash: pick.meta.hash, html };

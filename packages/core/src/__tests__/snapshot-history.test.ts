@@ -1,4 +1,5 @@
 import { mkdtemp, mkdir, readFile, writeFile, symlink, rename } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
@@ -65,4 +66,19 @@ it('rejects traversal, external paths, mismatched entry pairs and symlink direct
   await symlink(join(dir, 'kept-root'), env.REMEDY_SNAPSHOT_DIR);
   await expect(readSnapshot(saved.metaPath, env)).rejects.toThrow('integrity');
   expect(await readFile(join(dir, 'kept-page', saved.htmlPath.split('/').at(-1)!), 'utf8')).toBe('evidence');
+});
+
+it('skips a named pipe and malformed POSIX filename without blocking recovery', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'snapshot-special-'));
+  const env = { SERVER_DOMAIN: 'dev.libretexts.org', REMEDY_SNAPSHOT_DIR: dir };
+  const pagePath = 'Sandboxes/johnnyphung/History';
+  const expert = { pages: { getPageInfo: async () => ({ '@id': 816, path: pagePath }), getPageContents: async () => ({ body: 'current' }) } } as any;
+  const saved = await saveSnapshot('recover', { pageId: 816, pagePath, hostname: env.SERVER_DOMAIN, operator: 'fake', rules: [] }, env);
+  const pipe = await saveSnapshot('pipe', { pageId: 816, pagePath, hostname: env.SERVER_DOMAIN, operator: 'fake', rules: [] }, env);
+  await rename(pipe.htmlPath, pipe.htmlPath + '.kept');
+  execFileSync('mkfifo', [pipe.htmlPath]);
+  await writeFile(join(dir, '816', '..\\invalid.json'), '{}');
+  expect((await listPageSnapshots(816, { expert, env })).map(s => s.metaPath)).toEqual([saved.metaPath]);
+  await expect(readSnapshot(pipe.htmlPath, env)).rejects.toThrow('integrity');
+  expect((await revertPage(816, { expert, env, dryRun: true })).revertedToHtml).toBe('recover');
 });
