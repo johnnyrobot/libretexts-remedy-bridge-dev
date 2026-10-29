@@ -272,7 +272,14 @@ export async function readSnapshot(
     if (basename(dirname(paths.metaPath)) !== String(meta.pageId) || basename(paths.metaPath) !== name + '.json' ||
         meta.bytes !== bytes.length || hashContent(html) !== meta.hash) throw new InvalidSnapshotError();
     return { html, meta };
-  } catch { throw new InvalidSnapshotError(); }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (error instanceof InvalidSnapshotError || error instanceof SyntaxError || error instanceof TypeError ||
+        error instanceof WriteNotAllowedError || ['ENOENT', 'ELOOP', 'ENOTDIR', 'ENXIO', 'EISDIR'].includes(code ?? '')) {
+      throw new InvalidSnapshotError();
+    }
+    throw error;
+  }
 }
 
 /** List complete valid HTML pairs for a page, newest first. Tag recovery is separate. */
