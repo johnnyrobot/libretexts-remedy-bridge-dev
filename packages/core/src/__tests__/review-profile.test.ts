@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
-import { mkdtemp, writeFile, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generateKeyPairSync, randomBytes, sign } from 'node:crypto';
@@ -146,8 +146,8 @@ it('reports exhausted preview capacity without disabling source scans', async ()
   expect(f.mutations()).toBe(0);
 },30000);
 
-it('keeps caller validation and optional image-description failures out of required readiness', async () => {
-  const f=await fixture({},'<p><strong>Title</strong></p><img src="/diagram.png" alt="Diagram">');
+it.each(['review-only','full-write'] as const)('keeps caller validation and optional image-description failures out of required readiness (%s)', async profile => {
+  const f=await (profile==='full-write'?fullWriteFixture:fixture)({},'<p><strong>Title</strong></p><img src="/diagram.png" alt="Diagram">');
   expect((await f.request('/v1/cxone/page/scan',{})).status).toBe(400);
   expect((await f.request('/readyz')).status).toBe(200);
   const p=await f.request('/v1/cxone/page/preview-fix',{page_id:1,review_images:true});expect(p.status).toBe(200);
@@ -190,28 +190,30 @@ it.each([401,403])('tracks real SDK contents%s as preview auth failure without c
   const preview=await f.request('/v1/cxone/page/preview-fix',{page_id:1});expect(preview.status).toBe(200);expect(preview.body.review_binding).toMatchObject({action:'cxone.apply',target:{hostname:'dev.libretexts.org',page_id:'1'}});
   expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);
-it('keeps service auth, validation, policy and missing-page errors distinct from upstream authentication',async()=>{
-  const f=await fixture();
+it.each(['review-only','full-write'] as const)('keeps service auth, validation, policy and missing-page errors distinct from upstream authentication (%s)',async profile=>{
+  const f=await (profile==='full-write'?fullWriteFixture:fixture)();
   expect(await f.request('/v1/cxone/page/scan',{page_id:1},false)).toEqual({status:401,body:{error:'service_authentication_required'}});
   expect((await f.request('/v1/cxone/page/scan',{failureKind:'dependency_auth'})).status).toBe(400);
   expect((await f.request('/v1/cxone/page/preview-fix',{page_url:'https://foreign.example/Book'})).status).toBe(400);
-  expect((await f.request('/v1/cxone/page/apply-fix',{page_id:1})).status).toBe(503);
+  expect((await f.request('/v1/cxone/page/apply-fix',{page_id:1})).status).toBe(profile==='full-write'?409:503);
   expect(f.reads()).toBe(0);expect((await f.request('/readyz')).status).toBe(200);
   f.fail(true,404);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(404);
   expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);
-it('recovers admission availability after actual saturation without latching a dependency failure',async()=>{
-  const f=await fixture({REMEDY_WORK_ACTIVE:'2',REMEDY_WORK_QUEUED:'0',REMEDY_WORK_TIMEOUT_MS:'12000'});f.hold(true);
+it.each(['review-only','full-write'] as const)('recovers admission availability after actual saturation without latching a dependency failure (%s)',async profile=>{
+  const f=await (profile==='full-write'?fullWriteFixture:fixture)({REMEDY_WORK_ACTIVE:'2',REMEDY_WORK_QUEUED:'0',REMEDY_WORK_TIMEOUT_MS:'12000'});f.hold(true);
   const jobs=[f.request('/v1/cxone/page/scan',{page_id:1}),f.request('/v1/cxone/page/scan',{page_id:1})];
   try{
     await vi.waitFor(()=>expect(f.reads()).toBe(2),{timeout:8000});
-    expect((await f.request('/readyz')).body.profile.unavailable_reasons).toEqual(['owned_work_unavailable']);
+    const ready=await f.request('/readyz');
+    expect(ready.status).toBe(profile==='full-write'?200:503);
+    expect(ready.body.profile.unavailable_reasons).toEqual(profile==='full-write'?[]:['owned_work_unavailable']);
     expect((await f.request('/v1/cxone/page/scan',{page_id:1})).body.error).toBe('capacity_unavailable');
   }finally{f.hold(false);await Promise.all(jobs);}
   expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);
-it('keeps actual disconnect and work deadline independent of required read health',async()=>{
-  const f=await fixture({REMEDY_WORK_TIMEOUT_MS:'4500'});f.hold(true);
+it.each(['review-only','full-write'] as const)('keeps actual disconnect and work deadline independent of required read health (%s)',async profile=>{
+  const f=await (profile==='full-write'?fullWriteFixture:fixture)({REMEDY_WORK_TIMEOUT_MS:'4500'});f.hold(true);
   const controller=new AbortController();const aborted=f.request('/v1/cxone/page/scan',{page_id:1},true,controller.signal).catch(()=>null);
   await vi.waitFor(()=>expect(f.reads()).toBe(1),{timeout:3500});controller.abort();await aborted;
   await vi.waitFor(()=>expect(f.closed()).toBe(1),{timeout:3000});expect((await f.request('/readyz')).status).toBe(200);
@@ -241,4 +243,67 @@ it('rejects scheme-like locators before they can be interpreted as page paths',a
   expect(await f.request('/v1/cxone/page/scan',{page_url})).toEqual({status:400,body:{error:'invalid_request'}});
  }
  expect(f.reads()).toBe(0);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+
+async function fullWriteFixture(extra:NodeJS.ProcessEnv={},html?:string) {
+  const {DurableLedger}=await import('../../../conductor-panel/server/durable-ledger.js');
+  const root=await mkdtemp(join(tmpdir(),'full-read-health-'));await mkdir(join(root,'ledger'));
+  const epoch='synthetic-full-health',issuer='urn:conductor:full-health',audience='urn:bridge:full-health';
+  const options={directory:join(root,'ledger'),fencePath:join(root,'fence.json'),trustEpoch:epoch};
+  await(await DurableLedger.open({...options,initialize:true})).close();
+  const keys=generateKeyPairSync('ed25519');
+  const nodeEnv=Object.hasOwn(extra,'NODE_ENV')?extra.NODE_ENV:'test';
+  const environment=['development','test'].includes(nodeEnv??'')?'test':'production';
+  await writeFile(join(root,'keys.json'),JSON.stringify({issuer,audience,environment,trust_epoch:epoch,keys:[{kid:'full-health-synthetic',issuer,audience,environment,trust_epoch:epoch,kty:'OKP',crv:'Ed25519',x:keys.publicKey.export({format:'jwk'}).x,not_before:0,not_after:4102444800,enabled:true,revoked_at:null}]}));
+  const f=await fixture({NODE_ENV:nodeEnv,REMEDY_BRIDGE_PROFILE:'full-write',REMEDY_REVIEWER_REQUIRED:'true',REMEDY_REVIEWER_KEYRING_FILE:join(root,'keys.json'),REMEDY_REVIEWER_TRUST_EPOCH:epoch,REMEDY_CLAIM_DB:join(root,'ledger','claims.sqlite3'),REMEDY_CLAIM_FENCE_DIR:root,...extra},html);
+  return {...f,keys,issuer,audience,storeOptions:options};
+}
+it('full-write default source401 makes actual SDK scan capability unavailable',async()=>{
+ const f=await fullWriteFixture({REMEDY_BRIDGE_PROFILE:undefined});
+ expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+ expect((await f.request('/v1/cxone/page/preview-fix',{page_id:1})).status).toBe(200);
+ expect((await f.request('/readyz')).body).toMatchObject({ok:true,profile:{name:'full-write'},capabilities:{scan:true,preview:true,mutate:true,operation_status:true}});
+ f.fail(true,401);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(401);
+ const failed=await f.request('/readyz');expect(failed.status).toBe(503);
+ expect(failed.body).toMatchObject({capabilities:{scan:false,preview:true,mutate:true,operation_status:true},profile:{unavailable_reasons:['read_dependency_unavailable']}});
+ f.fail(false);expect((await f.request('/v1/cxone/page/preview-fix',{page_id:1})).status).toBe(200);
+ expect((await f.request('/readyz')).body.capabilities.scan).toBe(false);
+ expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+ expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+
+it.each([
+ {path:'/v1/cxone/page/scan',other:'/v1/cxone/page/preview-fix',capability:'scan',status:403,part:'info'},
+ {path:'/v1/cxone/page/preview-fix',other:'/v1/cxone/page/scan',capability:'preview',status:401,part:'contents'},
+ {path:'/v1/cxone/page/preview-fix',other:'/v1/cxone/page/scan',capability:'preview',status:403,part:'contents'},
+])('full-write $path source$status latches only $capability until qualifying retry',async({path,other,capability,status,part})=>{
+ const f=await fullWriteFixture();expect((await f.request(path,{page_id:1})).status).toBe(200);
+ f.fail(true,status,part);expect(await f.request(path,{page_id:1})).toEqual({status,body:{error:'work_failed',evidence_usable:false}});
+ const failed=await f.request('/readyz');expect(failed.status).toBe(503);expect(failed.body.capabilities[capability]).toBe(false);expect(failed.body.capabilities.operation_status).toBe(true);
+ const reads=f.reads();expect((await f.request('/v1/cxone/page/operation-status',{issuer:f.issuer,jti:randomBytes(32).toString('base64url')})).status).toBe(404);
+ expect((await f.request('/readyz')).body.capabilities[capability]).toBe(false);expect(f.reads()).toBe(reads);
+ f.fail(false);expect((await f.request(other,{page_id:1})).status).toBe(200);expect((await f.request('/readyz')).body.capabilities[capability]).toBe(false);
+ expect((await f.request(path,{page_id:1})).status).toBe(200);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+it.each(['production',undefined])('full-write %s retains truthful read health and rejects valid signed writes before claims',async NODE_ENV=>{
+ const f=await fullWriteFixture({NODE_ENV});
+ const initial=await f.request('/readyz');expect(initial.status).toBe(503);expect(initial.body.capabilities).toEqual({scan:true,preview:true,mutate:false,operation_status:true});
+ f.fail(true,401);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(401);
+ expect((await f.request('/readyz')).body.capabilities).toMatchObject({scan:false,preview:true,mutate:false});
+ f.fail(false);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+ const healthy=await f.request('/readyz');expect(healthy.status).toBe(503);expect(healthy.body.capabilities).toEqual({scan:true,preview:true,mutate:false,operation_status:true});
+ const apply=(await f.request('/v1/cxone/page/preview-fix',{page_id:1})).body;
+ const {saveSnapshot}=await import('../guardrails.js');
+ const saved=await saveSnapshot('<p>Synthetic restore</p>',{pageId:1,pagePath:'Sandboxes/johnnyphung/Page',hostname:'dev.libretexts.org',operator:'synthetic',source:'fix',rules:[]},f.env);
+ const restore=await f.request('/v1/cxone/page/restore-preview',{page_id:1,snapshot_timestamp:saved.meta.ts});expect(restore.status).toBe(200);
+ const fenceBefore=await readFile(f.storeOptions.fencePath),reads=f.reads();
+ for(const [path,preview] of [['apply-fix',apply],['restore',restore.body]] as const){
+  const now=Math.floor(Date.now()/1000),jti=randomBytes(32).toString('base64url');
+  const h=Buffer.from(JSON.stringify({alg:'Ed25519',kid:'full-health-synthetic',typ:'remedy-review+jwt'})).toString('base64url');
+  const p=Buffer.from(JSON.stringify({v:1,iss:f.issuer,aud:f.audience,sub:'synthetic',iat:now,nbf:now,exp:Math.min(now+60,preview.review_expires_at),jti,binding:preview.review_binding})).toString('base64url');
+  const denied=await f.request('/v1/cxone/page/'+path,{page_id:1,preview_token:preview.preview_token,preview_hash:preview.preview_hash,reviewer_assertion:`${h}.${p}.${sign(null,Buffer.from(`${h}.${p}`),f.keys.privateKey).toString('base64url')}`});
+  expect(denied.status).toBe(503);expect(denied.body).toMatchObject({error:'conditional_write_unproven',outcome:'not_attempted',operation_id:null});
+  expect((await f.request('/v1/cxone/page/operation-status',{issuer:f.issuer,jti})).status).toBe(404);
+ }
+ expect(await readFile(f.storeOptions.fencePath)).toEqual(fenceBefore);expect(f.reads()).toBe(reads);expect(f.mutations()).toBe(0);
 },30000);
