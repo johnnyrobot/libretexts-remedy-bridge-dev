@@ -646,7 +646,7 @@ const instance = createServer(async (req, res) => {
     const configured = isCxoneIntegrationEnabled(process.env) && validateCxoneConfiguration(process.env).valid;
     const readable = await (signedWriter ?? readOnlyStatus)?.readable() === true;
     const writable = await signedWriter?.ready() === true;
-    const capabilities = { scan: configured && (profile !== 'review-only' || workOwner.accepting && readHealth.scan), preview: configured && (profile !== 'review-only' || workOwner.accepting && readHealth.preview && previewCapacity), mutate: configured && writable, operation_status: readable };
+    const capabilities = { scan: configured && readHealth.scan && (profile !== 'review-only' || workOwner.accepting), preview: configured && readHealth.preview && (profile !== 'review-only' || workOwner.accepting && previewCapacity), mutate: configured && writable, operation_status: readable };
     const required = profile === 'review-only' ? ['scan', 'preview'] as const : ['scan','preview','mutate','operation_status'] as const;
     const ready = required.every(name => capabilities[name]);
     const metadata = {contract:'cxone-review-v1',name:profile,required_capabilities:required,unavailable_reasons:ready?[]:[!configured?'cxone_configuration_invalid':!workOwner.accepting?'owned_work_unavailable':!readHealth.scan||!readHealth.preview?'read_dependency_unavailable':!previewCapacity?'preview_capacity_unavailable':'capabilities_unavailable']};

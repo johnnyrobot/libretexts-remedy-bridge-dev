@@ -97,6 +97,11 @@ permission and its stored operation mapping before forwarding a lookup.
 
 Full-write remains the default and retains its all-four capability readiness
 requirements, signed authentication/storage configuration and production hold.
+LT-204 applies observed required source read health to scan/preview booleans in
+both modes; existing profile-specific admission/cache policy, status and mutate
+checks stay separate. Healthy read flags never clear the production write hold.
+Recovery guidance remains actual default source scan/deterministic preview;
+LT-202's successful optional-source retry limitation is not changed here.
 An absent profile field in an older producer must not be inferred as review-only;
 consumers must not infer mutation support from ok:true or liveness. LT-175/176
 must explicitly select this version and inspect named capabilities. Global

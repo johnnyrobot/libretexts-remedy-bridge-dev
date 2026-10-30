@@ -155,8 +155,14 @@ Authenticated `GET /readyz` returns strict boolean capabilities `scan`, `preview
   `/readyz` does not probe CXone. Incoming service-auth/validation failures,
   rejected locators, capacity and cancellation/deadline errors are separate.
   Rejected or malformed full page URLs return400 before any external read.
-- Signed full-write readiness requires all four capabilities. While the production
-  gate is open, `mutate:false` makes it degraded even when reads/status work.
+- Signed full-write readiness requires all four capabilities. Observed required
+  read health governs scan/preview booleans in **both modes**, independently of
+  mutation availability. Correct read booleans do not enable writes: while the
+  production gate is open, `mutate:false` keeps overall readiness degraded even
+  when reads/status work. Admission/cache/status rules retain their mode-specific
+  behavior. Verify recovery through a successful default source scan or
+  deterministic preview; successful optional-source requests may not clear a
+  previous latch yet (LT-202).
 - Consumers must inspect the selected mode and named capabilities. Do not infer
   mutation support from liveness, `ok:true`, or an older producer without metadata.
 
