@@ -149,6 +149,12 @@ Authenticated `GET /readyz` returns strict boolean capabilities `scan`, `preview
   always false; optional historical status may also be false. Missing required
   read configuration, observed required dependency failure or exhausted owned/
   preview capacity remains unready. Healthy required work can establish recovery.
+  An observed upstream CXone read401/403 marks the affected scan or preview
+  capability unavailable (`read_dependency_unavailable`) until that capability
+  succeeds on a real retry. The failed request retains its existing status/body;
+  `/readyz` does not probe CXone. Incoming service-auth/validation failures,
+  rejected locators, capacity and cancellation/deadline errors are separate.
+  Rejected or malformed full page URLs return400 before any external read.
 - Signed full-write readiness requires all four capabilities. While the production
   gate is open, `mutate:false` makes it degraded even when reads/status work.
 - Consumers must inspect the selected mode and named capabilities. Do not infer
@@ -234,9 +240,9 @@ Known dependency inventory remains **2 high advisories** in the SDK's dormant
 nested/embedded Axios chain. The reviewed postinstall routes actual ESM/CJS
 request instances through pinned Axios 1.21.0; the dormant code is still present,
 so this is not an advisory-free or vendor-patched SDK. Do not skip the patch.
-Known minor follow-ups include LT-182 (invalid locator can temporarily degrade
-readiness until successful work) and LT-183 (review-only tag dry-run support/
-rejection clarity); HTML scan/preview is the advertised review capability.
+LT-199 also closes LT-182 caller-locator readiness misclassification.
+Known minor follow-up LT-183 covers review-only tag dry-run support/rejection
+clarity; HTML scan/preview is the advertised review capability.
 Bridge terminal proof is delivered by LT-179; cross-stack known-success/lost-reply
 recovery acceptance remains LT-180/127 work; a read-only lookup does not automatically clear local pending state.
 Global LT-111/113 still tracks execution/security/data bounds, actual cross-stack

@@ -67,7 +67,16 @@ false and reports `profile.unavailable_reasons:["cxone_configuration_invalid"]`.
 An actual required scan/preview dependency/engine failure makes its capability
 false until successful real work retries that capability; readiness performs no
 vendor probes and never claims credentials have been remotely verified. A
-healthy retry restores that capability. Invalid 4xx requests and admission/
+healthy retry restores that capability. LT-199 distinguishes actual SDK read
+401/403 from incoming service auth/caller errors using private provenance across
+the owned-worker channel; it preserves the failed public request status/body.
+Optional request flags cannot hide a proven required CXone source auth failure;
+optional-provider failures remain excluded. Only the affected capability
+latches; success of the other capability or an
+operation-status lookup cannot clear it. Malformed/rejected full page URLs are
+caller400 without external work (LT-182), not a dependency outage. Upstream404
+alone is not classified as a shared authentication outage. No response fields
+are added and the contract remains cxone-review-v1. Invalid 4xx requests and admission/
 cancellation failures do not claim engine health. Stopped/full owned work is
 unavailable (`owned_work_unavailable`); observed dependency failure uses
 `read_dependency_unavailable`. Exhausted preview entries/bytes make preview false

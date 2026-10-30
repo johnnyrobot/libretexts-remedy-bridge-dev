@@ -1,6 +1,6 @@
 import { ReadOnlyStatus } from './read-only-status.js';
 import { PreviewCache, PreviewPool, finiteLimit, CapacityError } from './preview-cache.js';
-import { WorkOwner, ownedRead, WorkCancelled } from './work-owner.js';
+import { WorkOwner, ownedRead, WorkCancelled, ownedReadFailureKind } from './work-owner.js';
 import { requestBudget } from '../../../tools/request-policy.cjs';
 /**
  * Minimal Node API server for the Conductor panel.
@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import {
   readBridgeProfile,
+  isCxoneReadAuthFailure,
   ReviewOnlyProfileError,
   reviseAltText,
   reviewableImages,
@@ -620,9 +621,12 @@ async function readResult(pathname:string,body:Record<string,unknown>,signal:Abo
 export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
 const workOwner = new WorkOwner();
 const readHealth = {scan:true,preview:true};
+const sourceCapability = (path:string) =>
+  ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' :
+  ['/v1/cxone/page/preview-fix','/v1/cxone/page/revise-preview','/api/preview'].includes(path) ? 'preview' : null;
 const readCapability = (path:string,body:Record<string,unknown>) => {
   if (body.describe_image !== undefined || body.rendered === true || body.fix_mode === 'pipeline' || body.fixMode === 'pipeline' || path === '/api/preview') return null;
-  return ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' : ['/v1/cxone/page/preview-fix','/v1/cxone/page/revise-preview'].includes(path) ? 'preview' : null;
+  return sourceCapability(path);
 };
 owners.add(workOwner);
 const instance = createServer(async (req, res) => {
@@ -715,7 +719,14 @@ const instance = createServer(async (req, res) => {
       if (capability) readHealth[capability] = true;
     } catch(error) {
       const e = error as {status?:number;body?:{error?:string}};
-      if (capability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) && !signal.aborted && (e.status === undefined || e.status >= 500)) readHealth[capability] = false;
+      const kind = ownedReadFailureKind(error);
+      const dependencyAuth = kind === 'dependency_auth' || isCxoneReadAuthFailure(error);
+      // Optional providers cannot certify required health or hide a proven
+      // failure of the shared required CXone source read.
+      const failedCapability = dependencyAuth ? sourceCapability(pathname) : capability;
+      if (failedCapability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) &&
+          kind !== 'capacity' && kind !== 'cancelled' && !signal.aborted &&
+          (dependencyAuth || e.status === undefined || e.status >= 500)) readHealth[failedCapability] = false;
       throw error;
     }
     json(res, 200, decoratePreview(pathname, result));

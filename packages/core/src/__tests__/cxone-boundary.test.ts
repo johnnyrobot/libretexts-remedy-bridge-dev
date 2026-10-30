@@ -73,4 +73,10 @@ describe('CXone boundary', () => {
       validEnv,
     )).toBe('Sandboxes/johnnyphung/Book/Page');
   });
+
+  it('preserves ordinary colon-bearing page paths and canonical URL paths', () => {
+    expect(normalizePageInput('Chapter:Introduction', validEnv)).toBe('Chapter:Introduction');
+    expect(normalizePageInput('Sandboxes/johnnyphung/Chapter:Introduction', validEnv)).toBe('Sandboxes/johnnyphung/Chapter:Introduction');
+    expect(normalizePageInput('https://dev.libretexts.org/Sandboxes/johnnyphung/Chapter:Introduction', validEnv)).toBe('Sandboxes/johnnyphung/Chapter:Introduction');
+  });
 });
