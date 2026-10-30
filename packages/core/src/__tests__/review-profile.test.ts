@@ -237,7 +237,7 @@ it.each([
 },30000);
 it('rejects scheme-like locators before they can be interpreted as page paths',async()=>{
  const f=await fixture();
- for(const page_url of ['ftp://example.com/Page','https:/dev.libretexts.org/Page','https:dev.libretexts.org/Page']){
+ for(const page_url of ['ftp:example.com/Page',String.raw`ftp:\example.com\Page`,'ftp://example.com/Page','https:/dev.libretexts.org/Page','https:dev.libretexts.org/Page']){
   expect(await f.request('/v1/cxone/page/scan',{page_url})).toEqual({status:400,body:{error:'invalid_request'}});
  }
  expect(f.reads()).toBe(0);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);

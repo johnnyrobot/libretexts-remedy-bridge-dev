@@ -89,8 +89,12 @@ export function normalizePageInput(
   const trimmed = input.trim();
   if (/^\d+$/.test(trimmed)) return Number(trimmed);
   const httpUrl = /^https?:\/\//i.test(trimmed);
-  if (!httpUrl && (/^[a-z][a-z0-9+.-]*:\//i.test(trimmed) || /^https?:/i.test(trimmed))) {
-    throw new InvalidPageLocatorError();
+  if (!httpUrl) {
+    let parsed: URL | undefined;
+    try { parsed = new URL(trimmed); } catch { /* Plain page paths have no URL base. */ }
+    if (parsed?.hostname || /^(?:https?|ftps?|file|wss?):/i.test(trimmed) || /^[a-z][a-z0-9+.-]*:\//i.test(trimmed)) {
+      throw new InvalidPageLocatorError();
+    }
   }
   if (httpUrl) {
     let url: URL;
