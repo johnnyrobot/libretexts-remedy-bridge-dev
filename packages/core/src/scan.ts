@@ -1,6 +1,7 @@
 import { JSDOM } from 'jsdom';
 import type Expert from '@libretexts/cxone-expert-node';
 import { createExpertClient, normalizePageInput, resolvePageRef } from './client.js';
+import { cxoneRead } from './cxone-read.js';
 import { defaultRules } from './rules/index.js';
 import { scanHtmlWithAxe } from './scan-axe.js';
 import { buildWcagReview } from './wcag.js';
@@ -24,9 +25,9 @@ export async function fetchPageHtml(
   // no MindTouch-injected anchors, mt-section-origin wrappers, rendered MathJax,
   // etc. Using mode=view pollutes writes: its output contains auto-injected
   // IDs that get duplicated on the next render when we POST them back as source.
-  const res = await expert.pages.getPageContents(id as number, {
+  const res = await cxoneRead(() => expert.pages.getPageContents(id as number, {
     mode: 'edit',
-  } as unknown as Parameters<typeof expert.pages.getPageContents>[1]);
+  } as unknown as Parameters<typeof expert.pages.getPageContents>[1]));
   // The SDK returns a JSON envelope for contents; the HTML lives under body[0] or body['#text'].
   // Defensive extraction to handle XML-to-JSON vagaries.
   const anyRes = res as unknown as Record<string, unknown>;

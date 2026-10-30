@@ -1,5 +1,6 @@
 export * from './types.js';
 export * from './client.js';
+export { isCxoneReadAuthFailure } from './cxone-read.js';
 export * from './guardrails.js';
 export * from './scan.js';
 export * from './wcag.js';

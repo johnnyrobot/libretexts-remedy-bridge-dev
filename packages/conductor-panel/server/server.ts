@@ -1,6 +1,6 @@
 import { ReadOnlyStatus } from './read-only-status.js';
 import { PreviewCache, PreviewPool, finiteLimit, CapacityError } from './preview-cache.js';
-import { WorkOwner, ownedRead, WorkCancelled } from './work-owner.js';
+import { WorkOwner, ownedRead, WorkCancelled, ownedReadFailureKind } from './work-owner.js';
 import { requestBudget } from '../../../tools/request-policy.cjs';
 /**
  * Minimal Node API server for the Conductor panel.
@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import {
   readBridgeProfile,
+  isCxoneReadAuthFailure,
   ReviewOnlyProfileError,
   reviseAltText,
   reviewableImages,
@@ -715,7 +716,10 @@ const instance = createServer(async (req, res) => {
       if (capability) readHealth[capability] = true;
     } catch(error) {
       const e = error as {status?:number;body?:{error?:string}};
-      if (capability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) && !signal.aborted && (e.status === undefined || e.status >= 500)) readHealth[capability] = false;
+      const kind = ownedReadFailureKind(error);
+      if (capability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) &&
+          kind !== 'capacity' && kind !== 'cancelled' && !signal.aborted &&
+          (kind === 'dependency_auth' || isCxoneReadAuthFailure(error) || e.status === undefined || e.status >= 500)) readHealth[capability] = false;
       throw error;
     }
     json(res, 200, decoratePreview(pathname, result));

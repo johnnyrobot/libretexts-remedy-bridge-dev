@@ -2,6 +2,12 @@ import { fork, type Serializable } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CapacityError, finiteLimit } from './preview-cache.js';
 export class WorkCancelled extends Error {}
+type ReadFailureKind = 'dependency_auth' | 'capacity' | 'cancelled';
+const readFailures = new WeakMap<object, ReadFailureKind>();
+/** Trusted private-worker metadata, never read from public request/error bodies. */
+export function ownedReadFailureKind(error: unknown): ReadFailureKind | undefined {
+  return error !== null && typeof error === 'object' ? readFailures.get(error) : undefined;
+}
 export class WorkOwner {
   private active = 0;
   private queue: Array<()=>void> = [];
@@ -49,7 +55,12 @@ export async function ownedRead(payload: Serializable, signal: AbortSignal, work
       signal.removeEventListener('abort',stop);
       if(signal.aborted || failure) reject(failure??new WorkCancelled());
       else if(reply?.ok === true) resolve(reply.value);
-      else { const error = new Error('worker_failed') as Error & {status:number;body:unknown}; error.status=reply?.status??503; error.body=reply?.body??{error:'work_failed',evidence_usable:false}; reject(error); }
+      else {
+        const error = new Error('worker_failed') as Error & {status:number;body:unknown};
+        error.status=reply?.status??503; error.body=reply?.body??{error:'work_failed',evidence_usable:false};
+        if (['dependency_auth','capacity','cancelled'].includes(reply?.failureKind)) readFailures.set(error,reply.failureKind);
+        reject(error);
+      }
     });
     child.send(payload,error=>{if(error){failure=error;child.kill('SIGKILL');}});
     if(signal.aborted) stop();

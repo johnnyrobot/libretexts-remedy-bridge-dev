@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
 import { mkdtemp, writeFile, readdir } from 'node:fs/promises';
@@ -16,12 +16,15 @@ afterEach(async () => {
 async function fixture(extra: NodeJS.ProcessEnv = {}, html = '<p><strong>Review title</strong></p>') {
   const dir = await mkdtemp(join(tmpdir(), 'review-only-')), key = 'a'.repeat(64);
   await writeFile(join(dir, 'service'), key);
-  let mutations = 0, reads = 0, failReads = false;
+  let mutations = 0, reads = 0, failReads = false, failStatus = 503, failPart = 'all', holdReads = false, closed = 0;
+  const held: Array<()=>void> = [];
   const external = createServer((req, res) => {
     if (!['GET', 'HEAD'].includes(req.method!)) { mutations++; res.writeHead(500).end(); return; }
-    reads++; res.setHeader('content-type', 'application/json');
-    if (failReads) { res.writeHead(503).end('{"error":"synthetic read unavailable"}'); return; }
+    reads++; res.once('close',()=>closed++); res.setHeader('content-type', 'application/json');
+    const respond=()=>{
+    if (failReads && (failPart === 'all' || (req.url?.includes('/contents') ? 'contents' : 'info') === failPart)) { res.writeHead(failStatus).end('{"error":"synthetic read unavailable"}'); return; }
     res.end(JSON.stringify(req.url?.includes('/contents') ? {body:html} : {'@id':1,path:'Sandboxes/johnnyphung/Page'}));
+    }; if(holdReads)held.push(respond);else respond();
   });
   servers.push(external); await new Promise<void>(r => external.listen(0, '127.0.0.1', r));
   const env = { PATH: process.env.PATH!, NODE_ENV: 'production', REMEDY_BRIDGE_PROFILE: 'review-only',
@@ -36,11 +39,11 @@ async function fixture(extra: NodeJS.ProcessEnv = {}, html = '<p><strong>Review 
     child.once('exit', () => {clearTimeout(timer); reject(Error('review child startup failed: ' + diagnostics));});
   });
   const base = `http://127.0.0.1:${port}`;
-  const request = async (path: string, body?: unknown, authenticated = true) => {
-    const r = await fetch(base + path, {method:body === undefined ? 'GET' : 'POST', headers:authenticated ? {'X-Remedy-Service-Key':key} : {}, body:body === undefined ? undefined : JSON.stringify(body)});
+  const request = async (path: string, body?: unknown, authenticated = true, signal?:AbortSignal) => {
+    const r = await fetch(base + path, {method:body === undefined ? 'GET' : 'POST', headers:authenticated ? {'X-Remedy-Service-Key':key} : {}, body:body === undefined ? undefined : JSON.stringify(body),signal});
     return {status:r.status, body:await r.json()};
   };
-  return {request,dir,env,child, mutations:()=>mutations,reads:()=>reads, fail:(value:boolean)=>{failReads=value;}};
+  return {request,dir,env,child, mutations:()=>mutations,reads:()=>reads, closed:()=>closed, hold:(value:boolean)=>{holdReads=value;if(!value)for(const respond of held.splice(0))respond();},fail:(value:boolean,status=503,part='all')=>{failReads=value;failStatus=status;failPart=part;}};
 }
 it('supports authenticated real HTTP scan/preview with service/read config only and rejects valid signed mutations before side effects', async () => {
   const f = await fixture();
@@ -86,6 +89,11 @@ it('serves historical pending operation status without opening a writer or chang
   expect((await f.request('/v1/cxone/page/operation-status',{issuer,jti:randomBytes(32).toString('base64url')})).status).toBe(404);
   expect(await readFile(join(options.directory,'claims.sqlite3'))).toEqual(dbBefore); expect(await readFile(options.fencePath)).toEqual(fenceBefore);
   expect(f.reads()).toBe(0); expect(f.mutations()).toBe(0);
+  f.fail(true,401);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(401);
+  expect((await f.request('/readyz')).body.capabilities).toMatchObject({scan:false,preview:true,operation_status:true});
+  expect((await f.request('/v1/cxone/page/operation-status',{issuer,jti})).body).toEqual(status.body);
+  f.fail(false);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+  expect(await readFile(join(options.directory,'claims.sqlite3'))).toEqual(dbBefore);expect(await readFile(options.fencePath)).toEqual(fenceBefore);
   await writeFile(options.fencePath,JSON.stringify({trust_epoch:options.trustEpoch,durability_seq:-1}));
   const degraded=await f.request('/readyz');expect(degraded.status).toBe(200);expect(degraded.body.capabilities.operation_status).toBe(false);
   const unavailable=await f.request('/v1/cxone/page/operation-status',{issuer,jti});expect(unavailable.status).toBe(503);expect(unavailable.body).toEqual({error:'claim_store_unavailable'});
@@ -145,4 +153,74 @@ it('keeps caller validation and optional image-description failures out of requi
   const p=await f.request('/v1/cxone/page/preview-fix',{page_id:1,review_images:true});expect(p.status).toBe(200);
   const optional=await f.request('/v1/cxone/page/preview-fix',{page_id:1,preview_token:p.body.preview_token,describe_image:p.body.review_images[0].data.src});
   expect(optional.status).toBe(503);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+
+it('latches a real SDK upstream scan401 until a corresponding successful retry', async () => {
+  const f=await fixture(); f.fail(true,401);
+  const failed=await f.request('/v1/cxone/page/scan',{page_id:1});
+  expect(failed).toEqual({status:401,body:{error:'work_failed',evidence_usable:false}});
+  expect(f.reads()).toBeGreaterThan(0);expect(f.mutations()).toBe(0);
+  const ready=await f.request('/readyz');
+  expect(ready.status).toBe(503);
+  expect(ready.body).toMatchObject({capabilities:{scan:false,preview:true,mutate:false,operation_status:false},profile:{unavailable_reasons:['read_dependency_unavailable']}});
+  const reads=f.reads();expect((await f.request('/readyz')).status).toBe(503);expect(f.reads()).toBe(reads);
+  f.fail(false);
+  expect((await f.request('/v1/cxone/page/preview-fix',{page_id:1})).status).toBe(200);
+  expect((await f.request('/readyz')).body.capabilities.scan).toBe(false);
+  expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+
+it('rejects invalid caller locators as400 without external work or readiness poisoning', async () => {
+  const f=await fixture();
+  for (const page_url of ['https://example.com/Page','http://dev.libretexts.org/Page','https://dev.libretexts.org:443/Page','https://user@dev.libretexts.org/Page','https://dev.libretexts.org/%ZZ','https://[broken']) {
+    expect(await f.request('/v1/cxone/page/scan',{page_url})).toEqual({status:400,body:{error:'invalid_request'}});
+    expect((await f.request('/readyz')).status).toBe(200);
+  }
+  expect(f.reads()).toBe(0);expect(f.mutations()).toBe(0);
+},30000);
+
+it.each([401,403])('tracks real SDK contents%s as preview auth failure without clearing it via scans',async status=>{
+  const f=await fixture();f.fail(true,status,'contents');
+  expect(await f.request('/v1/cxone/page/preview-fix',{page_id:1})).toEqual({status,body:{error:'work_failed',evidence_usable:false}});
+  expect((await f.request('/readyz')).body).toMatchObject({capabilities:{scan:true,preview:false},profile:{unavailable_reasons:['read_dependency_unavailable']}});
+  f.fail(false);
+  expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(200);
+  expect((await f.request('/readyz')).status).toBe(503);
+  const preview=await f.request('/v1/cxone/page/preview-fix',{page_id:1});expect(preview.status).toBe(200);expect(preview.body.review_binding).toMatchObject({action:'cxone.apply',target:{hostname:'dev.libretexts.org',page_id:'1'}});
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+it('keeps service auth, validation, policy and missing-page errors distinct from upstream authentication',async()=>{
+  const f=await fixture();
+  expect(await f.request('/v1/cxone/page/scan',{page_id:1},false)).toEqual({status:401,body:{error:'service_authentication_required'}});
+  expect((await f.request('/v1/cxone/page/scan',{failureKind:'dependency_auth'})).status).toBe(400);
+  expect((await f.request('/v1/cxone/page/preview-fix',{page_url:'https://foreign.example/Book'})).status).toBe(400);
+  expect((await f.request('/v1/cxone/page/apply-fix',{page_id:1})).status).toBe(503);
+  expect(f.reads()).toBe(0);expect((await f.request('/readyz')).status).toBe(200);
+  f.fail(true,404);expect((await f.request('/v1/cxone/page/scan',{page_id:1})).status).toBe(404);
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+it('recovers admission availability after actual saturation without latching a dependency failure',async()=>{
+  const f=await fixture({REMEDY_WORK_ACTIVE:'2',REMEDY_WORK_QUEUED:'0',REMEDY_WORK_TIMEOUT_MS:'12000'});f.hold(true);
+  const jobs=[f.request('/v1/cxone/page/scan',{page_id:1}),f.request('/v1/cxone/page/scan',{page_id:1})];
+  try{
+    await vi.waitFor(()=>expect(f.reads()).toBe(2),{timeout:8000});
+    expect((await f.request('/readyz')).body.profile.unavailable_reasons).toEqual(['owned_work_unavailable']);
+    expect((await f.request('/v1/cxone/page/scan',{page_id:1})).body.error).toBe('capacity_unavailable');
+  }finally{f.hold(false);await Promise.all(jobs);}
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);
+it('keeps actual disconnect and work deadline independent of required read health',async()=>{
+  const f=await fixture({REMEDY_WORK_TIMEOUT_MS:'4500'});f.hold(true);
+  const controller=new AbortController();const aborted=f.request('/v1/cxone/page/scan',{page_id:1},true,controller.signal).catch(()=>null);
+  await vi.waitFor(()=>expect(f.reads()).toBe(1),{timeout:3500});controller.abort();await aborted;
+  await vi.waitFor(()=>expect(f.closed()).toBe(1),{timeout:3000});expect((await f.request('/readyz')).status).toBe(200);
+  const deadline=await f.request('/v1/cxone/page/scan',{page_id:1});
+  expect(deadline).toEqual({status:503,body:{error:'work_cancelled',evidence_usable:false}});
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);f.hold(false);
+},30000);
+it('keeps actual worker preview-size rejection separate from dependency health',async()=>{
+  const f=await fixture({REMEDY_PREVIEW_MAX_BYTES:'1'});
+  expect(await f.request('/v1/cxone/page/preview-fix',{page_id:1})).toEqual({status:503,body:{error:'capacity_unavailable'}});
+  expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);

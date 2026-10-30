@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import Expert from '@libretexts/cxone-expert-node';
 import type { PageRef } from './types.js';
+import { cxoneRead } from './cxone-read.js';
 import {
   CXONE_ALLOWED_HOST,
   isCxoneIntegrationEnabled,
@@ -34,6 +35,12 @@ export class InvalidCxoneConfigurationError extends Error {
     super('CXone integration configuration is invalid.');
     this.name = 'InvalidCxoneConfigurationError';
   }
+}
+
+/** A rejected caller locator, distinct from invalid service configuration. */
+export class InvalidPageLocatorError extends InvalidCxoneConfigurationError {
+  readonly status = 400;
+  readonly body = { error: 'invalid_request' };
 }
 
 export function createExpertClient(env: NodeJS.ProcessEnv = process.env): Expert {
@@ -82,20 +89,22 @@ export function normalizePageInput(
   const trimmed = input.trim();
   if (/^\d+$/.test(trimmed)) return Number(trimmed);
   if (/^https?:\/\//i.test(trimmed)) {
-    const url = new URL(trimmed);
+    let url: URL;
+    try { url = new URL(trimmed); } catch { throw new InvalidPageLocatorError(); }
     if (
       url.protocol !== 'https:' ||
       /^https:\/\/[^/]*:\d+(?:\/|$)/i.test(trimmed) ||
       url.hostname.toLowerCase().replace(/\.$/, '') !== CXONE_ALLOWED_HOST ||
       url.port ||
       url.username ||
-      url.password ||
-      (env.SERVER_DOMAIN ?? '').trim().toLowerCase() !== CXONE_ALLOWED_HOST
+      url.password
     ) {
-      throw new InvalidCxoneConfigurationError();
+      throw new InvalidPageLocatorError();
     }
+    if ((env.SERVER_DOMAIN ?? '').trim().toLowerCase() !== CXONE_ALLOWED_HOST) throw new InvalidCxoneConfigurationError();
     // Strip leading slash; SDK wants the raw path.
-    return decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+    try { return decodeURIComponent(url.pathname.replace(/^\/+/, '')); }
+    catch { throw new InvalidPageLocatorError(); }
   }
   return trimmed.replace(/^\/+/, '');
 }
@@ -106,7 +115,7 @@ export async function resolvePageRef(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<PageRef> {
   const id = normalizePageInput(input, env);
-  const info = await expert.pages.getPageInfo(id as number);
+  const info = await cxoneRead(() => expert.pages.getPageInfo(id as number));
   // The SDK returns slightly different shapes depending on accept-format; defensively pull id/path.
   // biome-ignore lint: SDK response shape is loosely typed.
   const anyInfo = info as any;
