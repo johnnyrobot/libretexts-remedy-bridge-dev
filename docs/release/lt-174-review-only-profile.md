@@ -70,7 +70,9 @@ vendor probes and never claims credentials have been remotely verified. A
 healthy retry restores that capability. LT-199 distinguishes actual SDK read
 401/403 from incoming service auth/caller errors using private provenance across
 the owned-worker channel; it preserves the failed public request status/body.
-Only the affected capability latches; success of the other capability or an
+Optional request flags cannot hide a proven required CXone source auth failure;
+optional-provider failures remain excluded. Only the affected capability
+latches; success of the other capability or an
 operation-status lookup cannot clear it. Malformed/rejected full page URLs are
 caller400 without external work (LT-182), not a dependency outage. Upstream404
 alone is not classified as a shared authentication outage. No response fields

@@ -224,3 +224,21 @@ it('keeps actual worker preview-size rejection separate from dependency health',
   expect(await f.request('/v1/cxone/page/preview-fix',{page_id:1})).toEqual({status:503,body:{error:'capacity_unavailable'}});
   expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
 },30000);
+it.each([
+  {path:'/v1/cxone/page/scan',body:{page_id:1,rendered:true},capability:'scan'},
+  {path:'/v1/cxone/page/scan',body:{page_id:1,fix_mode:'pipeline'},capability:'scan'},
+  {path:'/v1/cxone/page/preview-fix',body:{page_id:1,rendered:true},capability:'preview'},
+  {path:'/v1/cxone/page/preview-fix',body:{page_id:1,fix_mode:'pipeline',tier:1},capability:'preview'},
+])('optional flags cannot hide actual required source auth on $path $body',async({path,body,capability})=>{
+ const f=await fixture();f.fail(true,401);
+ expect((await f.request(path,body)).status).toBe(401);
+ const ready=await f.request('/readyz');expect(ready.status).toBe(503);expect(ready.body.capabilities[capability]).toBe(false);
+ expect(ready.body.profile.unavailable_reasons).toEqual(['read_dependency_unavailable']);expect(f.mutations()).toBe(0);
+},30000);
+it('rejects scheme-like locators before they can be interpreted as page paths',async()=>{
+ const f=await fixture();
+ for(const page_url of ['ftp://example.com/Page','https:/dev.libretexts.org/Page','https:dev.libretexts.org/Page']){
+  expect(await f.request('/v1/cxone/page/scan',{page_url})).toEqual({status:400,body:{error:'invalid_request'}});
+ }
+ expect(f.reads()).toBe(0);expect((await f.request('/readyz')).status).toBe(200);expect(f.mutations()).toBe(0);
+},30000);

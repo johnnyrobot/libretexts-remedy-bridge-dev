@@ -88,7 +88,11 @@ export function normalizePageInput(
   if (typeof input === 'number') return input;
   const trimmed = input.trim();
   if (/^\d+$/.test(trimmed)) return Number(trimmed);
-  if (/^https?:\/\//i.test(trimmed)) {
+  const httpUrl = /^https?:\/\//i.test(trimmed);
+  if (!httpUrl && (/^[a-z][a-z0-9+.-]*:\//i.test(trimmed) || /^https?:/i.test(trimmed))) {
+    throw new InvalidPageLocatorError();
+  }
+  if (httpUrl) {
     let url: URL;
     try { url = new URL(trimmed); } catch { throw new InvalidPageLocatorError(); }
     if (

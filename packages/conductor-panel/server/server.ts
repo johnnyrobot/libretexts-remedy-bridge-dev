@@ -621,9 +621,12 @@ async function readResult(pathname:string,body:Record<string,unknown>,signal:Abo
 export function createBridgeServer(execute:typeof ownedRead = ownedRead) {
 const workOwner = new WorkOwner();
 const readHealth = {scan:true,preview:true};
+const sourceCapability = (path:string) =>
+  ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' :
+  ['/v1/cxone/page/preview-fix','/v1/cxone/page/revise-preview','/api/preview'].includes(path) ? 'preview' : null;
 const readCapability = (path:string,body:Record<string,unknown>) => {
   if (body.describe_image !== undefined || body.rendered === true || body.fix_mode === 'pipeline' || body.fixMode === 'pipeline' || path === '/api/preview') return null;
-  return ['/v1/cxone/page/scan','/api/scan'].includes(path) ? 'scan' : ['/v1/cxone/page/preview-fix','/v1/cxone/page/revise-preview'].includes(path) ? 'preview' : null;
+  return sourceCapability(path);
 };
 owners.add(workOwner);
 const instance = createServer(async (req, res) => {
@@ -717,9 +720,13 @@ const instance = createServer(async (req, res) => {
     } catch(error) {
       const e = error as {status?:number;body?:{error?:string}};
       const kind = ownedReadFailureKind(error);
-      if (capability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) &&
+      const dependencyAuth = kind === 'dependency_auth' || isCxoneReadAuthFailure(error);
+      // Optional providers cannot certify required health or hide a proven
+      // failure of the shared required CXone source read.
+      const failedCapability = dependencyAuth ? sourceCapability(pathname) : capability;
+      if (failedCapability && !(error instanceof CapacityError) && !(error instanceof WorkCancelled) &&
           kind !== 'capacity' && kind !== 'cancelled' && !signal.aborted &&
-          (kind === 'dependency_auth' || isCxoneReadAuthFailure(error) || e.status === undefined || e.status >= 500)) readHealth[capability] = false;
+          (dependencyAuth || e.status === undefined || e.status >= 500)) readHealth[failedCapability] = false;
       throw error;
     }
     json(res, 200, decoratePreview(pathname, result));
