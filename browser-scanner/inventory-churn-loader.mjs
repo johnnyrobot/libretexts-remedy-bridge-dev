@@ -9,9 +9,12 @@ export async function resolve(specifier,context,nextResolve){
  export async function readdir(path,...args){
   const names=await fs.readdir(path,...args);
   if(first&&(path==='/proc'||/^\\/proc\\/\\d+\\/task/.test(String(path)))){
-   first=false;const pid=Number(process.env.LT225_UNRELATED_PID);
+   first=false;const state=JSON.parse(await fs.readFile(process.env.LT225_CHURN_STATE,'utf8')),pid=state.pid;
+   if(!Number.isSafeInteger(pid)||pid<=1||pid===process.pid)throw Error('Invalid fixture process');
+   const stat=await fs.readFile('/proc/'+pid+'/stat','utf8'),fields=stat.slice(stat.lastIndexOf(')')+2).split(' ');
+   if(fields[19]!==state.start)throw Error('Fixture identity changed');
    process.kill(pid,'SIGKILL');
-   for(let i=0;i<200;i++){try{await fs.readFile('/proc/'+pid+'/stat');}catch(error){if(error.code==='ENOENT'){process.env.LT225_CHURN_OBSERVED='1';break;}throw error;}await new Promise(r=>setTimeout(r,5));}
+   for(let i=0;i<200;i++){try{await fs.readFile('/proc/'+pid+'/stat');}catch(error){if(error.code==='ENOENT'||error.code==='ESRCH'){await fs.writeFile(process.env.LT225_CHURN_STATE,JSON.stringify({...state,observed:true}));break;}throw error;}await new Promise(r=>setTimeout(r,5));}
   }
   return names;
  }

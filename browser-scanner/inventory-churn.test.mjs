@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
 test('unrelated exiting sibling cannot quarantine a positively owned frozen tree',{skip:process.platform!=='linux',timeout:15000},async t=>{
  const root=await mkdtemp('/tmp/lt225-churn-'),driver=join(root,'driver.mjs');
- await writeFile(driver,`import {spawn} from 'node:child_process';import {readFile} from 'node:fs/promises';import {terminateOwnedTree} from ${JSON.stringify(new URL('./process-owner.mjs',import.meta.url).href)};
+ await writeFile(driver,`import {spawn} from 'node:child_process';import {readFile,writeFile} from 'node:fs/promises';import {terminateOwnedTree} from ${JSON.stringify(new URL('./process-owner.mjs',import.meta.url).href)};
  const children=[];
  const cleanup=()=>Promise.all(children.map(p=>new Promise(r=>{if(p.exitCode!==null||p.signalCode!==null)return r();p.once('close',r);p.kill('SIGKILL');})));
  process.once('SIGTERM',()=>{void cleanup().finally(()=>process.exit(1));});
@@ -16,13 +16,14 @@ test('unrelated exiting sibling cannot quarantine a positively owned frozen tree
  const ready=p=>new Promise((r,j)=>{const timer=setTimeout(()=>j(Error('fixture startup timeout')),4000);p.stdout.once('data',()=>{clearTimeout(timer);r();});p.once('error',e=>{clearTimeout(timer);j(e);});p.once('exit',()=>{clearTimeout(timer);j(Error('fixture exited before ready'));});});await Promise.all([ready(owned),ready(unrelated)]);
  const identity=async pid=>{const value=await readFile('/proc/'+pid+'/stat','utf8'),f=value.slice(value.lastIndexOf(')')+2).split(' ');return{pid,ppid:+f[1],group:+f[2],start:f[19]};};
  const before={owned:await identity(owned.pid),unrelated:await identity(unrelated.pid)};
- process.env.LT225_UNRELATED_PID=String(unrelated.pid);let error;
+ await writeFile(process.env.LT225_CHURN_STATE,JSON.stringify({...before.unrelated,observed:false}));let error;
  try{await terminateOwnedTree(owned.pid);}catch(e){error={code:e.code??'unclassified',details:e.details??{}};}
- console.log(JSON.stringify({before,churnObserved:process.env.LT225_CHURN_OBSERVED==='1',error:error??null}));
+ const {observed}=JSON.parse(await readFile(process.env.LT225_CHURN_STATE,'utf8'));
+ console.log(JSON.stringify({before,churnObserved:observed,error:error??null}));
 
- if(before.owned.ppid!==process.pid||before.unrelated.ppid!==process.pid||process.env.LT225_CHURN_OBSERVED!=='1'||error)process.exitCode=1;
+ if(before.owned.ppid!==process.pid||before.unrelated.ppid!==process.pid||observed!==true||error)process.exitCode=1;
  }finally{await cleanup();}`);
- const child=spawn(process.execPath,['--loader',fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)),driver],{stdio:['ignore','pipe','pipe']});
+ const child=spawn(process.execPath,['--loader',fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)),driver],{env:{...process.env,LT225_CHURN_STATE:join(root,'churn.json')},stdio:['ignore','pipe','pipe']});
  const exited=new Promise(r=>child.once('close',r));
  const stop=()=>{if(child.exitCode===null&&child.signalCode===null){child.kill('SIGTERM');const timer=setTimeout(()=>child.kill('SIGKILL'),500);timer.unref();}};
  t.signal.addEventListener('abort',stop,{once:true});

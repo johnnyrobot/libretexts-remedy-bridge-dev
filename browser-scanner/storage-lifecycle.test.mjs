@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {collectDiagnostics} from './test-diagnostics.mjs';
-import {fork,execFileSync} from 'node:child_process';
+import {fork,spawn,execFileSync} from 'node:child_process';
 import {mkdtemp,readdir,lstat,chmod,writeFile,readFile,open} from 'node:fs/promises';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -10,7 +10,7 @@ async function until(check,attempts=200,diagnostics=()=>""){for(let i=0;i<attemp
 const rows=()=>execFileSync('ps',['-eo','pid=,ppid=,pgid=,stat=,args='],{encoding:'utf8',maxBuffer:8*1024*1024}).trim().split('\n').map(line=>line.trim().split(/\s+/));
 async function usage(path){let bytes=0,allocated=0,entries=0;for(const name of await readdir(path)){const p=join(path,name),s=await lstat(p);entries++;bytes+=s.size;allocated+=s.blocks*512;if(s.isDirectory()){const c=await usage(p);bytes+=c.bytes;allocated+=c.allocated;entries+=c.entries;}}return{bytes,allocated,entries};}
 async function start(root,fixtureEnv={}){
- const child=fork(fileURLToPath(new URL('./server.mjs',import.meta.url)),[],{execArgv:[],env:{...process.env,...fixtureEnv,TMPDIR:root,TMP:root,TEMP:root,RENDER_TEST_CPU_HANG:'1',RENDER_SCANNER_TOKEN:'synthetic-only',RENDER_SCANNER_PORT:'0',RENDER_ALLOWED_HOSTS:'dev.libretexts.org',NODE_OPTIONS:`--loader ${fileURLToPath(new URL('./ownership-loader.mjs',import.meta.url))}`},stdio:['ignore','ignore','pipe','ipc']});
+ const child=fork(fileURLToPath(new URL('./server.mjs',import.meta.url)),[],{execArgv:[],env:{...process.env,...fixtureEnv,TMPDIR:root,TMP:root,TEMP:root,RENDER_TEST_CPU_HANG:'1',RENDER_SCANNER_TOKEN:'synthetic-only',RENDER_SCANNER_PORT:'0',RENDER_ALLOWED_HOSTS:'dev.libretexts.org',NODE_OPTIONS:`--loader ${fileURLToPath(new URL('./ownership-loader.mjs',import.meta.url))}${fixtureEnv.LT225_CHURN_STATE?' --loader '+fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)):''}`},stdio:['ignore','ignore','pipe','ipc']});
  const diagnostics=collectDiagnostics(child.stderr);
  const exited=new Promise(resolve=>child.once('exit',resolve));
  const port=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Scanner startup: '+diagnostics.text())),10000);child.once('message',m=>{clearTimeout(timer);resolve(m.port);});child.once('exit',()=>{clearTimeout(timer);reject(Error(diagnostics.text()));});});
@@ -104,4 +104,20 @@ test('a real job crossing the storage threshold is reaped and cannot claim reusa
   await sleep(750);assert.equal((await server.health()).busy,true);assert.equal((await server.request()).status,503);
   console.log(JSON.stringify({phase:'budget_refused',retained:await usage(root),busy:(await server.health()).busy}));
  }finally{await server.close();}
+});
+
+test('verified unrelated exit during real Chromium cancellation cannot retain admission',{skip:!enabled||process.platform!=='linux',timeout:25000},async()=>{
+ const root=await mkdtemp('/tmp/lt225-browser-'),state=join(root,'fixture-churn.json'),server=await start(root,{LT225_CHURN_STATE:state});
+ const unrelated=spawn(process.execPath,['-e',"console.log('ready');setInterval(()=>{},1000)"],{detached:true,stdio:['ignore','pipe','ignore']});
+ const exited=new Promise(r=>unrelated.once('close',r));
+ try{
+  await new Promise((r,j)=>{const timer=setTimeout(()=>j(Error('fixture startup timeout')),4000);unrelated.stdout.once('data',()=>{clearTimeout(timer);r();});unrelated.once('error',j);});
+  const value=await readFile('/proc/'+unrelated.pid+'/stat','utf8'),fields=value.slice(value.lastIndexOf(')')+2).split(' ');
+  const identity={pid:unrelated.pid,ppid:+fields[1],group:+fields[2],start:fields[19]};assert.equal(identity.ppid,process.pid);
+  await writeFile(state,JSON.stringify({...identity,observed:false}));
+  const c=new AbortController(),request=server.request(c.signal),{owned}=await active(server);c.abort();await request;await reaped(server,owned);
+  const result=JSON.parse(await readFile(state,'utf8'));console.log(JSON.stringify({phase:'unrelated_churn',identity,observed:result.observed,diagnostics:server.diagnostics()}));assert.equal(result.observed,true);
+  await until(async()=>!(await server.health()).busy,200,server.diagnostics);
+  const names=await readdir(root);assert.deepEqual(names,['fixture-churn.json']);
+ }finally{unrelated.kill('SIGKILL');await exited;await server.close();}
 });
