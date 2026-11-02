@@ -37,7 +37,7 @@ const server = createServer(async (req,res) => {
     const url=JSON.parse(body).url;
     // Allocation itself may have partially created storage before an I/O error.
     teardownFailed=true;
-    storage=await createJobStorage();
+    try{storage=await createJobStorage();}catch(error){report('allocation');throw error;}
     teardownFailed=false;
     if(cancelled)throw Error();
     const result=await new Promise((resolve,reject)=>{
@@ -46,7 +46,7 @@ const server = createServer(async (req,res) => {
       let reply;
       child.on('message',message=>{if(Number.isSafeInteger(message?.browser_owned)&&message.browser_owned>1){browserPid=message.browser_owned;if(cancelled){const previous=teardown;teardown=(async()=>{await previous;await terminateOwnedTree(child.pid,[browserPid]);})().catch(error=>{teardownFailed=true;report('termination',error);});}else child.send({ownership_ack:browserPid},error=>{if(error)stop();});return;}if(!cancelled)reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
       child.on('error',()=>stop());
-      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid)teardownFailed=true;stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
+      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid){teardownFailed=true;report('ownership_ack');}stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
       child.send({url});
       if(cancelled)stop();
     });
