@@ -39,5 +39,7 @@ finally:
    known,st=os.waitpid(pid,os.WNOHANG)
    if known==0:os.kill(pid,signal.SIGKILL);os.waitpid(pid,0)
   except ChildProcessError:pass`;
- const {stdout}=await promisify(execFile)('python3',['-c',script],{timeout:8000,maxBuffer:8192});const proof=JSON.parse(stdout);console.log(JSON.stringify({phase:'kernel_owner_probe',...proof}));assert.equal(proof.subreaper,1);assert.equal(proof.adopted,true);assert.equal(proof.unreaped_identity,true);assert.equal(proof.echild,true);assert.notEqual(proof.uid,0);assert.match(proof.policy.CapEff,/^0+$/);assert.equal(proof.policy.NoNewPrivs,'1');assert.equal(proof.policy.Seccomp,'2');
+ const {stdout}=await promisify(execFile)('python3',['-c',script],{timeout:8000,maxBuffer:8192});const proof=JSON.parse(stdout);console.log(JSON.stringify({phase:'kernel_owner_probe',...proof}));assert.equal(proof.subreaper,1);assert.equal(proof.adopted,true);assert.equal(proof.unreaped_identity,true);assert.equal(proof.echild,true);assert.equal(proof.policy.NoNewPrivs,'1');
+ // RUN_BROWSER_TESTS selects the existing hardened shipping-image suite.
+ if(process.env.RUN_BROWSER_TESTS==='1'){assert.notEqual(proof.uid,0);assert.match(proof.policy.CapEff,/^0+$/);assert.equal(proof.policy.Seccomp,'2');}
 });
