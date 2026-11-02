@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import {fork,execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function until(check){for(let i=0;i<150;i++){if(await check())return;await sleep(50);}throw Error('Owned process did not reach expected state');}
+async function until(check,diagnostics=()=>''){for(let i=0;i<150;i++){if(await check())return;await sleep(50);}throw Error('Owned process did not reach expected state '+diagnostics());}
 const processRows=()=>execFileSync('ps',['-eo','pid=,ppid=,pgid=,stat=,args='],{encoding:'utf8'}).split('\n').map(line=>line.trim().split(/\s+/));
 test('disconnect, abnormal worker exit and shutdown reap owned Chromium groups while health stays responsive',{skip:process.env.RUN_BROWSER_TESTS!=='1',timeout:35000},async()=>{
  const child=fork(fileURLToPath(new URL('./server.mjs',import.meta.url)),[],{env:{...process.env,RENDER_SCANNER_TOKEN:'synthetic-only',RENDER_SCANNER_PORT:'0',RENDER_ALLOWED_HOSTS:'dev.libretexts.org',NODE_OPTIONS:`--loader ${fileURLToPath(new URL('./ownership-loader.mjs',import.meta.url))}`},stdio:['ignore','ignore','pipe','ipc']});
- let diagnostics='';child.stderr.on('data',c=>diagnostics+=c);
+ let diagnostics='';child.stderr.on('data',c=>diagnostics=(diagnostics+c).slice(-8192));
+ const holds=()=>diagnostics.split('\n').filter(line=>line.startsWith('{"event":"renderer_admission_hold"')).slice(-4).join('\n');
  try{
   const port=await new Promise((resolve,reject)=>{child.once('message',m=>resolve(m.port));child.once('exit',()=>reject(Error(diagnostics)));});
   const base=`http://127.0.0.1:${port}`;
@@ -20,7 +21,7 @@ test('disconnect, abnormal worker exit and shutdown reap owned Chromium groups w
    if(mode==='shutdown')child.kill('SIGTERM');else if(mode==='worker_exit')process.kill(workerPid,'SIGKILL');else controller.abort();
    const response=await request;if(mode==='worker_exit')assert.equal(response.status,503);
    await until(()=>!processRows().some(r=>owned.has(r[0])&&!r[3].startsWith('Z')));
-   if(mode!=='shutdown')await until(async()=>!(await health()).busy);
+   if(mode!=='shutdown')await until(async()=>!(await health()).busy,holds);
   }
  }finally{child.kill('SIGKILL');}
 });
