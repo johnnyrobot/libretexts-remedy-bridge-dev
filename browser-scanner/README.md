@@ -147,11 +147,17 @@ Chromium **153.0.8010.12** at
 `/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`.
 The Dockerfile pins the observed base
 `mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`
-and `libnss3-tools=2:3.98-1ubuntu0.3`. The existing runtime stays
+and obtains `libnss3-tools=2:3.98-1ubuntu0.3` from the fixed Ubuntu snapshot
+`20261031T000000Z`, using only its signed noble/main, noble-updates/main and
+noble-security/main metadata. The scoped apt source excludes moving/third-party
+repositories. [Ubuntu documents this Snapshot source field](https://documentation.ubuntu.com/server/how-to/software/snapshot-service/).
+The runtime comes from the immutable base; the tool comes from that snapshot.
+The build checks the certified runtime version and the installed tool hash.
+The existing runtime stays
 `libnss3=2:3.98-1ubuntu0.2`; `/usr/bin/certutil` SHA-256 is
 `505b13e3087e1abcabec3f1485e0e76b81322667dcae25758341b46bcfc5b62d`.
 [The first green Linux proof](https://github.com/johnnyrobot/libretexts-remedy-bridge-dev/actions/runs/41441910329)
-records Node24.20.0 and all39 renderer cases passing with zero skips. The final
+records Node 24.20.0 and all 39 renderer cases passing with zero skips. The final
 exact-head/main records belong to the PR/handoff. No other NSS/browser/architecture
 pair is certified by this proof.
 
@@ -163,7 +169,7 @@ The exact already-reviewed Server stack seccomp policy is retained as
 `shipping-seccomp-amd64.json` (SHA-256
 `fcecf1a0ae6f84effa439b44d5f0e51bc25b4a975a7025c71e6f9ee0490ca7b0`);
 the original `seccomp_profile.json` remains unchanged. Shipping CI uses the former
-with UID1001, cap-drop ALL, no-new-privileges, init, read-only root, network-none,
+with UID 1001, cap-drop ALL, no-new-privileges, init, read-only root, network-none,
 finite tmpfs/shm/memory/CPU/PIDs and 30-second stop policy. The stack policy's
 existing namespace-local chroot allowance remains kernel-denied in the initial
 unprivileged namespace. No new host policy allowance is introduced here.
