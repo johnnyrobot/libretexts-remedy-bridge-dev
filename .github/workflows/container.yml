@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   signed-writer:
@@ -22,4 +23,4 @@ jobs:
       - name: Build the non-root sandboxed browser runtime
         run: docker build -t remedy-browser:ci browser-scanner
       - name: Exercise actual Chromium with network disabled and finite resources
-        run: docker run --rm --init --network none --memory=2g --cpus=1.5 --pids-limit=256 --shm-size=1g --tmpfs /tmp:rw,nosuid,nodev,size=512m --security-opt seccomp=browser-scanner/seccomp_profile.json -e RUN_BROWSER_TESTS=1 remedy-browser:ci npm test
+        run: docker run --rm --init --read-only --cap-drop=ALL --security-opt no-new-privileges --network none --memory=2g --cpus=1.5 --pids-limit=256 --shm-size=1g --tmpfs /tmp:rw,nosuid,nodev,size=512m --security-opt seccomp=browser-scanner/seccomp_profile.json -e RUN_BROWSER_TESTS=1 remedy-browser:ci npm test
