@@ -73,3 +73,22 @@ the PR and handoff. No Linux success is inferred from macOS tests.
 No live library/provider, credentials, deployed service, upstream repository,
 TestSprite run or production enablement is part of this work. Existing dormant
 SDK advisory inventory and release-owner acceptance limitations remain unchanged.
+
+
+## LT-225 correction to the original global-inventory decision
+
+The initial PR27 global `/proc` disappearance rule described above is historical
+for Linux shipping jobs. Controlled Linux evidence showed the same missing-row
+category can represent an unrelated sibling OR a reaped owned descendant with a
+live escaped child. Ignoring that category would be unsafe. The raw helper stays
+conservative for its generic/macOS diagnostic callers.
+
+Linux scanner jobs now use the [private per-job kernel guardian](../../browser-scanner/README.md#linux-job-process-ownership-lt-225).
+It verifies child-subreaper ownership before spawning work and never reaps direct/
+adopted PID identities before signaling. Only kernel `ECHILD` after teardown,
+received through the guardian-only channel and clean process exit, can certify
+that no descendants remain. Worker-supplied fields cannot forge this proof. An
+uncertain partial IPC send closes its channel; no terminal JSON is appended to a
+truncated prefix. Negative proof keeps a bounded reason; absent proof holds too.
+All root-identity/storage checks and finite limits remain. LT-224 allocation
+availability is a separate approved follow-up, not fixed by this ownership seam.

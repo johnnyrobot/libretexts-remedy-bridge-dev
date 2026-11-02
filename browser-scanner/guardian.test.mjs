@@ -22,3 +22,8 @@ test('worker-supplied terminal fields cannot forge the guardian channel proof',{
  const child=startOwnedWorker({...process.env},10000,pathToFileURL(worker));let closed=false;const finished=new Promise(r=>child.once('close',()=>{closed=true;r();}));
  try{const received=new Promise(r=>child.once('message',r));child.send({url:'synthetic'});assert.equal((await received).verified,true);await new Promise(r=>setTimeout(r,100));assert.equal(closed,false);await child.terminate();await finished;}finally{await child.terminate().catch(()=>{});await finished;}
 });
+test('negative guardian proof retains its bounded failure reason',{skip:!enabled,timeout:15000},async()=>{
+ const dir=await mkdtemp('/tmp/lt225-negative-'),worker=join(dir,'worker.mjs');await writeFile(worker,"process.once('message',()=>setInterval(()=>{},1000));");
+ const child=startOwnedWorker({...process.env},10000,pathToFileURL(worker)),closed=new Promise(r=>child.once('close',r));
+ try{child.send('invalid-private-frame');await closed;await assert.rejects(child.terminate(),error=>error.code==='guardian_unproved'&&error.details.reasons[0]==='message_failed');}finally{await child.terminate().catch(()=>{});await closed;}
+});

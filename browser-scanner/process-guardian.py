@@ -13,22 +13,21 @@ import signal
 import socket
 import sys
 import time
+from guardian_channel import Channel
 
 MAX_FRAME = 32 * 1024 * 1024
 cleanup_deadline = None
-parent = socket.socket(fileno=int(os.environ['NODE_CHANNEL_FD']))
-parent.settimeout(1)
+PR_SET_NO_NEW_PRIVS = 38
+PR_SET_CHILD_SUBREAPER = 36
+PR_GET_CHILD_SUBREAPER = 37
+parent = Channel(socket.socket(fileno=int(os.environ['NODE_CHANNEL_FD'])))
 worker_socket = None
 worker = None
 buffers = {}
 
 
 def send(channel, value):
-    data = json.dumps(value, separators=(',', ':'), ensure_ascii=False).encode() + b'\n'
-    if len(data) > MAX_FRAME:
-        raise ValueError()
-    channel.sendall(data)
-
+    channel.send(value)
 
 def children():
     # This guardian has one thread and creates exactly one worker. It never
@@ -84,12 +83,13 @@ reason = 'bootstrap_failed'
 try:
     lib = ctypes.CDLL(None, use_errno=True)
     flag = ctypes.c_int()
-    if lib.prctl(38, 1, 0, 0, 0) != 0 or lib.prctl(36, 1, 0, 0, 0) != 0:
+    if lib.prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 or lib.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
         raise OSError()
-    if lib.prctl(37, ctypes.byref(flag), 0, 0, 0) != 0 or flag.value != 1:
+    if lib.prctl(PR_GET_CHILD_SUBREAPER, ctypes.byref(flag), 0, 0, 0) != 0 or flag.value != 1:
         raise OSError()
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-    worker_socket, child_socket = socket.socketpair()
+    parent_socket, child_socket = socket.socketpair()
+    worker_socket = Channel(parent_socket)
     worker = os.fork()
     if worker == 0:
         parent.close()
@@ -98,7 +98,6 @@ try:
         env = dict(os.environ, NODE_CHANNEL_FD=str(child_socket.fileno()), NODE_CHANNEL_SERIALIZATION_MODE='json')
         os.execve(sys.argv[1], [sys.argv[1], '--max-old-space-size=384', sys.argv[2]], env)
     child_socket.close()
-    worker_socket.settimeout(1)
     reason = 'message_failed'
     cancelled = False
     job_deadline = time.monotonic() + max(0, min(120000, float(sys.argv[3]))) / 1000

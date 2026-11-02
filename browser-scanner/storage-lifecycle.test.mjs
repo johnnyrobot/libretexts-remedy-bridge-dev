@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {findOwnedWorker} from './test-worker-identity.mjs';
 import {collectDiagnostics} from './test-diagnostics.mjs';
 import {fork,spawn,execFileSync} from 'node:child_process';
 import {mkdtemp,readdir,lstat,chmod,writeFile,readFile,open} from 'node:fs/promises';
@@ -20,7 +21,7 @@ async function start(root,fixtureEnv={}){
 function descendants(all,pid){const owned=new Set([String(pid)]);for(let changed=true;changed;){changed=false;for(const row of all)if(owned.has(row[1])&&!owned.has(row[0])){owned.add(row[0]);changed=true;}}return owned;}
 async function active(server){
  let owned,workerPid;
- await until(()=>{const all=rows();owned=descendants(all,server.child.pid);workerPid=all.find(r=>owned.has(r[0])&&/^(?:\S*\/)?node(?:\s|$)/.test(r.slice(4).join(' '))&&r.slice(4).join(' ').includes('scan-worker.mjs'))?.[0];if(workerPid&&process.platform==='linux'){const worker=all.find(r=>r[0]===workerPid),guardian=all.find(r=>r[0]===worker[1]);assert.ok(guardian&&+guardian[1]===server.child.pid&&guardian.slice(4).join(' ').includes('process-guardian.py'),'actual Node worker must belong to its dedicated guardian');}return !!workerPid&&all.some(r=>owned.has(r[0])&&/--type=renderer/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
+ await until(()=>{const all=rows(),found=findOwnedWorker(all,server.child.pid);owned=found?.owned??descendants(all,server.child.pid);workerPid=found?.workerPid;return !!workerPid&&all.some(r=>owned.has(r[0])&&/--type=renderer/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
  return{owned,workerPid};
 }
 async function reaped(server,owned){await until(()=>!rows().some(r=>r[0]!==String(server.child.pid)&&owned.has(r[0])&&(process.platform==='linux'||!r[3].startsWith('Z'))));}
