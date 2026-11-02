@@ -30,7 +30,9 @@ I/O), `@libretexts/remedy-cli` (local commands), and
 Chromium evidence; it is distinct from the ADAPT scanner. Its
 [owned temporary-storage policy](browser-scanner/README.md#owned-temporary-storage-lt-162)
 distinguishes retryable, proven storage-free refusals from retained unknown
-cleanup. Scanner liveness alone never certifies scan readiness.
+cleanup. Optional [operator public CA trust](browser-scanner/README.md#operator-public-ca-trust-lt-239)
+is captured once and imported into each isolated job before navigation; Server
+consumers must use that finite public-PEM contract rather than a parent-home seed. Scanner liveness alone never certifies scan readiness.
 
 The stack entry point is
 [Remedy Server's deployment README](https://github.com/johnnyrobot/libretexts-remedy-server-dev/blob/main/deploy/stack/README.md).

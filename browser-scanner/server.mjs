@@ -1,3 +1,4 @@
+import {loadPublicCA,stagePublicCA} from './public-ca.mjs';
 import {OwnershipFailure} from './process-owner.mjs';
 import {startOwnedWorker} from './owned-worker.mjs';
 import {createJobStorage,allocationStorageState,STORAGE_LIMITS} from './job-storage.mjs';
@@ -5,6 +6,8 @@ import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 const token = process.env.RENDER_SCANNER_TOKEN;
 if (!token) throw Error('RENDER_SCANNER_TOKEN required');
+const publicCA=await loadPublicCA(process.env.RENDER_PUBLIC_CA_FILE);
+if(publicCA&&process.platform!=='linux')throw Error('Public CA provisioning requires the shipping Linux runtime');
 const hold=(phase,error)=>console.error(JSON.stringify({event:'renderer_admission_hold',phase,reason:error instanceof OwnershipFailure?error.code:'unproved',...(error instanceof OwnershipFailure?{details:error.details}:{})}));
 let busy = false;
 let current;
@@ -39,6 +42,7 @@ const server = createServer(async (req,res) => {
     teardownFailed=true;
     try{storage=await createJobStorage();}catch(error){const state=allocationStorageState(error);if(state==='no_root'||state==='removed')teardownFailed=false;else report('allocation',error);throw error;}
     teardownFailed=false;
+    await stagePublicCA(publicCA,storage.env.RENDER_JOB_HOME);
     if(cancelled)throw Error();
     const result=await new Promise((resolve,reject)=>{
       child=startOwnedWorker({...process.env,...storage.env},deadline-performance.now());
@@ -46,8 +50,8 @@ const server = createServer(async (req,res) => {
       let reply;
       child.on('message',message=>{if(Number.isSafeInteger(message?.browser_owned)&&message.browser_owned>1){browserPid=message.browser_owned;if(cancelled){const previous=teardown;teardown=(async()=>{await previous;await child.terminate([browserPid]);})().catch(error=>{teardownFailed=true;report('termination',error);});}else child.send({ownership_ack:browserPid},error=>{if(error)stop();});return;}if(!cancelled)reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
       child.on('error',()=>stop());
-      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid){teardownFailed=true;report('ownership_ack');}stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
-      child.send({url});
+      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid){teardownFailed=true;report('ownership_ack');}stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve({...reply.result,publicCATrust:publicCA?{sha256:publicCA.sha256,fingerprints:publicCA.fingerprints}:null}):reject(Error());});
+      child.send({url,publicCASha256:publicCA?.sha256});
       if(cancelled)stop();
     });
     if(!res.destroyed)res.end(JSON.stringify(result));

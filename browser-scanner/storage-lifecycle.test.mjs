@@ -1,3 +1,4 @@
+import {certificates} from './public-ca-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {findOwnedWorker} from './test-worker-identity.mjs';
@@ -7,11 +8,13 @@ import {mkdtemp,readdir,lstat,chmod,writeFile,readFile,open} from 'node:fs/promi
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+// Run the existing full deadline/cancellation/storage cases with real job CA setup.
+const publicCA=process.env.RUN_BROWSER_TESTS==='1'&&process.platform==='linux'?await certificates():null;
 async function until(check,attempts=200,diagnostics=()=>""){for(let i=0;i<attempts;i++){if(await check())return;await sleep(50);}throw Error('Lifecycle did not reach expected state '+diagnostics());}
 const rows=()=>execFileSync('ps',['-eo','pid=,ppid=,pgid=,stat=,args='],{encoding:'utf8',maxBuffer:8*1024*1024}).trim().split('\n').map(line=>line.trim().split(/\s+/));
 async function usage(path){let bytes=0,allocated=0,entries=0;for(const name of await readdir(path)){const p=join(path,name),s=await lstat(p);entries++;bytes+=s.size;allocated+=s.blocks*512;if(s.isDirectory()){const c=await usage(p);bytes+=c.bytes;allocated+=c.allocated;entries+=c.entries;}}return{bytes,allocated,entries};}
 async function start(root,fixtureEnv={}){
- const child=fork(fileURLToPath(new URL('./server.mjs',import.meta.url)),[],{execArgv:[],env:{...process.env,...fixtureEnv,TMPDIR:root,TMP:root,TEMP:root,RENDER_TEST_CPU_HANG:'1',RENDER_SCANNER_TOKEN:'synthetic-only',RENDER_SCANNER_PORT:'0',RENDER_ALLOWED_HOSTS:'dev.libretexts.org',NODE_OPTIONS:`--loader ${fileURLToPath(new URL('./ownership-loader.mjs',import.meta.url))}${fixtureEnv.LT225_CHURN_STATE?' --loader '+fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)):''}`},stdio:['ignore','ignore','pipe','ipc']});
+ const child=fork(fileURLToPath(new URL('./server.mjs',import.meta.url)),[],{execArgv:[],env:{...process.env,...fixtureEnv,TMPDIR:root,TMP:root,TEMP:root,RENDER_PUBLIC_CA_FILE:publicCA?.ca??'',RENDER_TEST_CPU_HANG:'1',RENDER_SCANNER_TOKEN:'synthetic-only',RENDER_SCANNER_PORT:'0',RENDER_ALLOWED_HOSTS:'dev.libretexts.org',NODE_OPTIONS:`--loader ${fileURLToPath(new URL('./ownership-loader.mjs',import.meta.url))}${fixtureEnv.LT225_CHURN_STATE?' --loader '+fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)):''}`},stdio:['ignore','ignore','pipe','ipc']});
  const diagnostics=collectDiagnostics(child.stderr);
  const exited=new Promise(resolve=>child.once('exit',resolve));
  const port=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Scanner startup: '+diagnostics.text())),10000);child.once('message',m=>{clearTimeout(timer);resolve(m.port);});child.once('exit',()=>{clearTimeout(timer);reject(Error(diagnostics.text()));});});

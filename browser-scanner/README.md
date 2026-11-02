@@ -82,3 +82,103 @@ closed and the exact root retained. The 120-second total timer, worker heap,
 aggregate/per-job storage, CPU/memory/PID limits and 30-second stop policy remain.
 macOS retains the previous conservative process handling; the shipping proof is
 Linux. This does not change public HTTP contracts or enable production writes.
+
+## Operator public CA trust (LT-239)
+
+`RENDER_PUBLIC_CA_FILE` is an optional **service-level operator setting**, supported
+only by the shipping Linux image. Unset or empty preserves Chromium's default
+platform trust. The HTTP request still selects only the permitted page URL;
+request/page/learner data cannot select a CA, file, trust store or tool.
+
+The deploying service owner may mount **one approved public root-CA PEM bundle**
+as a regular file, for example `/run/remedy-public-ca/roots.pem`, read-only into
+the renderer. Use an absolute path, no final symlink, mode **0444** (or **0400**
+with an owner readable by the selected nonroot UID). The file must have **no write
+permission bits**. Its containing directory/mount must be operator-controlled;
+use a read-only file bind mount, not a writable parent-home mount. No private key,
+client certificate, cookie, user profile, NSS seed directory or issuer fetched
+from a page belongs in this input. Only self-issued, signature-verified certificates
+with CA basic constraints are accepted. Intermediate and leaf certificates are
+rejected. The operator remains responsible for selecting which roots to trust.
+
+Limits are **65,536 input bytes**, **8 distinct certificates**, and **1 MiB / 32
+entries** for completed trust setup, including its input copy, PEM import files,
+NSS files and public hash record. Empty, missing, unreadable, writable, nonregular,
+malformed, mixed/key-containing, duplicate and over-limit configured inputs fail
+service startup before a listener or job exists. Startup captures the bounded
+input once. Changing it requires a controlled service restart; it cannot mutate
+admitted or later jobs in that process. No parent keystore is opened or cloned.
+
+For every admitted job the parent writes the captured public PEM as mode-0400
+`$RENDER_JOB_HOME/operator-public-ca.pem`. The private parent/worker channel binds
+its SHA-256; the worker rereads and verifies that exact finite snapshot. It creates
+fresh mode-0700 `$RENDER_JOB_HOME/.pki/nssdb`, initializes a new SQL NSS database
+with `/usr/bin/certutil -N --empty-password`, and imports each root with
+`-A -a -t 'C,,'`. Canonical per-certificate PEM inputs and `public-ca.json` stay
+under `.pki`. NSS generates `cert9.db`, `key4.db` and `pkcs11.txt`; **no private key
+is imported**. `key4.db` is the newly initialized empty NSS key database.
+
+[Chromium's Linux certificate documentation](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/linux/cert_management.md)
+specifies that M146+ defaults to `$HOME/.local/share/pki/nssdb` and reuses an
+existing `$HOME/.pki/nssdb`. We deliberately create the legacy path before browser
+startup, supporting that documented lookup without maintaining two writable DBs.
+The worker's HOME/XDG paths still point only to its own fresh job home. Importing
+local anchors is additive; the platform/root store, TLS verification and hostname
+checks are unchanged. No certificate-error or sandbox bypass is used.
+
+Trust tools run **inside the existing worker's guardian ownership**, with a
+5-second limit per command, finite captured output, and the same 120-second total
+job deadline. The parent monitors the entire job, including setup, against the
+existing 128 MiB / 8,192-entry thresholds. The 1 MiB / 32-entry trust check occurs
+before navigation; the existing **512 MiB tmpfs is the hard aggregate ceiling**,
+including writes between checks. Setup failure can release capacity only after
+positive guardian termination and exact-root cleanup. Cancellation without browser
+acknowledgement, lost proof, uninspectable/over-budget storage and failed cleanup
+retain the existing conservative hold. Setup has no independent cleanup sweep.
+
+Scanner results add `publicCATrust: { sha256, fingerprints }` for the exact
+operator input (SHA-256 of the original UTF-8 PEM bytes and certificate SHA-256
+fingerprints); it is `null` when unconfigured. This is provenance, not permission
+or evidence of conformance. Service authentication and URL/private-network policy
+are unchanged. Existing consumers preserve the additive result field.
+
+The verified shipping target is Linux **amd64**, Playwright **1.63.0**,
+Chromium **153.0.8010.12** at
+`/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`.
+The Dockerfile pins the observed base
+`mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`
+and obtains `libnss3-tools=2:3.98-1ubuntu0.3` from the fixed Ubuntu snapshot
+`20261031T000000Z`, using only its signed noble/main, noble-updates/main and
+noble-security/main metadata. The scoped apt source excludes moving/third-party
+repositories. [Ubuntu documents this Snapshot source field](https://documentation.ubuntu.com/server/how-to/software/snapshot-service/).
+The runtime comes from the immutable base; the tool comes from that snapshot.
+The build checks the certified runtime version and the installed tool hash.
+The existing runtime stays
+`libnss3=2:3.98-1ubuntu0.2`; `/usr/bin/certutil` SHA-256 is
+`505b13e3087e1abcabec3f1485e0e76b81322667dcae25758341b46bcfc5b62d`.
+[The first green Linux proof](https://github.com/johnnyrobot/libretexts-remedy-bridge-dev/actions/runs/41441910329)
+records Node 24.20.0 and all 39 renderer cases passing with zero skips. The final
+exact-head/main records belong to the PR/handoff. No other NSS/browser/architecture
+pair is certified by this proof.
+
+The image supplies the NSS tool beside its existing runtime library; its build
+must retain the base `libnss3` version. Exact base, tool/runtime package versions,
+tool hash and actual Chromium version are recorded in the Linux HTTPS proof.
+Host-generated NSS databases and arbitrary host NSS versions are unsupported.
+The exact already-reviewed Server stack seccomp policy is retained as
+`shipping-seccomp-amd64.json` (SHA-256
+`fcecf1a0ae6f84effa439b44d5f0e51bc25b4a975a7025c71e6f9ee0490ca7b0`);
+the original `seccomp_profile.json` remains unchanged. Shipping CI uses the former
+with UID 1001, cap-drop ALL, no-new-privileges, init, read-only root, network-none,
+finite tmpfs/shm/memory/CPU/PIDs and 30-second stop policy. The stack policy's
+existing namespace-local chroot allowance remains kernel-denied in the initial
+unprivileged namespace. No new host policy allowance is introduced here.
+
+For Server LT-212: consume the reviewed immutable source pin, rebuild the renderer
+from this directory, mount only the public PEM read-only and set
+`RENDER_PUBLIC_CA_FILE` to its absolute container path. Remove dependence on a
+parent HOME/NSS seed for this renderer; this implementation never reads that seed.
+The Server owner must review its own configuration/preflight change and rerun the
+assembled HTTPS/consumer/lifecycle acceptance. Component proof does not accept the
+assembled package, clear LT-227, enable production writes or alter the preserved
+original acceptance/archive.
