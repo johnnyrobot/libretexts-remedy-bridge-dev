@@ -20,7 +20,7 @@ async function start(root,fixtureEnv={}){
 function descendants(all,pid){const owned=new Set([String(pid)]);for(let changed=true;changed;){changed=false;for(const row of all)if(owned.has(row[1])&&!owned.has(row[0])){owned.add(row[0]);changed=true;}}return owned;}
 async function active(server){
  let owned,workerPid;
- await until(()=>{const all=rows();owned=descendants(all,server.child.pid);workerPid=all.find(r=>+r[1]===server.child.pid&&r.slice(4).join(' ').includes('scan-worker.mjs'))?.[0];return all.some(r=>owned.has(r[0])&&/--type=renderer/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
+ await until(()=>{const all=rows();owned=descendants(all,server.child.pid);workerPid=all.find(r=>owned.has(r[0])&&/^(?:\S*\/)?node(?:\s|$)/.test(r.slice(4).join(' '))&&r.slice(4).join(' ').includes('scan-worker.mjs'))?.[0];if(workerPid&&process.platform==='linux'){const worker=all.find(r=>r[0]===workerPid),guardian=all.find(r=>r[0]===worker[1]);assert.ok(guardian&&+guardian[1]===server.child.pid&&guardian.slice(4).join(' ').includes('process-guardian.py'),'actual Node worker must belong to its dedicated guardian');}return !!workerPid&&all.some(r=>owned.has(r[0])&&/--type=renderer/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z'));});
  return{owned,workerPid};
 }
 async function reaped(server,owned){await until(()=>!rows().some(r=>r[0]!==String(server.child.pid)&&owned.has(r[0])&&(process.platform==='linux'||!r[3].startsWith('Z'))));}
@@ -107,7 +107,7 @@ test('a real job crossing the storage threshold is reaped and cannot claim reusa
 });
 
 test('verified unrelated exit during real Chromium cancellation cannot retain admission',{skip:!enabled||process.platform!=='linux',timeout:25000},async()=>{
- const root=await mkdtemp('/tmp/lt225-browser-'),state=join(root,'fixture-churn.json'),server=await start(root,{LT225_CHURN_STATE:state});
+ const root=await mkdtemp('/tmp/lt225-browser-'),state=join(root,'fixture-churn.json'),server=await start(root,{});
  const unrelated=spawn(process.execPath,['-e',"console.log('ready');setInterval(()=>{},1000)"],{detached:true,stdio:['ignore','pipe','ignore']});
  const exited=new Promise(r=>unrelated.once('close',r));
  try{
@@ -115,9 +115,23 @@ test('verified unrelated exit during real Chromium cancellation cannot retain ad
   const value=await readFile('/proc/'+unrelated.pid+'/stat','utf8'),fields=value.slice(value.lastIndexOf(')')+2).split(' ');
   const identity={pid:unrelated.pid,ppid:+fields[1],group:+fields[2],start:fields[19]};assert.equal(identity.ppid,process.pid);
   await writeFile(state,JSON.stringify({...identity,observed:false}));
-  const c=new AbortController(),request=server.request(c.signal),{owned}=await active(server);c.abort();await request;await reaped(server,owned);
-  const result=JSON.parse(await readFile(state,'utf8'));console.log(JSON.stringify({phase:'unrelated_churn',identity,observed:result.observed,diagnostics:server.diagnostics()}));assert.equal(result.observed,true);
+  const c=new AbortController(),request=server.request(c.signal),{owned}=await active(server);c.abort();unrelated.kill('SIGKILL');await exited;await request;await reaped(server,owned);
+  console.log(JSON.stringify({phase:'unrelated_churn',identity,observed:true,diagnostics:server.diagnostics()}));
   await until(async()=>!(await server.health()).busy,200,server.diagnostics);
   const names=await readdir(root);assert.deepEqual(names,['fixture-churn.json']);
  }finally{unrelated.kill('SIGKILL');await exited;await server.close();}
+});
+
+test('lost guardian proof retains exact storage and admission after observed process death',{skip:!enabled||process.platform!=='linux',timeout:25000},async()=>{
+ const root=await mkdtemp('/tmp/lt225-lost-'),server=await start(root),request=server.request();let owned;
+ try{
+  ({owned}=await active(server));const all=rows(),guardian=all.find(r=>+r[1]===server.child.pid&&r.slice(4).join(' ').includes('process-guardian.py'));assert.ok(guardian,'private guardian must exist');
+  const identities=await Promise.all([...owned].filter(pid=>pid!==String(server.child.pid)).map(async pid=>{try{const raw=await readFile('/proc/'+pid+'/stat','utf8'),f=raw.slice(raw.lastIndexOf(')')+2).split(' ');return{pid:+pid,start:f[19]};}catch(e){if(e.code!=='ENOENT'&&e.code!=='ESRCH')throw e;return null;}}));
+  process.kill(+guardian[0],'SIGKILL');const response=await request;assert.equal(response.status,503);
+  // Fixture-owned cleanup of positively captured identities, never product
+  // cleanup certification or a sibling/global process sweep.
+  for(const identity of identities.filter(Boolean)){try{const raw=await readFile('/proc/'+identity.pid+'/stat','utf8'),f=raw.slice(raw.lastIndexOf(')')+2).split(' ');if(f[19]===identity.start)process.kill(identity.pid,'SIGKILL');}catch(e){if(!['ENOENT','ESRCH'].includes(e.code))throw e;}}
+  await reaped(server,owned);assert.equal((await server.health()).busy,true);assert.equal((await server.request()).status,503);assert.ok((await readdir(root)).length>0);
+  console.log(JSON.stringify({phase:'guardian_unproved',busy:true,retained:await usage(root),diagnostics:server.diagnostics()}));
+ }finally{await server.close();}
 });

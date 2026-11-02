@@ -4,7 +4,7 @@ import {spawn} from 'node:child_process';
 import {mkdtemp,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
-test('unrelated exiting sibling cannot quarantine a positively owned frozen tree',{skip:process.platform!=='linux',timeout:15000},async t=>{
+test('raw inventory refuses ambiguous disappearance without kernel ownership proof',{skip:process.platform!=='linux',timeout:15000},async t=>{
  const root=await mkdtemp('/tmp/lt225-churn-'),driver=join(root,'driver.mjs');
  await writeFile(driver,`import {spawn} from 'node:child_process';import {readFile,writeFile} from 'node:fs/promises';import {terminateOwnedTree} from ${JSON.stringify(new URL('./process-owner.mjs',import.meta.url).href)};
  const children=[];
@@ -21,7 +21,7 @@ test('unrelated exiting sibling cannot quarantine a positively owned frozen tree
  const {observed}=JSON.parse(await readFile(process.env.LT225_CHURN_STATE,'utf8'));
  console.log(JSON.stringify({before,churnObserved:observed,error:error??null}));
 
- if(before.owned.ppid!==process.pid||before.unrelated.ppid!==process.pid||observed!==true||error)process.exitCode=1;
+ if(before.owned.ppid!==process.pid||before.unrelated.ppid!==process.pid||observed!==true||error?.code!=='ownership_uncertain')process.exitCode=1;
  }finally{await cleanup();}`);
  const child=spawn(process.execPath,['--loader',fileURLToPath(new URL('./inventory-churn-loader.mjs',import.meta.url)),driver],{env:{...process.env,LT225_CHURN_STATE:join(root,'churn.json')},stdio:['ignore','pipe','pipe']});
  const exited=new Promise(r=>child.once('close',r));

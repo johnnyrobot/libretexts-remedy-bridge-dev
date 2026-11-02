@@ -52,3 +52,23 @@ worker SIGKILL, the full 120-second deadline, shutdown, concurrent-job isolation
 OS cleanup denial and a late detached descendant. It measures bytes and entries
 after observed reaping. These component checks do not enable production writes
 or replace the assembled-package acceptance owned by Remedy Server.
+
+### Linux job process ownership (LT-225)
+
+The Linux image uses its existing Python 3 runtime for a private, unprivileged
+per-job guardian. It sets and verifies child-subreaper status before creating the
+Node worker, with no-new-privileges and the existing seccomp policy. Orphans stay
+kernel-owned by that guardian even after `setsid`, worker SIGKILL, or parent exit.
+It signals only its own direct/adopted children and does not reap their PID
+identities before signaling. Only kernel `ECHILD` after termination certifies
+that the job has no remaining descendants. PID-fd support is not assumed: the
+current policy refuses that probe, and the guardian uses unreaped-child lifetime
+instead, without relaxing seccomp or adding capabilities.
+
+The worker cannot inherit the guardian's private parent channel or supply its
+terminal proof. Missing/failed guardian proof, inspection failure, cleanup denial,
+unacknowledged startup or retained over-budget storage still leaves admission
+closed and the exact root retained. The 120-second total timer, worker heap,
+aggregate/per-job storage, CPU/memory/PID limits and 30-second stop policy remain.
+macOS retains the previous conservative process handling; the shipping proof is
+Linux. This does not change public HTTP contracts or enable production writes.
