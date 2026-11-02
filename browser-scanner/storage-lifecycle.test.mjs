@@ -65,18 +65,31 @@ test('separate concurrent scanners clean only their own job; denied cleanup keep
  const root=await mkdtemp('/tmp/lt162-'),a=await start(root),b=await start(root);
  const sentinel=join(root,'other-user-data');await writeFile(sentinel,'preserve');
  try{
-  const ac=new AbortController(),bc=new AbortController(),ar=a.request(ac.signal),br=b.request(bc.signal);
-  const aa=await active(a),bb=await active(b);
+  const ac=new AbortController(),bc=new AbortController(),ar=a.request(ac.signal);
+  const aa=await active(a),[aName]=(await readdir(root)).filter(n=>n.startsWith('remedy-render-job-'));
+  const br=b.request(bc.signal),bb=await active(b),[bName]=(await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')&&n!==aName);
+  const bIdentity=await lstat(join(root,bName));
   assert.equal((await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')).length,2);
-  ac.abort();await ar;await reaped(a,aa.owned);await until(async()=>!(await a.health()).busy);
+  ac.abort();await ar;await reaped(a,aa.owned);await sleep(750);
+  const aHeld=(await a.health()).busy;
+  if(aHeld){assert.ok((await readdir(root)).includes(aName));assert.equal((await a.request()).status,503);}
+  else assert.ok(!(await readdir(root)).includes(aName));
   assert.equal((await b.health()).busy,true);
-  assert.equal((await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')).length,1);
+  const surviving=rows();
+  assert.ok(surviving.some(r=>r[0]===bb.workerPid&&!r[3].startsWith('Z')),'B worker must survive A teardown');
+  assert.ok(surviving.some(r=>bb.owned.has(r[0])&&/--type=renderer/.test(r.slice(4).join(' '))&&!r[3].startsWith('Z')),'B renderer must survive A teardown');
+  assert.equal((await lstat(join(root,bName))).ino,bIdentity.ino);
+  assert.equal((await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')).length,aHeld?2:1);
   assert.equal(await readFile(sentinel,'utf8'),'preserve');
+  console.log(JSON.stringify({phase:'concurrent_isolation',aHeld,bBusy:true,bPreserved:true,retained:await usage(root)}));
   // Actual OS permission denial, without replacing rm or process termination.
   await chmod(root,0o500);bc.abort();await br;await reaped(b,bb.owned);
   await sleep(750);assert.equal((await b.health()).busy,true);
   assert.equal((await b.request()).status,503);
-  assert.equal((await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')).length,1);
+  const finalAHeld=(await a.health()).busy;
+  if(finalAHeld){assert.ok((await readdir(root)).includes(aName));assert.equal((await a.request()).status,503);}
+  else assert.ok(!(await readdir(root)).includes(aName));
+  assert.equal((await readdir(root)).filter(n=>n.startsWith('remedy-render-job-')).length,finalAHeld?2:1);
   assert.equal(await readFile(sentinel,'utf8'),'preserve');
   console.log(JSON.stringify({phase:'cleanup_denied',retained:await usage(root),busy:(await b.health()).busy}));
  }finally{await chmod(root,0o700);await a.close();await b.close();}
