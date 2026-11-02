@@ -8,10 +8,11 @@ import {promisify} from 'node:util';
 export const PUBLIC_CA_LIMITS=Object.freeze({inputBytes:65536,certificates:8,derivedBytes:1024*1024,derivedEntries:32});
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const invalid=()=>Error('Public CA configuration invalid or unavailable');
+const certificateBlock=/-----BEGIN CERTIFICATE-----[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----/g;
 function parse(pem){
  if(typeof pem!=='string'||Buffer.byteLength(pem)>PUBLIC_CA_LIMITS.inputBytes)throw invalid();
- const blocks=pem.match(/-----BEGIN CERTIFICATE-----[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----/g)??[];
- if(!blocks.length||blocks.length>PUBLIC_CA_LIMITS.certificates||pem.replace(/-----BEGIN CERTIFICATE-----[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----/g,'').trim())throw invalid();
+ const blocks=pem.match(certificateBlock)??[];
+ if(!blocks.length||blocks.length>PUBLIC_CA_LIMITS.certificates||pem.replace(certificateBlock,'').trim())throw invalid();
  const certificates=blocks.map(block=>{
   const cert=new X509Certificate(block),der=Buffer.from(block.replace(/-----[A-Z ]+-----/g,'').replace(/\s/g,''),'base64');
   // Explicit trust anchors only: no leaf, intermediate, key or client identity.

@@ -142,6 +142,19 @@ fingerprints); it is `null` when unconfigured. This is provenance, not permissio
 or evidence of conformance. Service authentication and URL/private-network policy
 are unchanged. Existing consumers preserve the additive result field.
 
+The verified shipping target is Linux **amd64**, Playwright **1.63.0**,
+Chromium **153.0.8010.12** at
+`/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell`.
+The Dockerfile pins the observed base
+`mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`
+and `libnss3-tools=2:3.98-1ubuntu0.3`. The existing runtime stays
+`libnss3=2:3.98-1ubuntu0.2`; `/usr/bin/certutil` SHA-256 is
+`505b13e3087e1abcabec3f1485e0e76b81322667dcae25758341b46bcfc5b62d`.
+[The first green Linux proof](https://github.com/johnnyrobot/libretexts-remedy-bridge-dev/actions/runs/41441910329)
+records Node24.20.0 and all39 renderer cases passing with zero skips. The final
+exact-head/main records belong to the PR/handoff. No other NSS/browser/architecture
+pair is certified by this proof.
+
 The image supplies the NSS tool beside its existing runtime library; its build
 must retain the base `libnss3` version. Exact base, tool/runtime package versions,
 tool hash and actual Chromium version are recorded in the Linux HTTPS proof.

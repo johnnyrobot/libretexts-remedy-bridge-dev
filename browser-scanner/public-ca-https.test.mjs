@@ -33,10 +33,11 @@ async function completed(server,root){const response=await server.request();asse
 const processRows=()=>execFileSync('ps',['-eo','pid=,ppid=,pgid=,stat=,args='],{encoding:'utf8'}).trim().split('\n').map(line=>line.trim().split(/\s+/));
 
 test('operator public CA reaches actual HTTPS through HTTP and the owned sandboxed worker',{skip:!enabled,timeout:30000},async()=>{
- const certs=await certificates(),root=await mkdtemp('/tmp/lt239-jobs-');let reads=0;
+ const certs=await certificates('dev.libretexts.org',8),root=await mkdtemp('/tmp/lt239-jobs-');let reads=0;
+ const original=await readFile(certs.ca,'utf8');await chmod(certs.ca,0o644);await writeFile(certs.ca,original+'\n'.repeat(65536-Buffer.byteLength(original)));await chmod(certs.ca,0o444);
  const https=await fixture(certs,(req,res)=>{reads++;res.end(page);}),server=await scanner(root,https.port,certs.ca);
  try{
-  const result=await completed(server,root);assert.ok(reads>0);assert.equal(result.publicCATrust.sha256,sha(await readFile(certs.ca)));
+  const result=await completed(server,root);assert.ok(reads>0);assert.equal(result.publicCATrust.fingerprints.length,8);assert.equal(result.publicCATrust.sha256,sha(await readFile(certs.ca)));
   console.log(JSON.stringify({phase:'public_ca_https_success',node:process.version,browser:result.browser,trust:result.publicCATrust,nss:execFileSync('dpkg-query',['-W','libnss3','libnss3-tools'],{encoding:'utf8'}).trim(),certutilSha256:sha(await readFile('/usr/bin/certutil'))}));
  }finally{await server.close();await https.close();}
 });
