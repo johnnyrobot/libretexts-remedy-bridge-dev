@@ -17,18 +17,19 @@ assertion expected zero retained entries. Installed Playwright1.63.0
 `os.tmpdir()`. `launchProcess` removes them from its worker-side close callback;
 SIGKILL of that worker bypasses the callback. No dependency change is needed.
 
-The parent now creates one private job root before launching the worker, passes
+The parent creates one private job root before launching the worker, passes
 it as all temporary/home/cache locations, retains its device/inode/UID identity,
 and removes only that exact root after worker close and verified tree termination.
-The independently acknowledged Chromium root and late ownership messages remain
-owned through teardown. Descendants are frozen and reinventoried until stable,
+In the original PR27 implementation, the independently acknowledged Chromium
+root and late ownership messages remained owned through teardown. That historical
+raw-inventory algorithm froze and reinventoried descendants until stable,
 including children that fork into another process group during inventory. A PID
-disappearing during the initial Linux inventory, or an unfrozen discovered
-descendant disappearing before the next freeze, makes ownership uncertain. Known
-groups are still stopped; cleanup/admission remain held because a fork-and-exit
-could have left an unidentifiable orphan. This deliberately favors false holds
-over deleting storage beneath an unknown process. Uncertain termination never
-reaches storage cleanup.
+disappearing during that initial Linux inventory, or an unfrozen discovered
+descendant disappearing before the next freeze, made ownership uncertain. Known
+groups were still stopped; cleanup/admission remained held because a fork-and-exit
+could have left an unidentifiable orphan. LT-225 replaces that shipping Linux
+decision with the kernel guardian described below; the generic/macOS raw helper
+stays conservative. Uncertain termination still never reaches storage cleanup.
 
 128 MiB and8,192 entries are conservative sampled stop thresholds, inspected every
 250ms using the larger logical/allocated size for every entry. The128MiB budget
@@ -73,3 +74,22 @@ the PR and handoff. No Linux success is inferred from macOS tests.
 No live library/provider, credentials, deployed service, upstream repository,
 TestSprite run or production enablement is part of this work. Existing dormant
 SDK advisory inventory and release-owner acceptance limitations remain unchanged.
+
+
+## LT-225 correction to the original global-inventory decision
+
+The initial PR27 global `/proc` disappearance rule described above is historical
+for Linux shipping jobs. Controlled Linux evidence showed the same missing-row
+category can represent an unrelated sibling OR a reaped owned descendant with a
+live escaped child. Ignoring that category would be unsafe. The raw helper stays
+conservative for its generic/macOS diagnostic callers.
+
+Linux scanner jobs now use the [private per-job kernel guardian](../../browser-scanner/README.md#linux-job-process-ownership-lt-225).
+It verifies child-subreaper ownership before spawning work and never reaps direct/
+adopted PID identities before signaling. Only kernel `ECHILD` after teardown,
+received through the guardian-only channel and clean process exit, can certify
+that no descendants remain. Worker-supplied fields cannot forge this proof. An
+uncertain partial IPC send closes its channel; no terminal JSON is appended to a
+truncated prefix. Negative proof keeps a bounded reason; absent proof holds too.
+All root-identity/storage checks and finite limits remain. LT-224 allocation
+availability is a separate approved follow-up, not fixed by this ownership seam.

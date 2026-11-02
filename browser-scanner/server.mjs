@@ -1,11 +1,11 @@
-import {terminateOwnedTree} from './process-owner.mjs';
+import {OwnershipFailure} from './process-owner.mjs';
+import {startOwnedWorker} from './owned-worker.mjs';
 import {createJobStorage,STORAGE_LIMITS} from './job-storage.mjs';
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
-import { fork } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 const token = process.env.RENDER_SCANNER_TOKEN;
 if (!token) throw Error('RENDER_SCANNER_TOKEN required');
+const hold=(phase,error)=>console.error(JSON.stringify({event:'renderer_admission_hold',phase,reason:error instanceof OwnershipFailure?error.code:'unproved',...(error instanceof OwnershipFailure?{details:error.details}:{})}));
 let busy = false;
 let current;
 const server = createServer(async (req,res) => {
@@ -16,9 +16,12 @@ const server = createServer(async (req,res) => {
   if(req.url!=='/scan'||req.method!=='POST'){res.statusCode=404;return res.end('{}');}
   if(busy){res.statusCode=503;res.setHeader('Retry-After','5');return res.end('{"error":"capacity_unavailable"}');}
   busy=true;
+  const reported=new Set();
+  const report=(phase,error)=>{if(!reported.has(phase)){reported.add(phase);hold(phase,error);}};
   let child, browserPid, storage, monitor, inspection, storageFailed=false, cancelled=false, teardown, teardownFailed=false;
-  const stop=()=>{cancelled=true;if(child&&!teardown)teardown=terminateOwnedTree(child.pid,browserPid?[browserPid]:[]).catch(()=>{teardownFailed=true;});};
+  const stop=()=>{cancelled=true;if(child&&!teardown)teardown=child.terminate(browserPid?[browserPid]:[]).catch(error=>{teardownFailed=true;report('termination',error);});};
   current=stop;
+  const deadline=performance.now()+120000;
   const timeout=setTimeout(stop,120000);
   res.once('close',stop);
   try {
@@ -34,16 +37,16 @@ const server = createServer(async (req,res) => {
     const url=JSON.parse(body).url;
     // Allocation itself may have partially created storage before an I/O error.
     teardownFailed=true;
-    storage=await createJobStorage();
+    try{storage=await createJobStorage();}catch(error){report('allocation');throw error;}
     teardownFailed=false;
     if(cancelled)throw Error();
     const result=await new Promise((resolve,reject)=>{
-      child=fork(fileURLToPath(new URL('./scan-worker.mjs',import.meta.url)),[],{env:{...process.env,...storage.env},detached:true,stdio:['ignore','ignore','ignore','ipc'],execArgv:['--max-old-space-size=384']});
-      monitor=setInterval(()=>{if(!inspection)inspection=storage.inspect().catch(()=>{storageFailed=true;stop();}).finally(()=>{inspection=undefined;});},STORAGE_LIMITS.intervalMs);
+      child=startOwnedWorker({...process.env,...storage.env},deadline-performance.now());
+      monitor=setInterval(()=>{if(!inspection)inspection=storage.inspect().catch(()=>{storageFailed=true;report('storage_inspection');stop();}).finally(()=>{inspection=undefined;});},STORAGE_LIMITS.intervalMs);
       let reply;
-      child.on('message',message=>{if(Number.isSafeInteger(message?.browser_owned)&&message.browser_owned>1){browserPid=message.browser_owned;if(cancelled){const previous=teardown;teardown=(async()=>{await previous;await terminateOwnedTree(child.pid,[browserPid]);})().catch(()=>{teardownFailed=true;});}else child.send({ownership_ack:browserPid},error=>{if(error)stop();});return;}if(!cancelled)reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
+      child.on('message',message=>{if(Number.isSafeInteger(message?.browser_owned)&&message.browser_owned>1){browserPid=message.browser_owned;if(cancelled){const previous=teardown;teardown=(async()=>{await previous;await child.terminate([browserPid]);})().catch(error=>{teardownFailed=true;report('termination',error);});}else child.send({ownership_ack:browserPid},error=>{if(error)stop();});return;}if(!cancelled)reply=Buffer.byteLength(JSON.stringify(message))<=16*1024*1024?message:undefined;stop();});
       child.on('error',()=>stop());
-      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid)teardownFailed=true;stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
+      child.once('close',async()=>{clearInterval(monitor);if(!reply){if(!browserPid){teardownFailed=true;report('ownership_ack');}stop();}await teardown;await inspection;if(teardownFailed||storageFailed)reject(Error());else reply?.result?resolve(reply.result):reject(Error());});
       child.send({url});
       if(cancelled)stop();
     });
@@ -52,7 +55,7 @@ const server = createServer(async (req,res) => {
   finally {
     clearTimeout(timeout);clearInterval(monitor);res.off('close',stop);
     await teardown;await inspection;
-    if(storage&&!teardownFailed){try{await storage.cleanup();}catch{teardownFailed=true;}}
+    if(storage&&!teardownFailed){try{await storage.cleanup();}catch{teardownFailed=true;report('storage_cleanup');}}
     current=undefined;busy=teardownFailed;
   }
 });

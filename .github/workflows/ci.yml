@@ -17,6 +17,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: Verify Linux child ownership outside the hardened container
+        run: node --test browser-scanner/kernel-owner-probe.test.mjs
       - name: Check operator-only canary preparation without network
         run: |
           bash -n tools/cxone-canary-wizard.sh
