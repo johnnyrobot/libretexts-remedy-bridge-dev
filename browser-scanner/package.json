@@ -1,1 +1,1 @@
-{"name":"remedy-browser-scanner","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test *.test.mjs"},"dependencies":{"playwright":"1.63.0","axe-core":"4.13.0"}}
+{"name":"remedy-browser-scanner","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test --test-concurrency=1 *.test.mjs"},"dependencies":{"playwright":"1.63.0","axe-core":"4.13.0"}}

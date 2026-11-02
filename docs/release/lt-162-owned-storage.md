@@ -1,0 +1,75 @@
+# LT-162 owned browser storage
+
+The per-job storage policy is in [the scanner guide](../../browser-scanner/README.md#owned-temporary-storage-lt-162).
+This focused change preserves f39566e's cxone-review-v1/cxone-terminal-v1,
+both-profile read-health behavior, production mutation hold, and all Bridge
+SDK/worker/ledger contracts. The exact LT-197 verified Server delivery at
+20a09894895d8c5df69a6d2c2bb1adbbe08f22c2 is preserved; this new source requires a
+separate Server LT-212 package refresh and assembled acceptance.
+
+## Diagnosis and choice
+
+A real sandboxed Chromium cancellation under Node22/macOS left 82,386 bytes in
+48 entries after process termination and admission reuse. The red lifecycle
+assertion expected zero retained entries. Installed Playwright1.63.0
+`playwright-core/lib/coreBundle.js` `_prepareToLaunch` creates
+`playwright-artifacts-*` and `playwright_chromiumdev_profile-*` under
+`os.tmpdir()`. `launchProcess` removes them from its worker-side close callback;
+SIGKILL of that worker bypasses the callback. No dependency change is needed.
+
+The parent now creates one private job root before launching the worker, passes
+it as all temporary/home/cache locations, retains its device/inode/UID identity,
+and removes only that exact root after worker close and verified tree termination.
+The independently acknowledged Chromium root and late ownership messages remain
+owned through teardown. Descendants are frozen and reinventoried until stable,
+including children that fork into another process group during inventory. A PID
+disappearing during the initial Linux inventory, or an unfrozen discovered
+descendant disappearing before the next freeze, makes ownership uncertain. Known
+groups are still stopped; cleanup/admission remain held because a fork-and-exit
+could have left an unidentifiable orphan. This deliberately favors false holds
+over deleting storage beneath an unknown process. Uncertain termination never
+reaches storage cleanup.
+
+128 MiB and8,192 entries are conservative sampled stop thresholds, inspected every
+250ms using the larger logical/allocated size for every entry. The128MiB budget
+provides8x the16MiB maximum result message and16x the8MiB reader DOM; neither
+comparison claims a universal Chromium working-set limit. Small synthetic reader
+cancellation measured about83KiB logical/148KiB allocated in50entries on macOS;
+Linux measurements belong to the exact CI run. The shipping512MiB tmpfs is the
+hard aggregate cap and leaves384MiB beyond the stop threshold for sampling
+overshoot and other isolated runtime needs. Admission requires256MiB available.
+Shared-memory1GiB, totalmemory2GiB,256PIDs,1.5CPU and120s lifetime are preserved.
+Unsupported arbitrary host filesystems cannot claim the same hard storage bound.
+
+A failed inspection stops work. A denied/failed cleanup, identity change,
+unacknowledged startup, or retained over-budget root keeps admission busy and
+retains the directory. There is no global/sibling sweep, restart cleanup,
+process-termination bypass, host permission broadening or sandbox relaxation.
+
+## Verification and evidence
+
+The lifecycle suite uses real processes and sandboxed Chromium; only external
+DNS and reader content are synthetic. It covers repeated disconnect, worker
+SIGKILL, shutdown, normal completion, concurrent scanner isolation, actual OS
+cleanup denial, oversized storage, uncertain pre-ack startup and the real120s
+Linux deadline. Byte/allocated-byte/entry measurements follow observed reaping;
+Linux asserts disappearance of the observed PIDs, including zombies. A separate
+Linux fixture deterministically forks a detached descendant after the first
+process inventory: a surviving intermediate parent permits verified termination;
+the fork-and-exit variant must refuse certainty. The fixture explicitly kills its
+remaining synthetic orphan after that refusal. Browser test files run serially
+to avoid unrelated fixture process churn; the isolation case explicitly runs two
+scanners concurrently.
+
+Local raw red/green and failed initial harness runs are preserved in
+`.scratch/lt162-evidence/` and `/tmp/lt162-*.log`. Early harness failures were an
+already-disconnected IPC cleanup call, a wrong test working directory and a
+mechanical syntax replacement; those test errors are retained, not product
+passes. Initial broad Bridge tests under host load failed20/546, predominantly
+5/8s startup deadlines and their cascading assertions; focused provider-policy
+rerun passed3/3. Final results and exact Linux/main workflow URLs are recorded in
+the PR and handoff. No Linux success is inferred from macOS tests.
+
+No live library/provider, credentials, deployed service, upstream repository,
+TestSprite run or production enablement is part of this work. Existing dormant
+SDK advisory inventory and release-owner acceptance limitations remain unchanged.
