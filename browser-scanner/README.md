@@ -46,6 +46,16 @@ retained; `/healthz` remains live with `busy:true`. Repeated requests cannot
 allocate more jobs in that process. Preserve retained directories for isolated
 container/operator diagnosis; restarting is not evidence that they were cleaned.
 
+Before any worker exists, a refusal for insufficient free space creates no job
+root and leaves admission idle. It still returns 503 on every attempt until the
+256 MiB free-space floor is met; only a successful real scan proves recovery.
+Likewise, failure to create the job home can release admission only after exact
+owned-root removal is positively verified. These are private allocator outcomes,
+not error-message or caller-provided markers. Failed `mkdtemp`, unreadable identity,
+partial allocation, root replacement and denied/unproved cleanup keep the hold.
+`/healthz` is liveness: `busy:false` alone does not certify available disk space
+or a successful scan. Never delete retained roots to manufacture readiness.
+
 The Linux lifecycle suite exercises the actual sandboxed browser with synthetic
 external DNS/content and no external networking, including repeated cancellation,
 worker SIGKILL, the full 120-second deadline, shutdown, concurrent-job isolation,

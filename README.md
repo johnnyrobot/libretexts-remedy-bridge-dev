@@ -27,7 +27,10 @@ Bridge workspaces are `@libretexts/remedy-core` (rules, fix strategies and CXone
 I/O), `@libretexts/remedy-cli` (local commands), and
 `@libretexts/remedy-conductor-panel` (staff UI and Node Bridge). The private
 [`browser-scanner`](browser-scanner/README.md) supplies optional full reader-page
-Chromium evidence; it is distinct from the ADAPT scanner.
+Chromium evidence; it is distinct from the ADAPT scanner. Its
+[owned temporary-storage policy](browser-scanner/README.md#owned-temporary-storage-lt-162)
+distinguishes retryable, proven storage-free refusals from retained unknown
+cleanup. Scanner liveness alone never certifies scan readiness.
 
 The stack entry point is
 [Remedy Server's deployment README](https://github.com/johnnyrobot/libretexts-remedy-server-dev/blob/main/deploy/stack/README.md).
