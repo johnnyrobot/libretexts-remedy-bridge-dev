@@ -1,6 +1,6 @@
 import {OwnershipFailure} from './process-owner.mjs';
 import {startOwnedWorker} from './owned-worker.mjs';
-import {createJobStorage,STORAGE_LIMITS} from './job-storage.mjs';
+import {createJobStorage,allocationStorageState,STORAGE_LIMITS} from './job-storage.mjs';
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 const token = process.env.RENDER_SCANNER_TOKEN;
@@ -37,7 +37,7 @@ const server = createServer(async (req,res) => {
     const url=JSON.parse(body).url;
     // Allocation itself may have partially created storage before an I/O error.
     teardownFailed=true;
-    try{storage=await createJobStorage();}catch(error){report('allocation');throw error;}
+    try{storage=await createJobStorage();}catch(error){const state=allocationStorageState(error);if(state==='no_root'||state==='removed')teardownFailed=false;else report('allocation',error);throw error;}
     teardownFailed=false;
     if(cancelled)throw Error();
     const result=await new Promise((resolve,reject)=>{

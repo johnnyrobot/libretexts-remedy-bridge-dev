@@ -91,5 +91,22 @@ received through the guardian-only channel and clean process exit, can certify
 that no descendants remain. Worker-supplied fields cannot forge this proof. An
 uncertain partial IPC send closes its channel; no terminal JSON is appended to a
 truncated prefix. Negative proof keeps a bounded reason; absent proof holds too.
-All root-identity/storage checks and finite limits remain. LT-224 allocation
-availability is a separate approved follow-up, not fixed by this ownership seam.
+All root-identity/storage checks and finite limits remain. The ownership seam
+itself does not resolve allocation availability.
+
+## LT-224 proven storage-free refusal
+
+The allocator privately records only two failed-allocation outcomes: `no_root`
+for the free-space check before `mkdtemp`, and `removed` after a failed home mkdir
+and positively verified removal of that exact root. The server consults this
+private object-identity record before releasing admission. Error names, codes,
+messages and caller fields cannot manufacture it. No worker exists at this point.
+The public 503 response is unchanged; insufficient space still prevents scans
+until an actual retry succeeds. Liveness/idle status is not scan readiness.
+
+Failed `mkdtemp` (including partial creation), unreadable root identity, failed
+cleanup or root replacement has no release proof and keeps busy503. The server
+never sweeps sibling or global temporary data. Kernel uncertainty, oversized
+retained jobs and production write holds remain unchanged. The Linux regression
+uses real allocated fixture blocks under the existing 512 MiB tmpfs, actual OS
+mkdir denial, same-process real Chromium retry and conservative failure cases.
